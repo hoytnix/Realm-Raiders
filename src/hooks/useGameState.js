@@ -1707,6 +1707,20 @@ export function useGameState() {
       };
     });
   }, []);
+  useEffect(() => {
+    setGameState(prev => {
+      const currentDay = prev.calendar?.day ?? prev.day ?? 1;
+      const feuds = prev.bloodFeuds || [];
+      const hasMockFeuds = feuds.some(f => typeof f.id === 'number' || f.id === 'bf-1' || f.id === 'bf-2' || f.rivalName === 'Ashen Horde' || f.rivalName === 'Dusk Syndicate');
+      if (currentDay < 5 || hasMockFeuds) {
+        return {
+          ...prev,
+          bloodFeuds: []
+        };
+      }
+      return prev;
+    });
+  }, []);
   return {
     gameState,
     setGameState,

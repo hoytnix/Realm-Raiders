@@ -42,6 +42,13 @@
       "description": "Fixes React ReferenceError BSOD and ensures clean perimeter kingdom synchronization",
       "appliedAt": "2026-09-08T15:51:54.396Z",
       "sha256": "f5e40d28b96f24c6712e14fc641b0f636db585a82517bb985c7fe2f249c35c2d"
+    },
+    {
+      "id": "007_purge_mock_missives_and_display_surrounding_kingdoms",
+      "file": "007_purge_mock_missives_and_display_surrounding_kingdoms.mjs",
+      "description": "Purges mock retaliation missives and displays the 3 surrounding map kingdoms",
+      "appliedAt": "2026-09-08T15:57:12.834Z",
+      "sha256": "52bb3dcb5f013840caa5eb832610bcfaf999916fe434ad8b39d3da9bc4be06b1"
     }
   ]
 }

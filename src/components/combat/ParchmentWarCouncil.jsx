@@ -26,6 +26,7 @@ export function ParchmentWarCouncil({
       setRivals(settlements);
     }
   }, [gameState?.rivalSettlements, state?.rivalSettlements]);
+  const activeRivals = gameState && Array.isArray(gameState.rivalSettlements) && gameState.rivalSettlements.length > 0 ? gameState.rivalSettlements : state && Array.isArray(state.rivalSettlements) && state.rivalSettlements.length > 0 ? state.rivalSettlements : rivals;
   const [selectedRivalId, setSelectedRivalId] = useState(() => rivals[0]?.id || null);
   const [isInfused, setIsInfused] = useState(false);
   useEffect(() => {
@@ -96,7 +97,7 @@ export function ParchmentWarCouncil({
 
           {/* Roster of Rivals (Selectable Cards) */}
           <div className="space-y-2 mb-4 overflow-y-auto max-h-48 pr-1">
-            {rivals.map(rival => {
+            {activeRivals.map(rival => {
             const rFaction = FACTIONS[rival.faction] || FACTIONS.humans;
             const isSelected = rival.id === selectedRivalId;
             const rMatchup = getElementalMatchup(playerElement, rival.element || rFaction.element || 'Stone');
@@ -352,7 +353,7 @@ export function ParchmentWarCouncil({
         </div>
 
         <div className="grid grid-cols-1 gap-3">
-          {rivals.map(rival => {
+          {activeRivals.map(rival => {
           const rivalFaction = FACTIONS[rival.faction] || FACTIONS.humans;
           const rMatchup = getElementalMatchup(playerElement, rival.element || rivalFaction.element || 'Stone');
           return <div key={rival.id} className="bg-[#ebdcc1] border-2 border-[#8c6843] rounded-2xl p-3 shadow-md flex flex-col justify-between gap-2">
@@ -461,7 +462,7 @@ export function ParchmentWarCouncil({
             <span>🩸 Intercepted Retaliation Missives</span>
           </h3>
           <div className="space-y-2">
-            {state.revengeLedger.map(record => <div key={record.id} className={`p-3 rounded-xl border flex items-center justify-between gap-2 ${record.revenged ? 'bg-[#e4d4b3]/60 border-stone-400 opacity-60' : 'bg-[#ebdcc1] border-red-800/80 shadow-sm'}`}>
+            {(state?.bloodFeuds || []).map(record => <div key={record.id} className={`p-3 rounded-xl border flex items-center justify-between gap-2 ${record.revenged ? 'bg-[#e4d4b3]/60 border-stone-400 opacity-60' : 'bg-[#ebdcc1] border-red-800/80 shadow-sm'}`}>
                 <div className="flex items-center gap-2">
                   <span className="text-base">{record.revenged ? '⚖️' : '🔥'}</span>
                   <div>
