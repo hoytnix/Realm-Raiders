@@ -195,6 +195,29 @@
       - Removed extraneous topnav Flora button in `MonarchHeader.jsx`.
     - **War Council Cleanup (`ParchmentWarCouncil.jsx`)**:
       - Removed duplicate "Vassal Foraging Lines" tech card from desktop and mobile War Council.
+  - **20-Tier Building Progression, Macro-Scale Balancing (~700-Hour Mastery) & Construction State Machine**:
+    - **20-Tier Mathematical Scaling Architecture (`src/constants/buildings.js`)**:
+      - Expanded all 10 building schemas (`ROYAL_KEEP`, `FARM`, `LUMBER_MILL`, `QUARRY`, `BARRACKS`, `DEEP_VAULT`, `SPRING`, etc.) to `maxTier: 20`.
+      - Replaced static tiers with compound exponential and polynomial formula: `Cost = Base * (1.58)^(Tier-1) + 12 * Tier^(2.8)`, achieving ~700 hours of continuous gameplay for complete realm mastery.
+      - Implemented dynamic yield scaling: `Yield = BaseYield * (1.36)^(Tier-1) + 4 * Tier^(1.9)`.
+      - Implemented dynamic construction durations: `Duration = round(BaseSec * (1.45)^(Tier-1) + 15 * Tier)`.
+      - Exponentially scaled Deep Vault storage capacity: `calculateResourceCaps` uses `Math.pow(1.36, level - 1)` so vault upgrades are mandatory prerequisites to house materials for high-tier upgrades.
+      - Added Roman numeral formatting (`toRomanTier`, `ROMAN_NUMERALS`) supporting I through XX, epoch categorizations (Bronze, Iron, Gilded Stone, Imperial Obsidian), and duration formatting (`formatBuildDuration`).
+    - **Calibrated Starter Conditions (`src/constants/initialState.js`)**:
+      - Calibrated starter resources to eliminate initial abundance: `gold: 60`, `sustenance/food: 75`, `water: 75`, `wood: 40`, `stone: 20`, `flora: 15`, `troops: 0`.
+      - Initialized Citadel with 1 Tier 1 Royal Keep (`plot-1-1`) and empty surveyed foundation plots across the core bailey, requiring active early development.
+    - **Construction State Machine & Deep Vault Gating (`src/hooks/useGameState.js`)**:
+      - Upgrades now initiate an active construction state machine: `isUpgrading: true`, `upgradeTimeRemaining`, `totalUpgradeTime`, and `targetTier`.
+      - Production structures operate at 50% baseline efficiency while undergoing structural masonry.
+      - 1000ms simulation loop ticks down active upgrades, triggering celebratory fanfare chime, screen haptics, battle chronicle logging, and tier advancement upon completion.
+      - Deterministic offline catchup computes elapsed offline seconds, applying progress to ongoing upgrades and completing them if time elapsed exceeds remaining duration.
+      - Deep Vault Storage Gating: Enforced `storageCap >= cost` validation in `handleIssueRoyalDecree` and `handleBulkUpgradeBuildings` before allowing construction, presenting the diegetic alert *"The Royal Vault cannot contain the materials required for this decree."*
+    - **Diegetic UI & Visual Surfacing (`BuildingInspector.jsx`, `SovereignLedger.jsx`, `CitadelSvgGrid.jsx`, `ParchmentCitadelMap.jsx`)**:
+      - Display Roman numerals (I to XX) and epoch badges across all inspectors and grid overlays.
+      - Animated masonry progress bar with diagonal hazard striping and live countdown timer (`Masonry underway: XXm YYs remaining`).
+      - Detailed yield jump comparisons displaying current vs target cycle yield with percentage gains (`Harvest Yield: X/cycle -> Y/cycle (+Z%)`).
+      - Clear Vault capacity warnings when storage limits cannot hold required materials.
+      - Citadel SVG map renders pulsing floating construction banners (`🧱 Tier {targetTier}`) over plots undergoing masonry.
     - **Verification**:
       - `pnpm run lint` and `pnpm run build` passing with zero errors.
 

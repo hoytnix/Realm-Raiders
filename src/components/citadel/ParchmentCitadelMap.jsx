@@ -162,6 +162,7 @@ export function ParchmentCitadelMap({
             isExpanded={isInspectorExpanded}
             setIsExpanded={setIsInspectorExpanded}
             selectedDef={selectedDef}
+            selectedPlot={selectedPlot}
             currentLvl={currentLvl}
             costGold={costGold}
             costWood={costWood}

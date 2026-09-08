@@ -5,15 +5,7 @@ export const STORAGE_KEY = 'realmraid_parchment_v1';
 
 export function createDefaultGrid() {
   const INITIAL_PLOT_BUILDINGS = {
-    'plot-1-1': 'keep',
-    'plot-0-1': 'granary',
-    'plot-2-1': 'well',
-    'plot-0-2': 'lumber',
-    'plot-1-2': 'farm',
-    'plot-2-2': 'quarry',
-    'plot-1-3': 'greenhouse',
-    'plot-3-1': 'vault',
-    'plot-2-0': 'watchtower'
+    'plot-1-1': 'keep'
   };
 
   const grid = [];
@@ -37,42 +29,33 @@ export const DEFAULT_STATE = {
   faction: null,
   territoryTier: 1,
   troops: {
-    total: 20,
+    total: 0,
     maxCapacity: 30,
     sustenanceUpkeepPerDay: 1
   },
   resources: {
-    gold: 400,
-    food: 450,
-    water: 350,
-    wood: 250,
-    stone: 150,
-    flora: 120
+    gold: 60,
+    food: 75,
+    water: 75,
+    wood: 40,
+    stone: 20,
+    flora: 15
   },
   buildings: {
     keep: 1,
-    granary: 1,
-    well: 1,
-    lumber: 1,
-    quarry: 1,
-    greenhouse: 1,
-    vault: 1,
-    watchtower: 1,
-    farm: 1,
+    granary: 0,
+    well: 0,
+    lumber: 0,
+    quarry: 0,
+    greenhouse: 0,
+    vault: 0,
+    watchtower: 0,
+    farm: 0,
     barracks: 0
   },
   grid: createDefaultGrid(),
   harvestTimers: {
-    granary: 20,
-    farm: 20,
-    well: 0,
-    lumber: 20,
-    quarry: 0,
-    greenhouse: 0,
-    vault: 0,
-    'plot-1-2': 20,
-    'plot-0-2': 20,
-    'plot-0-1': 20
+    'plot-1-1': 0
   },
   timeState: {
     day: 1,

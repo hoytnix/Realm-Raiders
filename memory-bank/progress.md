@@ -133,6 +133,13 @@
   - [x] Created `ParchmentFloraDesk` full-spread 2-page desktop parchment folio for `deskView === 'flora'` on `>=md` screens.
   - [x] Removed duplicate "Vassal Foraging Lines" tech card from `ParchmentWarCouncil`.
   - [x] Removed redundant topnav Flora button from `MonarchHeader`.
+  - [x] **20-Tier Building Progression, Macro-Scale Balancing (~700-Hour Mastery) & Construction State Machine**:
+  - [x] Expanded all 10 building schemas to `maxTier: 20` with exponential & polynomial cost and yield formulas (`Cost = Base * 1.58^(T-1) + 12 * T^2.8`, `Yield = BaseYield * 1.36^(T-1) + 4 * T^1.9`).
+  - [x] Calibrated starter resources (`gold: 60`, `sustenance: 75`, `water: 75`, `wood: 40`, `stone: 20`, `flora: 15`, `troops: 0`) and Citadel starting layout (1 Tier 1 Keep, all other plots surveyed foundations).
+  - [x] Implemented construction state machine: `isUpgrading: true`, real-time countdowns, 50% baseline production efficiency during masonry, and fanfare completion logging.
+  - [x] Implemented deterministic offline catchup for active construction projects.
+  - [x] Enforced Deep Vault storage capacity gating before allowing construction/decree execution with diegetic alert.
+  - [x] UI surfacing across `BuildingInspector`, `SovereignLedger`, and `CitadelSvgGrid`: Roman numerals (I to XX), epoch badges, animated masonry progress bars, yield multiplier jump comparisons, and floating construction banners.
   - [x] Validated via `pnpm run lint` and `pnpm run build` with zero errors.
 
 ## Planned / In Progress

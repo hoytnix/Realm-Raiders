@@ -13,7 +13,7 @@ export const BUILDINGS = {
     costMult: 1.6,
     baseHp: 650,
     laborRequired: 4,
-    maxTier: 5,
+    maxTier: 20,
     type: 'core'
   },
   granary: {
@@ -30,7 +30,7 @@ export const BUILDINGS = {
     baseCapacity: 1200,
     baseHp: 280,
     laborRequired: 3,
-    maxTier: 5,
+    maxTier: 20,
     type: 'eco'
   },
   farm: {
@@ -47,7 +47,7 @@ export const BUILDINGS = {
     baseCapacity: 800,
     baseHp: 220,
     laborRequired: 3,
-    maxTier: 5,
+    maxTier: 20,
     type: 'eco'
   },
   barracks: {
@@ -63,7 +63,7 @@ export const BUILDINGS = {
     troopCapacity: 20,
     baseHp: 450,
     laborRequired: 2,
-    maxTier: 5,
+    maxTier: 20,
     type: 'military'
   },
   well: {
@@ -80,7 +80,7 @@ export const BUILDINGS = {
     baseCapacity: 1200,
     baseHp: 260,
     laborRequired: 2,
-    maxTier: 5,
+    maxTier: 20,
     type: 'eco'
   },
   lumber: {
@@ -97,7 +97,7 @@ export const BUILDINGS = {
     baseCapacity: 1500,
     baseHp: 250,
     laborRequired: 4,
-    maxTier: 5,
+    maxTier: 20,
     type: 'resource'
   },
   quarry: {
@@ -114,7 +114,7 @@ export const BUILDINGS = {
     baseCapacity: 1500,
     baseHp: 320,
     laborRequired: 5,
-    maxTier: 5,
+    maxTier: 20,
     type: 'resource'
   },
   greenhouse: {
@@ -131,7 +131,7 @@ export const BUILDINGS = {
     baseCapacity: 800,
     baseHp: 220,
     laborRequired: 3,
-    maxTier: 5,
+    maxTier: 20,
     type: 'magic'
   },
   vault: {
@@ -148,7 +148,7 @@ export const BUILDINGS = {
     baseCapacity: 2000,
     baseHp: 420,
     laborRequired: 2,
-    maxTier: 5,
+    maxTier: 20,
     type: 'finance'
   },
   watchtower: {
@@ -163,7 +163,7 @@ export const BUILDINGS = {
     defense: 38,
     baseHp: 460,
     laborRequired: 2,
-    maxTier: 5,
+    maxTier: 20,
     type: 'military'
   }
 };
@@ -194,7 +194,143 @@ export const TROOP_RECRUIT_COST = {
   food: 0
 };
 
+// Canonical building schema aliases
+export const ROYAL_KEEP = BUILDINGS.keep;
+export const FARM = BUILDINGS.farm;
+export const LUMBER_MILL = BUILDINGS.lumber;
+export const QUARRY = BUILDINGS.quarry;
+export const BARRACKS = BUILDINGS.barracks;
+export const DEEP_VAULT = BUILDINGS.vault;
+export const SPRING = BUILDINGS.well;
+
+// ==========================================
+// BASE COSTS & YIELDS FOR 20-TIER SCALING
+// ==========================================
+export const BASE_BUILDING_COSTS = {
+  keep: { gold: 120, wood: 100, stone: 100, flora: 0 },
+  ROYAL_KEEP: { gold: 120, wood: 100, stone: 100, flora: 0 },
+  farm: { gold: 35, wood: 15, stone: 0, flora: 0 },
+  FARM: { gold: 35, wood: 15, stone: 0, flora: 0 },
+  granary: { gold: 40, wood: 25, stone: 10, flora: 0 },
+  lumber: { gold: 30, wood: 0, stone: 10, flora: 0 },
+  LUMBER_MILL: { gold: 30, wood: 0, stone: 10, flora: 0 },
+  quarry: { gold: 50, wood: 30, stone: 0, flora: 0 },
+  QUARRY: { gold: 50, wood: 30, stone: 0, flora: 0 },
+  barracks: { gold: 75, wood: 60, stone: 50, flora: 0 },
+  BARRACKS: { gold: 75, wood: 60, stone: 50, flora: 0 },
+  vault: { gold: 100, wood: 80, stone: 110, flora: 0 },
+  DEEP_VAULT: { gold: 100, wood: 80, stone: 110, flora: 0 },
+  well: { gold: 40, wood: 20, stone: 0, flora: 0 },
+  SPRING: { gold: 40, wood: 20, stone: 0, flora: 0 },
+  greenhouse: { gold: 40, wood: 25, stone: 15, flora: 0 },
+  watchtower: { gold: 90, wood: 75, stone: 85, flora: 0 }
+};
+
+export const BASE_BUILDING_YIELDS = {
+  farm: 55,
+  FARM: 55,
+  granary: 55,
+  well: 50,
+  SPRING: 50,
+  lumber: 45,
+  LUMBER_MILL: 45,
+  quarry: 30,
+  QUARRY: 30,
+  greenhouse: 35,
+  vault: 65,
+  DEEP_VAULT: 65,
+  keep: 25,
+  ROYAL_KEEP: 25,
+  barracks: 20,
+  BARRACKS: 20,
+  watchtower: 15
+};
+
+export const calculateBuildingCost = (type, targetTier) => {
+  const base = BASE_BUILDING_COSTS[type] || BASE_BUILDING_COSTS.farm || { gold: 35, wood: 15, stone: 0, flora: 0 };
+  const factor = 1.58;
+  const poly = 12 * Math.pow(targetTier, 2.8);
+  return {
+    gold: Math.floor((base.gold || 0) * Math.pow(factor, targetTier - 1) + poly),
+    wood: Math.floor((base.wood || 0) * Math.pow(factor, targetTier - 1) + poly * 0.8),
+    stone: Math.floor((base.stone || 0) * Math.pow(factor, targetTier - 1) + poly * 0.6),
+    flora: Math.floor((base.flora || 0) * Math.pow(factor, targetTier - 1)),
+  };
+};
+
+export const calculateBuildingYield = (type, tier) => {
+  const base = BASE_BUILDING_YIELDS[type] || 35;
+  const factor = 1.36;
+  return Math.floor(base * Math.pow(factor, tier - 1));
+};
+
+export const calculateBuildDuration = (tier) => {
+  // Returns construction time in seconds
+  return Math.round(15 * Math.pow(1.44, tier - 1));
+};
+
+// ==========================================
+// ROMAN NUMERALS & EPOCH CIVILIZATION BADGES
+// ==========================================
+export const ROMAN_NUMERALS = [
+  '', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X',
+  'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX'
+];
+
+export function toRomanTier(num) {
+  if (num >= 1 && num <= 20) return ROMAN_NUMERALS[num];
+  return `${num}`;
+}
+
+export function getTierEpoch(tier) {
+  if (tier <= 5) {
+    return {
+      name: 'Bronze Epoch',
+      epoch: 'Bronze',
+      badgeClass: 'bg-amber-900/20 text-amber-900 border-amber-800/60 shadow-amber-900/10',
+      dotClass: 'bg-amber-700'
+    };
+  }
+  if (tier <= 10) {
+    return {
+      name: 'Iron Epoch',
+      epoch: 'Iron',
+      badgeClass: 'bg-slate-800/20 text-slate-800 border-slate-700/60 shadow-slate-900/10',
+      dotClass: 'bg-slate-600'
+    };
+  }
+  if (tier <= 15) {
+    return {
+      name: 'Gilded Stone Epoch',
+      epoch: 'Gilded Stone',
+      badgeClass: 'bg-yellow-700/25 text-yellow-900 border-yellow-600/70 shadow-yellow-700/20',
+      dotClass: 'bg-yellow-600'
+    };
+  }
+  return {
+    name: 'Imperial Obsidian Epoch',
+    epoch: 'Imperial Obsidian',
+    badgeClass: 'bg-purple-950/25 text-purple-950 border-purple-900/70 shadow-purple-950/20',
+    dotClass: 'bg-purple-800'
+  };
+}
+
+export function formatBuildDuration(seconds) {
+  if (seconds <= 0) return '0s';
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h > 0) return `${h}h ${m}m remaining`;
+  if (m > 0) return `${m}m ${s}s remaining`;
+  return `${s}s remaining`;
+}
+
 export function calculateResourceCaps(buildings = {}, grid = null) {
+  const getTierCap = (baseCap, lvl) => {
+    // Scales exponentially with building tier so higher tiers can contain upgrade costs
+    return Math.floor(baseCap * Math.pow(1.36, (lvl || 1) - 1));
+  };
+
   if (grid && Array.isArray(grid)) {
     let foodGranaryCap = 0;
     let foodFarmCap = 0;
@@ -215,59 +351,61 @@ export function calculateResourceCaps(buildings = {}, grid = null) {
       if (!plot.buildingId) return;
       const lvl = plot.level || 1;
       if (plot.buildingId === 'granary') {
-        foodGranaryCap += (BUILDINGS.granary?.baseCapacity || 1200) * lvl;
+        foodGranaryCap += getTierCap(BUILDINGS.granary?.baseCapacity || 1200, lvl);
         hasGranary = true;
       } else if (plot.buildingId === 'farm') {
-        foodFarmCap += (BUILDINGS.farm?.baseCapacity || 800) * lvl;
+        foodFarmCap += getTierCap(BUILDINGS.farm?.baseCapacity || 800, lvl);
       } else if (plot.buildingId === 'well') {
-        waterCap += (BUILDINGS.well?.baseCapacity || 1200) * lvl;
+        waterCap += getTierCap(BUILDINGS.well?.baseCapacity || 1200, lvl);
         hasWell = true;
       } else if (plot.buildingId === 'lumber') {
-        woodCap += (BUILDINGS.lumber?.baseCapacity || 1500) * lvl;
+        woodCap += getTierCap(BUILDINGS.lumber?.baseCapacity || 1500, lvl);
         hasLumber = true;
       } else if (plot.buildingId === 'quarry') {
-        stoneCap += (BUILDINGS.quarry?.baseCapacity || 1500) * lvl;
+        stoneCap += getTierCap(BUILDINGS.quarry?.baseCapacity || 1500, lvl);
         hasQuarry = true;
       } else if (plot.buildingId === 'greenhouse') {
-        floraCap += (BUILDINGS.greenhouse?.baseCapacity || 800) * lvl;
+        floraCap += getTierCap(BUILDINGS.greenhouse?.baseCapacity || 800, lvl);
         hasGreenhouse = true;
       } else if (plot.buildingId === 'vault') {
-        goldCap += (BUILDINGS.vault?.baseCapacity || 2000) * lvl;
+        goldCap += getTierCap(BUILDINGS.vault?.baseCapacity || 2000, lvl);
         hasVault = true;
       }
     });
 
     return {
       food: Math.max(1000, foodGranaryCap + foodFarmCap),
-      water: Math.max(1000, hasWell ? waterCap : (BUILDINGS.well?.baseCapacity || 1200) * (buildings.well || 1)),
-      wood: Math.max(1000, hasLumber ? woodCap : (BUILDINGS.lumber?.baseCapacity || 1500) * (buildings.lumber || 1)),
-      stone: Math.max(1000, hasQuarry ? stoneCap : (BUILDINGS.quarry?.baseCapacity || 1500) * (buildings.quarry || 1)),
-      flora: Math.max(500, hasGreenhouse ? floraCap : (BUILDINGS.greenhouse?.baseCapacity || 800) * (buildings.greenhouse || 1)),
-      gold: Math.max(1500, hasVault ? goldCap : (BUILDINGS.vault?.baseCapacity || 2000) * (buildings.vault || 1))
+      water: Math.max(1000, hasWell ? waterCap : getTierCap(BUILDINGS.well?.baseCapacity || 1200, buildings.well || 1)),
+      wood: Math.max(1000, hasLumber ? woodCap : getTierCap(BUILDINGS.lumber?.baseCapacity || 1500, buildings.lumber || 1)),
+      stone: Math.max(1000, hasQuarry ? stoneCap : getTierCap(BUILDINGS.quarry?.baseCapacity || 1500, buildings.quarry || 1)),
+      flora: Math.max(500, hasGreenhouse ? floraCap : getTierCap(BUILDINGS.greenhouse?.baseCapacity || 800, buildings.greenhouse || 1)),
+      gold: Math.max(1500, hasVault ? goldCap : getTierCap(BUILDINGS.vault?.baseCapacity || 2000, buildings.vault || 1))
     };
   }
 
-  const foodGranaryCap = (BUILDINGS.granary?.baseCapacity || 1200) * (buildings.granary || 1);
-  const foodFarmCap = (BUILDINGS.farm?.baseCapacity || 800) * (buildings.farm || 0);
+  const foodGranaryCap = getTierCap(BUILDINGS.granary?.baseCapacity || 1200, buildings.granary || 1);
+  const foodFarmCap = getTierCap(BUILDINGS.farm?.baseCapacity || 800, buildings.farm || 0);
 
   return {
     food: foodGranaryCap + foodFarmCap,
-    water: (BUILDINGS.well?.baseCapacity || 1200) * (buildings.well || 1),
-    wood: (BUILDINGS.lumber?.baseCapacity || 1500) * (buildings.lumber || 1),
-    stone: (BUILDINGS.quarry?.baseCapacity || 1500) * (buildings.quarry || 1),
-    flora: (BUILDINGS.greenhouse?.baseCapacity || 800) * (buildings.greenhouse || 1),
-    gold: (BUILDINGS.vault?.baseCapacity || 2000) * (buildings.vault || 1)
+    water: getTierCap(BUILDINGS.well?.baseCapacity || 1200, buildings.well || 1),
+    wood: getTierCap(BUILDINGS.lumber?.baseCapacity || 1500, buildings.lumber || 1),
+    stone: getTierCap(BUILDINGS.quarry?.baseCapacity || 1500, buildings.quarry || 1),
+    flora: getTierCap(BUILDINGS.greenhouse?.baseCapacity || 800, buildings.greenhouse || 1),
+    gold: getTierCap(BUILDINGS.vault?.baseCapacity || 2000, buildings.vault || 1)
   };
 }
 
 export function getBuildingUpgradeCost(bDef, currentLvl = 1, discount = 1.0) {
-  if (!bDef || !bDef.baseCost) return { gold: 0, wood: 0, stone: 0 };
-  // Tier 1 -> Tier 2 upgrade material requirements reduced by 40% (tierFactor 0.6)
-  const tierFactor = currentLvl === 1 ? 0.6 : Math.pow(bDef.costMult || 1.5, currentLvl - 1);
+  if (!bDef) return { gold: 0, wood: 0, stone: 0, flora: 0 };
+  const typeKey = typeof bDef === 'string' ? bDef : (bDef.id || bDef.type || 'farm');
+  const targetTier = currentLvl + 1;
+  const rawCost = calculateBuildingCost(typeKey, targetTier);
   return {
-    gold: Math.round((bDef.baseCost.gold || 0) * tierFactor * discount),
-    wood: Math.round((bDef.baseCost.wood || 0) * tierFactor * discount),
-    stone: Math.round((bDef.baseCost.stone || 0) * tierFactor * discount)
+    gold: Math.round(rawCost.gold * discount),
+    wood: Math.round(rawCost.wood * discount),
+    stone: Math.round(rawCost.stone * discount),
+    flora: Math.round((rawCost.flora || 0) * discount)
   };
 }
 

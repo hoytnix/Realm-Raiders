@@ -9,6 +9,7 @@ import {
   rotateGridCoords,
   isPlotAnnexed,
   createDefaultGrid,
+  toRomanTier,
   sounds
 } from '../../constants/index.js';
 import { haptics, triggerHaptic } from '../../utils/index.js';
@@ -667,10 +668,37 @@ export function CitadelSvgGrid({
               >
                 {b.inkSymbol}
               </text>
+              {/* Ongoing Construction / Masonry Floating Banner */}
+              {plot.isUpgrading && (
+                <g className="animate-pulse pointer-events-none select-none">
+                  <rect
+                    x={x - 24}
+                    y={y - height - (isReadyToHarvest ? 42 : 24)}
+                    width="48"
+                    height="14"
+                    rx="3"
+                    fill="#3f2314"
+                    stroke="#f59e0b"
+                    strokeWidth="1.2"
+                  />
+                  <text
+                    x={x}
+                    y={y - height - (isReadyToHarvest ? 32 : 14)}
+                    textAnchor="middle"
+                    fill="#fef08a"
+                    fontSize="7.5"
+                    fontWeight="bold"
+                    fontFamily="monospace"
+                  >
+                    🧱 Tier {toRomanTier(plot.targetTier || level + 1)}
+                  </text>
+                </g>
+              )}
+
               <rect
-                x={x - (isAutomated ? 18 : 14)}
+                x={x - (isAutomated ? 22 : 16)}
                 y={y - height + 8}
-                width={isAutomated ? 36 : 28}
+                width={isAutomated ? 44 : 32}
                 height="12"
                 rx="3"
                 fill="#3f2314"
@@ -682,11 +710,11 @@ export function CitadelSvgGrid({
                 y={y - height + 17}
                 textAnchor="middle"
                 fill={isAutomated ? '#86efac' : '#fef08a'}
-                fontSize="8.5"
+                fontSize="8"
                 fontWeight="bold"
                 fontFamily="monospace"
               >
-                {isAutomated ? `🛡️ T${level}` : `T${level}`}
+                {isAutomated ? `🛡️ ${toRomanTier(level)}` : `Tier ${toRomanTier(level)}`}
               </text>
 
               {/* Click-to-Collect Floating Ink Banner */}

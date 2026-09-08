@@ -6,12 +6,18 @@ import {
   TERRITORY_TIERS,
   MAX_TERRITORY_TIER,
   TROOP_RECRUIT_COST,
+  toRomanTier,
+  getTierEpoch,
+  formatBuildDuration,
+  calculateBuildingYield,
+  calculateBuildDuration,
   sounds
 } from '../../constants/index.js';
 import { haptics, triggerHaptic } from '../../utils/index.js';
 
 export function BuildingInspector({
   selectedDef = BUILDINGS.keep,
+  selectedPlot = null,
   currentLvl = 1,
   costGold = 0,
   costWood = 0,
@@ -48,6 +54,29 @@ export function BuildingInspector({
   const isHarvestBuilding = selectedDef?.cycleDuration && selectedDef?.baseYield;
   const hasTroopLogistics = technologies.includes('tech_troop_logistics');
   const isAutomated = hasTroopLogistics && (troops?.total || 0) >= 1 && isHarvestBuilding;
+
+  const isUpgrading = !!selectedPlot?.isUpgrading;
+  const upgradeTimeRemaining = selectedPlot?.upgradeTimeRemaining || 0;
+  const totalUpgradeTime = selectedPlot?.totalUpgradeTime || calculateBuildDuration((currentLvl || 1) + 1);
+  const targetTier = selectedPlot?.targetTier || ((currentLvl || 1) + 1);
+  const epochInfo = getTierEpoch(currentLvl || 1);
+  const isMaxTier = (currentLvl || 1) >= (selectedDef?.maxTier || 20);
+
+  // Deep Vault Storage Gating
+  const caps = stats?.caps || { gold: 1500, wood: 1000, stone: 1000, flora: 500 };
+  const isVaultGated = (caps.gold < costGold || caps.wood < costWood || caps.stone < costStone);
+
+  // Yield jump multipliers
+  const currYield = isHarvestBuilding ? calculateBuildingYield(selectedDef.id, currentLvl || 1) : 0;
+  const nextYield = isHarvestBuilding ? calculateBuildingYield(selectedDef.id, (currentLvl || 1) + 1) : 0;
+  const yieldPct = currYield > 0 ? Math.round(((nextYield - currYield) / currYield) * 100) : 36;
+
+  const currDef = Math.round((selectedDef?.baseHp || 650) * (1 + ((currentLvl || 1) - 1) * 0.4));
+  const nextDef = Math.round((selectedDef?.baseHp || 650) * (1 + (currentLvl || 1) * 0.4));
+  const currTroopCap = 30 + ((currentLvl || 1) * (selectedDef?.troopCapacity || 20));
+  const nextTroopCap = 30 + (((currentLvl || 1) + 1) * (selectedDef?.troopCapacity || 20));
+  const currTowerDef = Math.round((selectedDef?.defense || 38) * (currentLvl || 1));
+  const nextTowerDef = Math.round((selectedDef?.defense || 38) * ((currentLvl || 1) + 1));
 
   const canAffordLogistics =
     !hasTroopLogistics &&
@@ -229,6 +258,33 @@ export function BuildingInspector({
                   </p>
                 </div>
 
+                {/* ONGOING MASONRY PROGRESS TRACKING */}
+                {isUpgrading && (
+                  <div className="bg-[#dfcba6] p-3 rounded-2xl border-2 border-amber-800 shadow-md space-y-2 animate-in fade-in">
+                    <div className="flex items-center justify-between text-xs font-mono">
+                      <span className="font-bold text-[#442813] flex items-center gap-1.5">
+                        <span className="animate-spin">🧱</span>
+                        <span>Inscribing Foundations: Tier {toRomanTier(targetTier)}</span>
+                      </span>
+                      <span className="font-bold text-amber-950 bg-amber-900/15 px-2 py-0.5 rounded border border-amber-800/40">
+                        {formatBuildDuration(upgradeTimeRemaining)}
+                      </span>
+                    </div>
+                    <div className="w-full bg-stone-900/20 rounded-full h-3 overflow-hidden border border-[#8c6843]/60 p-0.5">
+                      <div
+                        className="bg-gradient-to-r from-amber-700 via-yellow-600 to-amber-500 h-full rounded-full transition-all duration-300 relative overflow-hidden"
+                        style={{ width: `${Math.min(100, Math.max(5, Math.round((1 - (upgradeTimeRemaining / (totalUpgradeTime || 1))) * 100)))}%` }}
+                      >
+                        <div className="absolute inset-0 bg-white/25 animate-pulse" />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between text-[10px] font-mono text-[#6b4a2e]">
+                      <span>Workforce: {Math.round((1 - (upgradeTimeRemaining / (totalUpgradeTime || 1))) * 100)}% Complete</span>
+                      <span className="text-amber-900 font-bold">⚠️ 50% baseline efficiency during masonry</span>
+                    </div>
+                  </div>
+                )}
+
                 {/* PROMINENT EMBOSSED "SEAL ROYAL UPGRADE" CARD */}
                 <div className="bg-[#dfcba6] p-3 rounded-2xl border-2 border-[#8c6843] shadow-md space-y-2.5">
                   <div className="flex items-center justify-between">
@@ -237,19 +293,46 @@ export function BuildingInspector({
                         Decree Target:
                       </span>
                       <span className="text-xs font-mono font-black text-[#442813]">
-                        Tier {currentLvl} → Tier {currentLvl + 1}
+                        Tier {toRomanTier(currentLvl)} → Tier {toRomanTier(currentLvl + 1)}
                       </span>
                     </div>
-                    {canAfford ? (
-                      <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-800 text-emerald-100 border border-emerald-600 animate-pulse">
-                        Stores Ready ✨
-                      </span>
-                    ) : (
-                      <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-red-900/10 text-red-900 border border-red-800/30">
-                        Deficit
-                      </span>
-                    )}
+                    <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded border ${epochInfo.badgeClass}`}>
+                      {epochInfo.name}
+                    </span>
                   </div>
+
+                  {/* Detailed Production Multipliers Jump */}
+                  <div className="bg-[#ebdcc1] p-2 rounded-xl border border-[#bfa379] space-y-1 text-xs font-mono">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#6b4a2e] font-bold uppercase text-[10px]">Production Scaling:</span>
+                      <span className="text-emerald-800 font-black">+{yieldPct}% Expansion</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-[#442813] font-bold">
+                        {isHarvestBuilding ? 'Harvest Yield:' : isKeep ? 'Fortress Defense:' : isBarracks ? 'Muster Capacity:' : 'Citadel Defense:'}
+                      </span>
+                      <span className="font-bold text-amber-950">
+                        {isHarvestBuilding
+                          ? `${currYield}/cycle → ${nextYield}/cycle`
+                          : isKeep
+                            ? `${currDef} HP → ${nextDef} HP`
+                            : isBarracks
+                              ? `${currTroopCap} Troops → ${nextTroopCap} Troops`
+                              : `${currTowerDef} Def → ${nextTowerDef} Def`}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Deep Vault Storage Gating Warning */}
+                  {isVaultGated && (
+                    <div className="bg-red-950/20 p-2 rounded-xl border-2 border-red-800/60 text-red-950 text-xs font-mono flex items-start gap-2 animate-pulse">
+                      <span className="text-base">🔒</span>
+                      <div>
+                        <strong className="block font-bold">The Royal Vault cannot contain the materials required for this decree.</strong>
+                        <span className="text-[10px] text-red-900">Upgrade the Deep Vault and storage silos to expand realm treasury capacity.</span>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Resource Costs with Color-Coded Deficit Indicators */}
                   <div className="grid grid-cols-3 gap-2 text-xs font-mono">
@@ -291,16 +374,32 @@ export function BuildingInspector({
                       triggerHaptic('heavy');
                       handleUpgradeClick(e);
                     }}
-                    disabled={!canAfford || stampingDecree}
+                    disabled={!canAfford || stampingDecree || isUpgrading || isVaultGated || isMaxTier}
                     className={`w-full py-3 px-4 rounded-xl font-black text-xs transition flex items-center justify-center gap-2 border-2 shadow-xl ${
-                      canAfford
-                        ? 'bg-gradient-to-r from-red-800 via-rose-800 to-red-700 text-amber-100 hover:brightness-110 active:scale-95 border-red-600 shadow-red-950/40 cursor-pointer'
-                        : 'bg-stone-300 text-stone-600 border-stone-400 cursor-not-allowed'
+                      isUpgrading
+                        ? 'bg-amber-950/20 text-amber-900 border-amber-800/50 cursor-not-allowed'
+                        : isMaxTier
+                          ? 'bg-stone-300 text-stone-600 border-stone-400 cursor-not-allowed'
+                          : isVaultGated
+                            ? 'bg-red-950/20 text-red-900 border-red-800/60 cursor-not-allowed'
+                            : canAfford
+                              ? 'bg-gradient-to-r from-red-800 via-rose-800 to-red-700 text-amber-100 hover:brightness-110 active:scale-95 border-red-600 shadow-red-950/40 cursor-pointer'
+                              : 'bg-stone-300 text-stone-600 border-stone-400 cursor-not-allowed'
                     }`}
                   >
-                    <span className={`text-base ${stampingDecree ? 'animate-spin' : ''}`}>🩸</span>
+                    <span className={`text-base ${stampingDecree ? 'animate-spin' : ''}`}>
+                      {isUpgrading ? '🧱' : isVaultGated ? '🔒' : '🩸'}
+                    </span>
                     <span className="tracking-wide uppercase">
-                      {canAfford ? `SEAL ROYAL UPGRADE (T${currentLvl + 1})` : `Insufficient Resources for Tier ${currentLvl + 1}`}
+                      {isUpgrading
+                        ? `Masonry Underway (${formatBuildDuration(upgradeTimeRemaining)})`
+                        : isMaxTier
+                          ? `Monumental Tier XX Reached`
+                          : isVaultGated
+                            ? `Vault Capacity Deficient`
+                            : canAfford
+                              ? `SEAL ROYAL UPGRADE (Tier ${toRomanTier(currentLvl + 1)})`
+                              : `Insufficient Resources for Tier ${toRomanTier(currentLvl + 1)}`}
                     </span>
                   </button>
                 </div>
@@ -631,9 +730,14 @@ export function BuildingInspector({
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-black text-[#442813]">{selectedDef?.name}</h3>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#6b4724] text-amber-200 font-bold">
-                    Tier {currentLvl}
+                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded border font-bold ${epochInfo.badgeClass}`}>
+                    Tier {toRomanTier(currentLvl)}
                   </span>
+                  {isUpgrading && (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-900/20 text-amber-900 font-bold border border-amber-700/40 flex items-center gap-1 animate-pulse">
+                      🧱 Inscribing Tier {toRomanTier(targetTier)} ({formatBuildDuration(upgradeTimeRemaining)})
+                    </span>
+                  )}
                   {isAutomated && (
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-900/20 text-emerald-900 font-bold border border-emerald-700/40 flex items-center gap-1">
                       🛡️ Automated by Garrison

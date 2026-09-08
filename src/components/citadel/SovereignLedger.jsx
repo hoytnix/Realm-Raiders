@@ -8,6 +8,11 @@ import {
   TROOP_RECRUIT_COST,
   TECHNOLOGIES,
   getBuildingUpgradeCost,
+  toRomanTier,
+  getTierEpoch,
+  formatBuildDuration,
+  calculateBuildingYield,
+  calculateBuildDuration,
   sounds
 } from '../../constants/index.js';
 import { haptics, triggerHaptic } from '../../utils/index.js';
@@ -48,11 +53,36 @@ export function SovereignLedger({
   const isHarvestBuilding = selectedDef?.cycleDuration && selectedDef?.baseYield;
   const isAutomated = hasTroopLogistics && (troops?.total || 0) >= 1 && isHarvestBuilding;
   const isVault = selectedDef?.id === 'vault' || selectedBuildingId === 'vault';
+  const isKeep = selectedDef?.id === 'keep' || selectedBuildingId === 'keep';
+  const isBarracks = selectedDef?.id === 'barracks' || selectedBuildingId === 'barracks';
+
+  const isUpgrading = !!selectedPlot?.isUpgrading;
+  const upgradeTimeRemaining = selectedPlot?.upgradeTimeRemaining || 0;
+  const totalUpgradeTime = selectedPlot?.totalUpgradeTime || calculateBuildDuration((currentLvl || 1) + 1);
+  const targetTier = selectedPlot?.targetTier || ((currentLvl || 1) + 1);
+  const epochInfo = getTierEpoch(currentLvl || 1);
+  const isMaxTier = (currentLvl || 1) >= (selectedDef?.maxTier || 20);
 
   const discount = stats.currentFaction?.id === 'humans' ? 0.5 : 1.0;
   const { gold: costGold, wood: costWood, stone: costStone } = isEmptyPlot
     ? { gold: 0, wood: 0, stone: 0 }
     : getBuildingUpgradeCost(selectedDef, currentLvl, discount);
+
+  // Deep Vault Storage Gating
+  const caps = stats?.caps || { gold: 1500, wood: 1000, stone: 1000, flora: 500 };
+  const isVaultGatedSingle = (caps.gold < costGold || caps.wood < costWood || caps.stone < costStone);
+
+  // Yield jump multipliers
+  const currYield = isHarvestBuilding ? calculateBuildingYield(selectedDef.id, currentLvl || 1) : 0;
+  const nextYield = isHarvestBuilding ? calculateBuildingYield(selectedDef.id, (currentLvl || 1) + 1) : 0;
+  const yieldPct = currYield > 0 ? Math.round(((nextYield - currYield) / currYield) * 100) : 36;
+
+  const currDef = Math.round((selectedDef?.baseHp || 650) * (1 + ((currentLvl || 1) - 1) * 0.4));
+  const nextDef = Math.round((selectedDef?.baseHp || 650) * (1 + (currentLvl || 1) * 0.4));
+  const currTroopCap = 30 + ((currentLvl || 1) * (selectedDef?.troopCapacity || 20));
+  const nextTroopCap = 30 + (((currentLvl || 1) + 1) * (selectedDef?.troopCapacity || 20));
+  const currTowerDef = Math.round((selectedDef?.defense || 38) * (currentLvl || 1));
+  const nextTowerDef = Math.round((selectedDef?.defense || 38) * ((currentLvl || 1) + 1));
 
   const canAffordSingle =
     !isEmptyPlot &&
@@ -121,6 +151,8 @@ export function SovereignLedger({
     (resources.gold || 0) >= multiTotalGold &&
     (resources.wood || 0) >= multiTotalWood &&
     (resources.stone || 0) >= multiTotalStone;
+
+  const isVaultGatedBulk = (caps.gold < multiTotalGold || caps.wood < multiTotalWood || caps.stone < multiTotalStone);
 
   return (
     <aside className="w-full h-full bg-[#f4ecd8] border-l-4 border-[#8c6843] shadow-[-10px_0_30px_rgba(0,0,0,0.35)] flex flex-col overflow-hidden text-stone-900 font-serif">
@@ -234,7 +266,7 @@ export function SovereignLedger({
                         <span>{item.def.name}</span>
                       </span>
                       <span className="font-mono text-[10px] text-[#6b4724] font-bold">
-                        Tier {item.lvl}
+                        Tier {toRomanTier(item.lvl)}
                       </span>
                     </div>
                   ))}
@@ -244,10 +276,20 @@ export function SovereignLedger({
                 <div className="bg-[#dfcba6] p-2.5 rounded-xl border border-[#bfa379] space-y-2">
                   <div className="flex items-center justify-between text-[10px] font-mono font-bold text-[#6b4a2e] uppercase">
                     <span>Combined Upgrade Cost:</span>
-                    <span className={canAffordBulk ? 'text-green-800' : 'text-red-800'}>
-                      {canAffordBulk ? 'Store Affords All ✨' : 'Stores Short'}
+                    <span className={isVaultGatedBulk ? 'text-red-900 font-bold' : canAffordBulk ? 'text-green-800' : 'text-red-800'}>
+                      {isVaultGatedBulk ? 'Vault Deficient' : canAffordBulk ? 'Store Affords All ✨' : 'Stores Short'}
                     </span>
                   </div>
+
+                  {isVaultGatedBulk && (
+                    <div className="bg-red-950/20 p-2 rounded-xl border border-red-800/60 text-red-950 text-[10px] font-mono flex items-start gap-1.5 animate-pulse">
+                      <span>🔒</span>
+                      <div>
+                        <strong className="block font-bold">The Royal Vault cannot contain the materials required for this decree.</strong>
+                        <span className="text-red-900">Upgrade the Deep Vault and storage silos to expand capacity.</span>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-between gap-1 text-xs font-mono">
                     <span className={`px-2 py-1 rounded border flex-1 text-center ${(resources.gold || 0) >= multiTotalGold ? 'bg-yellow-900/10 border-yellow-800 text-yellow-900 font-bold' : 'bg-red-900/10 border-red-800 text-red-900 font-bold'}`}>
@@ -262,16 +304,25 @@ export function SovereignLedger({
                   </div>
 
                   <button
-                    onClick={() => onBulkUpgrade && onBulkUpgrade(multiSelectedIds)}
-                    disabled={!canAffordBulk}
+                    onClick={() => {
+                      triggerHaptic('heavy');
+                      if (onBulkUpgrade) onBulkUpgrade(multiSelectedIds);
+                    }}
+                    disabled={!canAffordBulk || isVaultGatedBulk}
                     className={`w-full py-2.5 rounded-xl font-black text-xs transition flex items-center justify-center gap-2 shadow ${
-                      canAffordBulk
-                        ? 'bg-gradient-to-r from-red-800 to-rose-900 text-amber-100 hover:brightness-110 active:scale-95 shadow border border-red-700'
-                        : 'bg-stone-400 text-stone-600 cursor-not-allowed'
+                      isVaultGatedBulk
+                        ? 'bg-red-950/20 text-red-900 border border-red-800/60 cursor-not-allowed'
+                        : canAffordBulk
+                          ? 'bg-gradient-to-r from-red-800 to-rose-900 text-amber-100 hover:brightness-110 active:scale-95 shadow border border-red-700 cursor-pointer'
+                          : 'bg-stone-400 text-stone-600 cursor-not-allowed'
                     }`}
                   >
-                    <span>🩸</span>
-                    <span>Seal Bulk Upgrade Decree ({multiSelectedIds.length})</span>
+                    <span>{isVaultGatedBulk ? '🔒' : '🩸'}</span>
+                    <span>
+                      {isVaultGatedBulk
+                        ? 'Vault Capacity Deficient'
+                        : `Seal Bulk Upgrade Decree (${multiSelectedIds.length})`}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -364,8 +415,8 @@ export function SovereignLedger({
                   <div>
                     <div className="flex items-center gap-1.5">
                       <h3 className="text-xs font-black text-[#442813]">{selectedDef?.name}</h3>
-                      <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#6b4724] text-amber-200 font-bold">
-                        T{currentLvl}
+                      <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded border font-bold ${epochInfo.badgeClass}`}>
+                        Tier {toRomanTier(currentLvl)}
                       </span>
                     </div>
                     <span className="text-[9px] font-mono text-[#6b4a2e] block">{selectedDef?.tag}</span>
@@ -539,14 +590,74 @@ export function SovereignLedger({
                   </div>
                 )}
 
+                {/* Ongoing Masonry Progress Bar */}
+                {isUpgrading && (
+                  <div className="bg-[#dfcba6] p-2.5 rounded-xl border-2 border-amber-800 space-y-1.5 animate-in fade-in">
+                    <div className="flex items-center justify-between text-xs font-mono">
+                      <span className="font-bold text-[#442813] flex items-center gap-1">
+                        <span className="animate-spin">🧱</span>
+                        <span>Inscribing Foundations: Tier {toRomanTier(targetTier)}</span>
+                      </span>
+                      <span className="font-bold text-amber-950 bg-amber-900/15 px-1.5 py-0.5 rounded border border-amber-800/40 text-[10px]">
+                        {formatBuildDuration(upgradeTimeRemaining)}
+                      </span>
+                    </div>
+                    <div className="w-full bg-stone-900/20 rounded-full h-2.5 overflow-hidden border border-[#8c6843]/60 p-0.5">
+                      <div
+                        className="bg-gradient-to-r from-amber-700 via-yellow-600 to-amber-500 h-full rounded-full transition-all duration-300 relative overflow-hidden"
+                        style={{ width: `${Math.min(100, Math.max(5, Math.round((1 - (upgradeTimeRemaining / (totalUpgradeTime || 1))) * 100)))}%` }}
+                      >
+                        <div className="absolute inset-0 bg-white/25 animate-pulse" />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between text-[9px] font-mono text-[#6b4a2e]">
+                      <span>Workforce: {Math.round((1 - (upgradeTimeRemaining / (totalUpgradeTime || 1))) * 100)}%</span>
+                      <span className="text-amber-900 font-bold">⚠️ 50% baseline efficiency during masonry</span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Upgrade Requirement & Royal Wax Seal Button */}
                 <div className="bg-[#dfcba6] p-2.5 rounded-xl border border-[#bfa379] space-y-2">
                   <div className="flex items-center justify-between text-[10px] font-mono font-bold text-[#6b4a2e] uppercase">
-                    <span>Upgrade to Tier {currentLvl + 1}:</span>
-                    <span className={canAffordSingle ? 'text-green-800' : 'text-red-800'}>
-                      {canAffordSingle ? 'Affordable ✨' : 'Short Stores'}
+                    <span>Upgrade Target: Tier {toRomanTier(currentLvl)} → Tier {toRomanTier(currentLvl + 1)}</span>
+                    <span className={`px-1.5 py-0.5 rounded border text-[9px] ${epochInfo.badgeClass}`}>
+                      {epochInfo.name}
                     </span>
                   </div>
+
+                  {/* Production Multipliers Jump */}
+                  <div className="bg-[#ebdcc1] p-2 rounded-xl border border-[#bfa379] space-y-0.5 text-xs font-mono">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#6b4a2e] font-bold uppercase text-[9px]">Production Scaling:</span>
+                      <span className="text-emerald-800 font-black text-[10px]">+{yieldPct}% Expansion</span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-[#442813] font-bold">
+                        {isHarvestBuilding ? 'Harvest Yield:' : isKeep ? 'Fortress Defense:' : isBarracks ? 'Muster Capacity:' : 'Citadel Defense:'}
+                      </span>
+                      <span className="font-bold text-amber-950">
+                        {isHarvestBuilding
+                          ? `${currYield}/cycle → ${nextYield}/cycle`
+                          : isKeep
+                            ? `${currDef} HP → ${nextDef} HP`
+                            : isBarracks
+                              ? `${currTroopCap} Troops → ${nextTroopCap} Troops`
+                              : `${currTowerDef} Def → ${nextTowerDef} Def`}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Deep Vault Storage Gating Warning */}
+                  {isVaultGatedSingle && (
+                    <div className="bg-red-950/20 p-2 rounded-xl border border-red-800/60 text-red-950 text-[10px] font-mono flex items-start gap-1.5 animate-pulse">
+                      <span>🔒</span>
+                      <div>
+                        <strong className="block font-bold">The Royal Vault cannot contain the materials required for this decree.</strong>
+                        <span className="text-red-900">Upgrade the Deep Vault and storage silos to expand treasury capacity.</span>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-between gap-1 text-xs font-mono">
                     <span className={`px-2 py-0.5 rounded border flex-1 text-center ${(resources.gold || 0) >= costGold ? 'bg-yellow-900/10 border-yellow-800 text-yellow-900 font-bold' : 'bg-red-900/10 border-red-800 text-red-900 font-bold'}`}>
@@ -561,16 +672,37 @@ export function SovereignLedger({
                   </div>
 
                   <button
-                    onClick={(e) => onUpgradeBuilding && onUpgradeBuilding(selectedBuildingId, e)}
-                    disabled={!canAffordSingle || stampingDecree}
+                    onClick={(e) => {
+                      triggerHaptic('heavy');
+                      if (onUpgradeBuilding) onUpgradeBuilding(selectedBuildingId, e);
+                    }}
+                    disabled={!canAffordSingle || stampingDecree || isUpgrading || isVaultGatedSingle || isMaxTier}
                     className={`w-full py-2.5 rounded-xl font-black text-xs transition flex items-center justify-center gap-2 shadow-lg ${
-                      canAffordSingle
-                        ? 'bg-gradient-to-r from-red-800 to-rose-900 text-amber-100 hover:brightness-110 active:scale-95 shadow-red-950/40 border border-red-700'
-                        : 'bg-stone-400 text-stone-700 cursor-not-allowed border border-stone-500'
+                      isUpgrading
+                        ? 'bg-amber-950/20 text-amber-900 border-amber-800/50 cursor-not-allowed'
+                        : isMaxTier
+                          ? 'bg-stone-300 text-stone-600 border-stone-400 cursor-not-allowed'
+                          : isVaultGatedSingle
+                            ? 'bg-red-950/20 text-red-900 border-red-800/60 cursor-not-allowed'
+                            : canAffordSingle
+                              ? 'bg-gradient-to-r from-red-800 to-rose-900 text-amber-100 hover:brightness-110 active:scale-95 shadow-red-950/40 border border-red-700 cursor-pointer'
+                              : 'bg-stone-400 text-stone-700 cursor-not-allowed border border-stone-500'
                     }`}
                   >
-                    <span className={stampingDecree ? 'animate-spin' : ''}>🩸</span>
-                    <span>Seal Royal Decree (T{currentLvl + 1})</span>
+                    <span className={stampingDecree ? 'animate-spin' : ''}>
+                      {isUpgrading ? '🧱' : isVaultGatedSingle ? '🔒' : '🩸'}
+                    </span>
+                    <span>
+                      {isUpgrading
+                        ? `Masonry Underway (${formatBuildDuration(upgradeTimeRemaining)})`
+                        : isMaxTier
+                          ? `Monumental Tier XX Reached`
+                          : isVaultGatedSingle
+                            ? `Vault Capacity Deficient`
+                            : canAffordSingle
+                              ? `Seal Royal Decree (Tier ${toRomanTier(currentLvl + 1)})`
+                              : `Insufficient Stores for Tier ${toRomanTier(currentLvl + 1)}`}
+                    </span>
                   </button>
                 </div>
               </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BUILDINGS, getBuildingUpgradeCost } from '../../constants/index.js';
+import { BUILDINGS, getBuildingUpgradeCost, calculateBuildingYield, toRomanTier } from '../../constants/index.js';
 
 export function BuildingHoverTooltip({
   buildingId,
@@ -29,8 +29,8 @@ export function BuildingHoverTooltip({
   // Calculate rate
   let yieldInfo = null;
   if (bDef.baseYield) {
-    const [resKey, baseVal] = Object.entries(bDef.baseYield)[0];
-    const cycleYield = Math.round(baseVal * (1 + (level - 1) * 0.5) * laborEfficiency);
+    const [resKey] = Object.entries(bDef.baseYield)[0];
+    const cycleYield = Math.round(calculateBuildingYield(buildingId, level) * laborEfficiency);
     const perMinute = Math.round((60 / (bDef.cycleDuration || 10)) * cycleYield);
     yieldInfo = { resKey, cycleYield, perMinute, cycleDur: bDef.cycleDuration };
   }
@@ -55,7 +55,7 @@ export function BuildingHoverTooltip({
             </div>
           </div>
           <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#6b4724] text-amber-200 font-bold">
-            T{level}
+            Tier {toRomanTier(level)}
           </span>
         </div>
 

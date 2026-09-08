@@ -17,6 +17,10 @@ import {
   TROOP_RECRUIT_COST,
   createDefaultGrid,
   getBuildingUpgradeCost,
+  calculateBuildingYield,
+  calculateBuildDuration,
+  toRomanTier,
+  formatBuildDuration,
   sounds
 } from '../constants/index.js';
 import { haptics } from '../utils/index.js';
@@ -56,6 +60,47 @@ export function useGameState() {
         }
         if (!parsed.currentResearch) {
           parsed.currentResearch = null;
+        }
+
+        // Deterministic offline building construction catchup
+        if (parsed.grid && Array.isArray(parsed.grid) && parsed.lastTickTimestamp) {
+          const elapsedSecs = Math.max(0, Math.floor((now - parsed.lastTickTimestamp) / 1000));
+          if (elapsedSecs > 0) {
+            let anyUpgradeFinished = false;
+            parsed.grid.forEach(plot => {
+              if (plot.isUpgrading && plot.upgradeTimeRemaining !== undefined) {
+                const rem = Math.max(0, plot.upgradeTimeRemaining - elapsedSecs);
+                if (rem <= 0) {
+                  anyUpgradeFinished = true;
+                  const targetTier = plot.targetTier || (plot.level || 1) + 1;
+                  const bDef = BUILDINGS[plot.buildingId];
+                  plot.level = targetTier;
+                  plot.isUpgrading = false;
+                  plot.upgradeTimeRemaining = 0;
+                  delete plot.targetTier;
+                  delete plot.totalUpgradeTime;
+                  if (!parsed.battleLogs) parsed.battleLogs = [];
+                  parsed.battleLogs.unshift({
+                    id: `log-upgrade-offline-${plot.id}-${now}`,
+                    title: `Decree Finalized: ${bDef?.name || 'Citadel Structure'} (Tier ${toRomanTier(targetTier)})`,
+                    text: `Masons and carpenters completed structural elevation of ${bDef?.name || 'building'} while the throne stood vacant.`,
+                    type: 'win',
+                    timestamp: now
+                  });
+                } else {
+                  plot.upgradeTimeRemaining = rem;
+                }
+              }
+            });
+            if (anyUpgradeFinished) {
+              if (!parsed.buildings) parsed.buildings = {};
+              parsed.grid.forEach(p => {
+                if (p.buildingId) {
+                  parsed.buildings[p.buildingId] = Math.max(parsed.buildings[p.buildingId] || 1, p.level || 1);
+                }
+              });
+            }
+          }
         }
         parsed.lastTickTimestamp = now;
         if (!parsed.harvestTimers) {
@@ -373,6 +418,9 @@ export function useGameState() {
           if (bDef && bDef.cycleDuration && bDef.baseYield) {
             const isAgriTimber = plot.buildingId === 'farm' || plot.buildingId === 'granary' || plot.buildingId === 'lumber';
             let plotSpeedMult = 1.0;
+            if (plot.isUpgrading) {
+              plotSpeedMult *= 0.5;
+            }
             if (factionData.element === 'Flora' && isAgriTimber) {
               // Base Passive: +15% base production speed to Sustenance & Timber
               plotSpeedMult *= 1.15;
@@ -395,7 +443,7 @@ export function useGameState() {
               // Troop Quartermaster / Garrison automatically collects completed harvest!
               autoHarvestCount++;
               const lvl = plot.level || 1;
-              const [resKey, baseVal] = Object.entries(bDef.baseYield)[0];
+              const [resKey] = Object.entries(bDef.baseYield)[0];
               const fMult = factionData.productionMultipliers?.[resKey] || 1.0;
               const sMult = season.multipliers?.[resKey] || 1.0;
               const wCond = WEATHER_CONDITIONS[currentWeather] || WEATHER_CONDITIONS.autumn_breeze || WEATHER_CONDITIONS.clear;
@@ -404,9 +452,13 @@ export function useGameState() {
               const isAgriOrTimber = plot.buildingId === 'farm' || plot.buildingId === 'granary' || plot.buildingId === 'lumber';
               const effectiveLabor = isAgriOrTimber ? 1.0 : laborEfficiency;
 
-              const totalYield = Math.round(
-                baseVal * (1 + (lvl - 1) * 0.5) * fMult * sMult * wMult * effectiveLabor * farmFertilityMult
+              const tierBaseYield = calculateBuildingYield(plot.buildingId, lvl);
+              let totalYield = Math.round(
+                tierBaseYield * fMult * sMult * wMult * effectiveLabor * farmFertilityMult
               );
+              if (plot.isUpgrading) {
+                totalYield = Math.round(totalYield * 0.5);
+              }
 
               autoYields[resKey] = (autoYields[resKey] || 0) + totalYield;
               updatedTimers[timerKey] = 0; // Harvest cycle harvested and restarted
@@ -455,12 +507,76 @@ export function useGameState() {
           }
         }
 
+        // Advance ongoing building construction decrees (1s per tick)
+        let hasCompletedUpgrade = false;
+        let nextGrid = prev.grid;
+        let nextBuildings = { ...prev.buildings };
+
+        if (prev.grid && Array.isArray(prev.grid)) {
+          nextGrid = prev.grid.map(plot => {
+            if (plot.isUpgrading && plot.upgradeTimeRemaining !== undefined) {
+              const nextRemaining = plot.upgradeTimeRemaining - 1;
+              if (nextRemaining <= 0) {
+                hasCompletedUpgrade = true;
+                const targetTier = plot.targetTier || (plot.level || 1) + 1;
+                const bDef = BUILDINGS[plot.buildingId];
+                const bId = plot.buildingId;
+                if (bId === 'barracks' && bDef?.troopCapacity) {
+                  nextTroops.maxCapacity = (nextTroops.maxCapacity || 30) + (bDef.troopCapacity || 20);
+                }
+                if (bId === 'granary' || bId === 'keep' || bId === 'farm') {
+                  nextPopulation += 3;
+                } else {
+                  nextPopulation += 1;
+                }
+                if (bId === 'watchtower' || bId === 'keep' || bId === 'barracks') {
+                  nextGarrison += 2;
+                }
+                const compLog = {
+                  id: `log-upgrade-${plot.id}-${Date.now()}`,
+                  title: `Decree Finalized: ${bDef?.name || 'Citadel Structure'} (Tier ${toRomanTier(targetTier)})`,
+                  text: `Royal stonemasons and carpenters finalized structural elevation. ${bDef?.name || 'Structure'} now operating at Tier ${toRomanTier(targetTier)}.`,
+                  type: 'win',
+                  timestamp: Date.now()
+                };
+                newBattleLogs = [compLog, ...newBattleLogs];
+
+                return {
+                  ...plot,
+                  level: targetTier,
+                  isUpgrading: false,
+                  upgradeTimeRemaining: 0,
+                  targetTier: undefined,
+                  totalUpgradeTime: undefined
+                };
+              } else {
+                return {
+                  ...plot,
+                  upgradeTimeRemaining: nextRemaining
+                };
+              }
+            }
+            return plot;
+          });
+
+          if (hasCompletedUpgrade) {
+            sounds.playUpgrade();
+            nextGrid.forEach(p => {
+              if (p.buildingId) {
+                nextBuildings[p.buildingId] = Math.max(nextBuildings[p.buildingId] || 1, p.level || 1);
+              }
+            });
+          }
+        }
+
         return {
           ...prev,
           resources: nextRes,
           harvestTimers: updatedTimers,
           technologies: nextTechnologies,
           currentResearch: nextCurrentResearch,
+          grid: nextGrid,
+          buildings: nextBuildings,
           troops: nextTroops,
           garrison: nextGarrison,
           population: nextPopulation,
@@ -541,9 +657,13 @@ export function useGameState() {
     const isAgriOrTimber = bId === 'farm' || bId === 'granary' || bId === 'lumber';
     const effectiveLabor = isAgriOrTimber ? 1.0 : laborEfficiency;
 
-    const totalYield = Math.round(
-      baseVal * (1 + (lvl - 1) * 0.5) * fMult * sMult * wMult * effectiveLabor * farmFertilityMult
+    const tierBaseYield = calculateBuildingYield(bId, lvl);
+    let totalYield = Math.round(
+      tierBaseYield * fMult * sMult * wMult * effectiveLabor * farmFertilityMult
     );
+    if (targetPlot?.isUpgrading) {
+      totalYield = Math.round(totalYield * 0.5);
+    }
 
     setGameState(prev => {
       const cap = caps[resKey] || 1000;
@@ -593,7 +713,7 @@ export function useGameState() {
       if (currentProgress >= effectiveDuration) {
         harvestedCount++;
         const lvl = plot.level || 1;
-        const [resKey, baseVal] = Object.entries(bDef.baseYield)[0];
+        const [resKey] = Object.entries(bDef.baseYield)[0];
         const fMult = currentFaction.productionMultipliers[resKey] || 1.0;
         const sMult = season.multipliers[resKey] || 1.0;
         const wMult = weather.multipliers[resKey] || 1.0;
@@ -601,9 +721,13 @@ export function useGameState() {
         const isAgriOrTimber = plot.buildingId === 'farm' || plot.buildingId === 'granary' || plot.buildingId === 'lumber';
         const effectiveLabor = isAgriOrTimber ? 1.0 : laborEfficiency;
 
-        const totalYield = Math.round(
-          baseVal * (1 + (lvl - 1) * 0.5) * fMult * sMult * wMult * effectiveLabor * farmFertilityMult
+        const tierBaseYield = calculateBuildingYield(plot.buildingId, lvl);
+        let totalYield = Math.round(
+          tierBaseYield * fMult * sMult * wMult * effectiveLabor * farmFertilityMult
         );
+        if (plot.isUpgrading) {
+          totalYield = Math.round(totalYield * 0.5);
+        }
 
         accumulatedYields[resKey] = (accumulatedYields[resKey] || 0) + totalYield;
         resetTimers[timerKey] = 0;
@@ -638,63 +762,116 @@ export function useGameState() {
     const targetPlot = (gameState.grid || []).find(p => p.id === targetId || p.buildingId === targetId);
     const bId = targetPlot ? targetPlot.buildingId : targetId;
     const bDef = BUILDINGS[bId];
-    if (!bDef || !currentFaction) return;
+    if (!bDef || !currentFaction) return false;
+
+    if (targetPlot && targetPlot.isUpgrading) {
+      return false;
+    }
 
     const currentLvl = targetPlot ? (targetPlot.level || 1) : (gameState.buildings[bId] || 1);
-    const discount = currentFaction.id === 'humans' ? 0.5 : 1.0;
-    const { gold: costGold, wood: costWood, stone: costStone } = getBuildingUpgradeCost(bDef, currentLvl, discount);
+    if (currentLvl >= (bDef.maxTier || 20)) {
+      return false;
+    }
 
+    const discount = currentFaction.id === 'humans' ? 0.5 : 1.0;
+    const { gold: costGold, wood: costWood, stone: costStone, flora: costFlora } = getBuildingUpgradeCost(bDef, currentLvl, discount);
+
+    // Deep Vault Storage Gating: Verify player storageCap >= cost before permitting construction
+    const storageCaps = calculateResourceCaps(gameState.buildings, gameState.grid);
     if (
-      gameState.resources.gold < costGold ||
-      gameState.resources.wood < costWood ||
-      gameState.resources.stone < costStone
+      storageCaps.gold < costGold ||
+      storageCaps.wood < costWood ||
+      storageCaps.stone < costStone ||
+      (costFlora > 0 && storageCaps.flora < costFlora)
     ) {
       sounds.playFamineAlarm();
-      return;
+      haptics.heavy();
+      setGameState(prev => ({
+        ...prev,
+        battleLogs: [
+          {
+            id: `log-vault-cap-${Date.now()}`,
+            title: 'Royal Vault Deficient',
+            text: 'The Royal Vault cannot contain the materials required for this decree. Expand or reinforce your storage structures first.',
+            type: 'loss',
+            timestamp: Date.now()
+          },
+          ...(prev.battleLogs || [])
+        ]
+      }));
+      return false;
     }
+
+    if (
+      (gameState.resources.gold || 0) < costGold ||
+      (gameState.resources.wood || 0) < costWood ||
+      (gameState.resources.stone || 0) < costStone ||
+      (costFlora > 0 && (gameState.resources.flora || 0) < costFlora)
+    ) {
+      sounds.playFamineAlarm();
+      return false;
+    }
+
+    const targetTier = currentLvl + 1;
+    const buildDuration = calculateBuildDuration(targetTier);
 
     // Trigger visual stamping feedback and sound
     sounds.playWaxSealThud();
     haptics.heavy();
     if (onTriggerDecreeStamp) onTriggerDecreeStamp();
 
-    setTimeout(() => {
-      sounds.playUpgrade();
-    }, 350);
-
     setGameState(prev => {
-      let nextTroops = prev.troops ? { ...prev.troops } : { total: 20, maxCapacity: 30, sustenanceUpkeepPerDay: 1 };
-      if (bId === 'barracks') {
-        nextTroops.maxCapacity += (bDef.troopCapacity || 20);
+      if (!targetPlot || !prev.grid) {
+        const nextBuildings = { ...prev.buildings, [bId]: targetTier };
+        return {
+          ...prev,
+          resources: {
+            ...prev.resources,
+            gold: (prev.resources.gold || 0) - costGold,
+            wood: (prev.resources.wood || 0) - costWood,
+            stone: (prev.resources.stone || 0) - costStone,
+            flora: (prev.resources.flora || 0) - (costFlora || 0)
+          },
+          buildings: nextBuildings
+        };
       }
 
-      const nextLvl = currentLvl + 1;
-      let nextGrid = prev.grid;
-      let nextBuildings = { ...prev.buildings };
+      const nextGrid = prev.grid.map(p => {
+        if (p.id === targetPlot.id) {
+          return {
+            ...p,
+            isUpgrading: true,
+            upgradeTimeRemaining: buildDuration,
+            totalUpgradeTime: buildDuration,
+            targetTier: targetTier
+          };
+        }
+        return p;
+      });
 
-      if (targetPlot && prev.grid) {
-        nextGrid = prev.grid.map(p => p.id === targetPlot.id ? { ...p, level: nextLvl } : p);
-        const maxOfThisType = Math.max(...nextGrid.filter(p => p.buildingId === bId).map(p => p.level || 1));
-        nextBuildings[bId] = maxOfThisType;
-      } else {
-        nextBuildings[bId] = nextLvl;
-      }
+      const decreeLog = {
+        id: `log-upgrade-start-${Date.now()}`,
+        title: `Decree Sealed: ${bDef.name} (Tier ${toRomanTier(targetTier)})`,
+        text: `Royal decree enacted for ${bDef.name}. Structural masonry has begun (Duration: ${formatBuildDuration(buildDuration)}).`,
+        type: 'win',
+        timestamp: Date.now()
+      };
 
       return {
         ...prev,
         resources: {
           ...prev.resources,
-          gold: prev.resources.gold - costGold,
-          wood: prev.resources.wood - costWood,
-          stone: prev.resources.stone - costStone
+          gold: (prev.resources.gold || 0) - costGold,
+          wood: (prev.resources.wood || 0) - costWood,
+          stone: (prev.resources.stone || 0) - costStone,
+          flora: (prev.resources.flora || 0) - (costFlora || 0)
         },
         grid: nextGrid,
-        buildings: nextBuildings,
-        troops: nextTroops,
-        population: prev.population + (bId === 'granary' || bId === 'keep' || bId === 'farm' ? 3 : 1),
-        garrison: prev.garrison + (bId === 'watchtower' || bId === 'keep' || bId === 'barracks' ? 2 : 0)
+        battleLogs: [decreeLog, ...(prev.battleLogs || [])]
       };
     });
+
+    return true;
   };
 
   // Construction of new structures on empty plots
@@ -1060,15 +1237,19 @@ export function useGameState() {
 
         harvestedCount++;
         const lvl = plot.level || 1;
-        const [resKey, baseVal] = Object.entries(bDef.baseYield)[0];
+        const [resKey] = Object.entries(bDef.baseYield)[0];
         const fMult = factionData.productionMultipliers?.[resKey] || 1.0;
         const sMult = season.multipliers?.[resKey] || 1.0;
         const wMult = weather.multipliers?.[resKey] || 1.0;
         const farmFertilityMult = plot.buildingId === 'farm' ? (1 + (prev.soilFertilityBonus || 0)) : 1.0;
 
-        const totalYield = Math.round(
-          baseVal * (1 + (lvl - 1) * 0.5) * fMult * sMult * wMult * 1.0 * farmFertilityMult
+        const tierBaseYield = calculateBuildingYield(plot.buildingId, lvl);
+        let totalYield = Math.round(
+          tierBaseYield * fMult * sMult * wMult * 1.0 * farmFertilityMult
         );
+        if (plot.isUpgrading) {
+          totalYield = Math.round(totalYield * 0.5);
+        }
 
         const cap = storageCaps[resKey] || 1000;
         updatedRes[resKey] = Math.min(cap, (updatedRes[resKey] || 0) + totalYield);
@@ -1255,6 +1436,30 @@ export function useGameState() {
       }
     });
 
+    const storageCaps = calculateResourceCaps(gameState.buildings, gameState.grid);
+    if (
+      storageCaps.gold < totalGold ||
+      storageCaps.wood < totalWood ||
+      storageCaps.stone < totalStone
+    ) {
+      sounds.playFamineAlarm();
+      haptics.heavy();
+      setGameState(prev => ({
+        ...prev,
+        battleLogs: [
+          {
+            id: `log-vault-cap-${Date.now()}`,
+            title: 'Royal Vault Deficient',
+            text: 'The Royal Vault cannot contain the materials required for this bulk decree. Expand or reinforce your storage structures first.',
+            type: 'loss',
+            timestamp: Date.now()
+          },
+          ...(prev.battleLogs || [])
+        ]
+      }));
+      return false;
+    }
+
     if (
       (gameState.resources.gold || 0) < totalGold ||
       (gameState.resources.wood || 0) < totalWood ||
@@ -1268,46 +1473,31 @@ export function useGameState() {
     haptics.heavy();
     if (onTriggerDecreeStamp) onTriggerDecreeStamp();
 
-    setTimeout(() => {
-      sounds.playUpgrade();
-    }, 350);
-
     setGameState(prev => {
       let nextGrid = prev.grid;
-      const nextBuildings = { ...prev.buildings };
-      let popGain = 0;
-      let garGain = 0;
 
       if (prev.grid && Array.isArray(prev.grid)) {
         nextGrid = prev.grid.map(plot => {
           const item = upgradeList.find(u => u.plotId === plot.id || (u.id === plot.id));
-          if (item) {
-            return { ...plot, level: (plot.level || 1) + 1 };
+          if (item && !plot.isUpgrading) {
+            const targetTier = (plot.level || 1) + 1;
+            const buildDuration = calculateBuildDuration(targetTier);
+            return {
+              ...plot,
+              isUpgrading: true,
+              upgradeTimeRemaining: buildDuration,
+              totalUpgradeTime: buildDuration,
+              targetTier: targetTier
+            };
           }
           return plot;
         });
-
-        // Recalculate max building tiers
-        Object.keys(BUILDINGS).forEach(bKey => {
-          const plotsOfType = nextGrid.filter(p => p.buildingId === bKey);
-          if (plotsOfType.length > 0) {
-            nextBuildings[bKey] = Math.max(...plotsOfType.map(p => p.level || 1));
-          }
-        });
       }
-
-      upgradeList.forEach(item => {
-        if (!nextGrid) {
-          nextBuildings[item.bId] = (nextBuildings[item.bId] || 1) + 1;
-        }
-        popGain += (item.bId === 'granary' || item.bId === 'keep' || item.bId === 'farm' ? 3 : 1);
-        garGain += (item.bId === 'watchtower' || item.bId === 'keep' || item.bId === 'barracks' ? 2 : 0);
-      });
 
       const bulkLog = {
         id: `log-bulk-${Date.now()}`,
         title: `Bulk Decree Sealed (${buildingIds.length} Structures)`,
-        text: `Monarch ratified bulk construction edict across ${buildingIds.length} citadel structures.`,
+        text: `Monarch ratified bulk construction decree across ${buildingIds.length} citadel structures. Masons and carpenters have mobilized.`,
         type: 'win',
         timestamp: Date.now()
       };
@@ -1316,14 +1506,11 @@ export function useGameState() {
         ...prev,
         resources: {
           ...prev.resources,
-          gold: Math.max(0, prev.resources.gold - totalGold),
-          wood: Math.max(0, prev.resources.wood - totalWood),
-          stone: Math.max(0, prev.resources.stone - totalStone)
+          gold: Math.max(0, (prev.resources.gold || 0) - totalGold),
+          wood: Math.max(0, (prev.resources.wood || 0) - totalWood),
+          stone: Math.max(0, (prev.resources.stone || 0) - totalStone)
         },
         grid: nextGrid,
-        buildings: nextBuildings,
-        population: prev.population + popGain,
-        garrison: (prev.garrison || 0) + garGain,
         battleLogs: [bulkLog, ...(prev.battleLogs || [])]
       };
     });
