@@ -13,8 +13,15 @@
 - [x] LocalStorage persistence (`realmraid_parchment_v1`) with deterministic offline catchup calculation.
 - [x] Architectural Mandate (`GEMINI.md`) and 6-file Memory Bank initialized.
 - [x] Epic `README.md` authored with exhaustive diegetic documentation, architecture diagrams, and system specs.
+- [x] **Monolithic Component Modularization**:
+  - [x] Extracted game loops, tick clock, weather rotation, upkeep, and persistence into `useGameState`.
+  - [x] Extracted derived ratings, caps, and vault protections into `usePlayerStats`.
+  - [x] Extracted parallax tilt, cursor tracking, and wax splats into `useDeskTilt`.
+  - [x] Extracted siege catapult strikes, countdown timer, and loot doubling into `useRaidBattle`.
+  - [x] Decomposed UI into `src/components/{common, hud, desk, citadel, combat, chronicle, menu, onboarding}`.
+  - [x] Centralized constants and config schemas in `src/constants/`.
+  - [x] Reduced root `App.jsx` from 2538 lines down to a clean ~160-line orchestrator.
 
 ## Planned / In Progress
-- [ ] Potential modularization of sub-views and audio controllers into separate clean modules while preserving single-file build compatibility.
 - [ ] Additional sound synthesizers (ambient wind, rain, blizzard noise nodes).
 - [ ] Expanded battle animations (projectile arcs and particle debris on the SVG canvas).

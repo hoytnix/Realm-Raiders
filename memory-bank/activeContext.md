@@ -1,11 +1,15 @@
 # Active Context: Realm Raiders
 
 ## Current State
-- `App.jsx` contains the full monolithic implementation of the Realm Raiders frontend application, including Web Audio synthesis, isometric cartography, time/weather engines, building upgrades, war council, and catapult siege minigame.
-- Project architectural mandate defined in `GEMINI.md`.
-- Memory Bank initialized with all 6 core files.
-- Epic `README.md` authored, fully documenting game vision, asymmetric factions, astrological simulation, 2.5D isometric math, audio synthesis, citadel structures, catapult sieges, and persistence.
+- Successfully refactored the monolithic 2538-line `App.jsx` into a clean, DRY, modular React architecture:
+  - **Core Orchestrator**: `App.jsx` now serves purely as root coordinator (~160 lines).
+  - **Custom Hooks**: Extracted `useGameState`, `usePlayerStats`, `useDeskTilt`, and `useRaidBattle` into `src/hooks/`.
+  - **UI & Layout Primitives**: Extracted reusable components into `src/components/common/`, `src/components/hud/`, `src/components/desk/`, `src/components/citadel/`, `src/components/combat/`, `src/components/chronicle/`, `src/components/menu/`, and `src/components/onboarding/`.
+  - **Centralized Constants**: Moved audio synthesis (`SoundController`), factions, buildings, seasons, weather, isometric projection math, and initial state schemas into `src/constants/` with index barrels.
+  - **Procedural Utilities**: Created `src/utils/rivals.js` for War Council matchmaking generation.
+- Preserved 100% of existing functionality, mechanics, styling, and visual behavior.
+- Build integrity validated via syntax checks and esbuild compilation.
 
 ## Active Focus & Next Steps
-- Verify application readiness for modular refactoring or feature enhancements.
-- Ensure all diegetic parchment visual standards, Web Audio synthesis rules, and asymmetric mathematical constants are preserved across future iterations.
+- Continue verifying balance tuning across the 4 asymmetric factions and 7-day seasonal shifts.
+- Explore procedural ambient audio additions (rain, wind, blizzard synthesizer nodes) within `SoundController`.
