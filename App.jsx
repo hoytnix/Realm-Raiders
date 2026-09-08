@@ -129,7 +129,13 @@ export default function App() {
     recordRaidVictory,
     handleDoubleRaidSpoils,
     handleResetKingdom,
-    selectFaction
+    selectFaction,
+    brambleShieldActive,
+    soilFertilityBonus,
+    triggerVerdantBloom,
+    toggleBrambleShield,
+    transmuteFlora,
+    setGameState
   } = useGameState();
 
   const { currentFaction, stats } = usePlayerStats(gameState);
@@ -256,6 +262,20 @@ export default function App() {
     startRaidAdFlow(feudRival);
   }, [stats.overallRating, stats.defensePower, startRaidAdFlow]);
 
+  // Launch Catapult Raid with Flora Infusion Deduction
+  const handleLaunchRaid = useCallback((targetRival, options = {}) => {
+    if (options?.floraCost > 0) {
+      setGameState(prev => ({
+        ...prev,
+        resources: {
+          ...prev.resources,
+          flora: Math.max(0, (prev.resources?.flora || 0) - options.floraCost)
+        }
+      }));
+    }
+    startRaidAdFlow(targetRival, options);
+  }, [setGameState, startRaidAdFlow]);
+
   // Kingdom Reset Rebirth
   const onResetSave = useCallback(() => {
     handleResetKingdom();
@@ -369,6 +389,9 @@ export default function App() {
         isMuted={isMuted}
         isStarving={isStarving}
         starvationDeaths={starvationDeaths}
+        brambleShieldActive={brambleShieldActive}
+        onToggleBrambleShield={toggleBrambleShield}
+        onTriggerVerdantBloom={triggerVerdantBloom}
         onToggleSpeed={handleToggleSpeed}
         onToggleMute={() => setIsMuted(!isMuted)}
         onOpenSettings={() => setIsSettingsOpen(true)}
@@ -387,6 +410,10 @@ export default function App() {
         currentResearch={currentResearch || gameState.currentResearch}
         hasTroopLogistics={hasTroopLogistics}
         troops={gameState.troops}
+        currentFaction={currentFaction}
+        brambleShieldActive={brambleShieldActive}
+        onToggleBrambleShield={toggleBrambleShield}
+        onTriggerVerdantBloom={triggerVerdantBloom}
         onOpenTech={() => setIsTechCodexOpen(true)}
         onToggleSpeed={handleToggleSpeed}
         onToggleMenu={() => {
@@ -425,6 +452,10 @@ export default function App() {
             onExpandTerritory={expandTerritory}
             onTrainTroops={trainTroops}
             onResearchTechnology={onResearchTechnology}
+            onTransmuteFlora={transmuteFlora}
+            onTriggerVerdantBloom={triggerVerdantBloom}
+            brambleShieldActive={brambleShieldActive}
+            onToggleBrambleShield={toggleBrambleShield}
             resources={gameState.resources}
             faction={currentFaction}
             stats={stats}
@@ -446,7 +477,7 @@ export default function App() {
           <ParchmentWarCouncil
             stats={stats}
             state={gameState}
-            onLaunchRaid={startRaidAdFlow}
+            onLaunchRaid={handleLaunchRaid}
             onDeclareBloodFeud={onDeclareBloodFeud}
             onResearchTechnology={onResearchTechnology}
           />

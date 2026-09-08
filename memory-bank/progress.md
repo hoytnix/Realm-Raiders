@@ -95,6 +95,18 @@
   - [x] Direct quick-trigger parchment pill in `MobileFloatingHUD.jsx` during active research or garrison auto-harvest.
   - [x] Tech catalog expansion in `src/constants/technology.js` with passive benefits in `usePlayerStats.js` and desktop `SovereignLedger.jsx`.
   - [x] Timed research progression in 1000ms loop with deterministic offline catchup in `useGameState.js`.
+- [x] **Flora Elemental Affinity, Verdant Bloom, Bramble Shield & Vault Transmutation**:
+  - [x] 4-Faction Elemental Affinity Matrix (Sylvaeth Elves: Flora, Humans: Water, Orcs: Flame, Dwarves: Stone).
+  - [x] Cyclic Combat Advantage System (Flora > Stone +25% Atk, Flora > Water +15% Def, Flora < Flame -20% Def penalty).
+  - [x] Verdant Surge Faction Passive (+15% Farm/Lumber harvest speed, +20% weather synergy in rain/mist/overcast).
+  - [x] Seasonal Crop Storage Bonus (+25% in Autumn & Spring) and Drought Heatwave Upkeep Vulnerability (+10%).
+  - [x] Composting Decay Engine (5% excess Flora > 90% cap converts daily to permanent +1% Farm soil fertility).
+  - [x] Verdant Bloom Action (`triggerVerdantBloom`, 75 Flora -> instant harvest of agricultural and timber plots).
+  - [x] Living Bramble Shield (`toggleBrambleShield`, 2 Flora/hr, -40% raid plunder losses, +35 Citadel defense, auto-withering on depletion).
+  - [x] Briar Infusion Pre-Raid Munitions (3 Flora/troop dispatched, +20% survivability, +15% plunder vs Stone strongholds).
+  - [x] Deep Vault Alchemical Press & Crucible Transmutation (100 Flora + 50 Food -> 50 Stone; 100 Flora + 25 Food -> 40 Gold).
+  - [x] Flora-Exclusive Tech Codex Decrees (Bramble Bastion, Rapid Sprout, Canopy Granary) with Keep tier and Flora cost requirements.
+  - [x] Diegetic UI/UX Surfacing (Interactive Monarch Crest flyout, Mobile Floating HUD affinity sheet, Citadel floating controls).
 
 ## Planned / In Progress
 - [ ] Additional weather sound synthesizers (rain, thunder, blizzard noise nodes).

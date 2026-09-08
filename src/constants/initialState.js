@@ -92,6 +92,8 @@ export const DEFAULT_STATE = {
   },
   technologies: [],
   currentResearch: null,
+  brambleShieldActive: false,
+  soilFertilityBonus: 0,
   population: 14,
   garrison: 8,
   totalRaidsWon: 0,

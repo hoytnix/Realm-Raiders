@@ -118,6 +118,12 @@ export function useGameState() {
         }
         if (parsed.buildings.farm === undefined) parsed.buildings.farm = 0;
         if (parsed.buildings.barracks === undefined) parsed.buildings.barracks = 0;
+        if (parsed.brambleShieldActive === undefined) {
+          parsed.brambleShieldActive = false;
+        }
+        if (parsed.soilFertilityBonus === undefined) {
+          parsed.soilFertilityBonus = 0;
+        }
         if (!parsed.settings) {
           parsed.settings = { ...DEFAULT_STATE.settings };
         } else {
@@ -198,8 +204,9 @@ export function useGameState() {
         const prevHour = newHour;
         let dayPassed = false;
 
+        let hoursElapsed = 0;
         if (newMinute >= 60) {
-          const hoursElapsed = Math.floor(newMinute / 60);
+          hoursElapsed = Math.floor(newMinute / 60);
           newMinute = newMinute % 60;
           newHour += hoursElapsed;
         }
@@ -242,9 +249,12 @@ export function useGameState() {
           if (starvingNow) sounds.playFamineAlarm();
         }
 
-        // Calculate troop demographic upkeep
+        // Calculate troop demographic upkeep with Flora Drought Vulnerability
         const livingTroops = prev.troops?.total ?? 20;
-        const troopUpkeep = livingTroops * 0.18 * (prev.troops?.sustenanceUpkeepPerDay || 1);
+        const hasCanopyGranary = (prev.technologies || []).includes('tech_flora_living_granary');
+        const isDrought = currentWeather === 'heatwave';
+        const droughtMult = (factionData.element === 'Flora' && isDrought && !hasCanopyGranary) ? 1.10 : 1.0;
+        const troopUpkeep = livingTroops * 0.18 * (prev.troops?.sustenanceUpkeepPerDay || 1) * droughtMult;
 
         const upkeepFood = (prev.population * 0.35 + livingTroops * 0.45 + troopUpkeep) *
           factionData.upkeepMultiplier *
@@ -258,10 +268,59 @@ export function useGameState() {
         nextRes.food = Math.max(0, nextRes.food - upkeepFood);
         nextRes.water = Math.max(0, nextRes.water - upkeepWater);
 
+        let newBattleLogs = prev.battleLogs || [];
+
+        // Living Bramble Shield Upkeep (deduct 2 Flora/hr, or 1 Flora/hr with Bramble Bastion)
+        let nextBrambleShieldActive = prev.brambleShieldActive;
+        if (hoursElapsed > 0 && prev.brambleShieldActive) {
+          const hasBrambleWall = (prev.technologies || []).includes('tech_flora_bramble_wall');
+          const shieldRate = hasBrambleWall ? 1 : 2;
+          const shieldDrain = hoursElapsed * shieldRate;
+          if (nextRes.flora <= shieldDrain) {
+            nextRes.flora = 0;
+            nextBrambleShieldActive = false;
+            const witherLog = {
+              id: `log-wither-${Date.now()}`,
+              title: 'Living Brambles Withered',
+              text: 'The Living Brambles have withered from lack of Flora.',
+              type: 'loss',
+              timestamp: Date.now()
+            };
+            newBattleLogs = [witherLog, ...newBattleLogs];
+            sounds.playFamineAlarm();
+          } else {
+            nextRes.flora -= shieldDrain;
+          }
+        }
+
+        // Composting Decay (Anti-Cap Overflow): when Flora > 90% cap, convert 5% excess per day into +1% permanent farm fertility
+        let nextSoilFertilityBonus = prev.soilFertilityBonus || 0;
+        const storageCaps = calculateResourceCaps(prev.buildings, prev.grid);
+        if (factionData.element === 'Flora' && (seasonKey === 'autumn' || seasonKey === 'spring')) {
+          storageCaps.food = Math.round(storageCaps.food * 1.25);
+        }
+
+        if (dayPassed) {
+          const floraCap = storageCaps.flora || 500;
+          if (nextRes.flora > floraCap * 0.9) {
+            const excess = nextRes.flora - (floraCap * 0.9);
+            const compostAmt = Math.max(1, Math.round(excess * 0.05));
+            nextRes.flora = Math.max(0, nextRes.flora - compostAmt);
+            nextSoilFertilityBonus += 0.01;
+            const compostLog = {
+              id: `log-compost-${Date.now()}`,
+              title: 'Composting Humus Renewal',
+              text: `Stored Flora exceeded 90% capacity; ${compostAmt} excess decomposed into fertile humus, permanently granting +1% yield to Farms.`,
+              type: 'win',
+              timestamp: Date.now()
+            };
+            newBattleLogs = [compostLog, ...newBattleLogs];
+          }
+        }
+
         // Starvation Mortality: When resources are 0, troops die off during day transitions
         let nextTroops = prev.troops ? { ...prev.troops } : { total: 20, maxCapacity: 30, sustenanceUpkeepPerDay: 1 };
         let nextGarrison = prev.garrison;
-        let newBattleLogs = prev.battleLogs || [];
 
         if (starvingNow && dayPassed && nextTroops.total > 0) {
           const mortalityRate = 0.10; // 10% die per cycle
@@ -286,7 +345,6 @@ export function useGameState() {
         const hasTroopLogistics = (prev.technologies || []).includes('tech_troop_logistics');
         const canAutoCollect = hasTroopLogistics && nextTroops.total >= 1;
         const laborEfficiency = getLaborEfficiency(prev);
-        const storageCaps = calculateResourceCaps(prev.buildings, prev.grid);
 
         const updatedTimers = { ...prev.harvestTimers };
         const autoYields = {};
@@ -296,14 +354,32 @@ export function useGameState() {
           ? prev.grid.filter(p => p.buildingId)
           : Object.keys(BUILDINGS).map(bId => ({ id: bId, buildingId: bId, level: prev.buildings[bId] || 1 }));
 
+        const hasOvergrowth = (prev.technologies || []).includes('tech_flora_overgrowth');
+
         plotsToHarvest.forEach(plot => {
           const bDef = BUILDINGS[plot.buildingId];
           if (bDef && bDef.cycleDuration && bDef.baseYield) {
+            const isAgriTimber = plot.buildingId === 'farm' || plot.buildingId === 'granary' || plot.buildingId === 'lumber';
+            let plotSpeedMult = 1.0;
+            if (factionData.element === 'Flora' && isAgriTimber) {
+              // Base Passive: +15% base production speed to Sustenance & Timber
+              plotSpeedMult *= 1.15;
+              // Weather Synergy: Gentle Amber Rain, Overcast Cloudcover, or Morning Mist grant +20%
+              if (['amber_rain', 'overcast', 'mist'].includes(currentWeather)) {
+                plotSpeedMult *= 1.20;
+              }
+            }
+
+            // Rapid Sprout cuts cycle duration by 20% on Farms and Lumber Mills
+            const effectiveCycleDuration = (hasOvergrowth && (plot.buildingId === 'farm' || plot.buildingId === 'lumber'))
+              ? Math.max(1, Math.round(bDef.cycleDuration * 0.8))
+              : bDef.cycleDuration;
+
             const timerKey = plot.id;
             const currentVal = updatedTimers[timerKey] ?? updatedTimers[plot.buildingId] ?? 0;
-            const nextVal = currentVal + (1 * speed);
+            const nextVal = currentVal + (1 * speed * plotSpeedMult);
 
-            if (canAutoCollect && nextVal >= bDef.cycleDuration) {
+            if (canAutoCollect && nextVal >= effectiveCycleDuration) {
               // Troop Quartermaster / Garrison automatically collects completed harvest!
               autoHarvestCount++;
               const lvl = plot.level || 1;
@@ -312,9 +388,10 @@ export function useGameState() {
               const sMult = season.multipliers?.[resKey] || 1.0;
               const wCond = WEATHER_CONDITIONS[currentWeather] || WEATHER_CONDITIONS.autumn_breeze || WEATHER_CONDITIONS.clear;
               const wMult = wCond.multipliers?.[resKey] || 1.0;
+              const farmFertilityMult = plot.buildingId === 'farm' ? (1 + nextSoilFertilityBonus) : 1.0;
 
               const totalYield = Math.round(
-                baseVal * (1 + (lvl - 1) * 0.5) * fMult * sMult * wMult * laborEfficiency
+                baseVal * (1 + (lvl - 1) * 0.5) * fMult * sMult * wMult * laborEfficiency * farmFertilityMult
               );
 
               autoYields[resKey] = (autoYields[resKey] || 0) + totalYield;
@@ -323,7 +400,7 @@ export function useGameState() {
                 updatedTimers[plot.buildingId] = 0;
               }
             } else {
-              updatedTimers[timerKey] = Math.min(bDef.cycleDuration, nextVal);
+              updatedTimers[timerKey] = Math.min(effectiveCycleDuration, nextVal);
             }
           }
         });
@@ -373,6 +450,8 @@ export function useGameState() {
           troops: nextTroops,
           garrison: nextGarrison,
           battleLogs: newBattleLogs,
+          brambleShieldActive: nextBrambleShieldActive,
+          soilFertilityBonus: nextSoilFertilityBonus,
           timeState: {
             day: newDay,
             month: newMonth,
@@ -444,8 +523,13 @@ export function useGameState() {
     if (!bDef || !bDef.baseYield || !currentFaction) return;
 
     const timerKey = targetPlot ? targetPlot.id : bId;
+    const hasOvergrowth = (gameState.technologies || []).includes('tech_flora_overgrowth');
+    const effectiveDuration = (hasOvergrowth && (bId === 'farm' || bId === 'lumber'))
+      ? Math.max(1, Math.round(bDef.cycleDuration * 0.8))
+      : bDef.cycleDuration;
+
     const currentProgress = gameState.harvestTimers[timerKey] ?? gameState.harvestTimers[bId] ?? 0;
-    if (currentProgress < bDef.cycleDuration) return; // not ready
+    if (currentProgress < effectiveDuration) return; // not ready
 
     const season = SEASONS[SEASON_ORDER[gameState.timeState?.seasonIndex || 0]] || SEASONS.spring;
     const weather = WEATHER_CONDITIONS[gameState.timeState?.weather || 'clear'] || WEATHER_CONDITIONS.clear;
@@ -459,9 +543,10 @@ export function useGameState() {
     const fMult = currentFaction.productionMultipliers[resKey] || 1.0;
     const sMult = season.multipliers[resKey] || 1.0;
     const wMult = weather.multipliers[resKey] || 1.0;
+    const farmFertilityMult = bId === 'farm' ? (1 + (gameState.soilFertilityBonus || 0)) : 1.0;
 
     const totalYield = Math.round(
-      baseVal * (1 + (lvl - 1) * 0.5) * fMult * sMult * wMult * laborEfficiency
+      baseVal * (1 + (lvl - 1) * 0.5) * fMult * sMult * wMult * laborEfficiency * farmFertilityMult
     );
 
     setGameState(prev => {
@@ -497,22 +582,29 @@ export function useGameState() {
       ? gameState.grid.filter(p => p.buildingId)
       : Object.keys(BUILDINGS).map(bId => ({ id: bId, buildingId: bId, level: gameState.buildings[bId] || 1 }));
 
+    const hasOvergrowth = (gameState.technologies || []).includes('tech_flora_overgrowth');
+
     plotsToHarvest.forEach(plot => {
       const bDef = BUILDINGS[plot.buildingId];
       if (!bDef || !bDef.baseYield || !bDef.cycleDuration) return;
 
+      const effectiveDuration = (hasOvergrowth && (plot.buildingId === 'farm' || plot.buildingId === 'lumber'))
+        ? Math.max(1, Math.round(bDef.cycleDuration * 0.8))
+        : bDef.cycleDuration;
+
       const timerKey = plot.id;
       const currentProgress = gameState.harvestTimers[timerKey] ?? gameState.harvestTimers[plot.buildingId] ?? 0;
-      if (currentProgress >= bDef.cycleDuration) {
+      if (currentProgress >= effectiveDuration) {
         harvestedCount++;
         const lvl = plot.level || 1;
         const [resKey, baseVal] = Object.entries(bDef.baseYield)[0];
         const fMult = currentFaction.productionMultipliers[resKey] || 1.0;
         const sMult = season.multipliers[resKey] || 1.0;
         const wMult = weather.multipliers[resKey] || 1.0;
+        const farmFertilityMult = plot.buildingId === 'farm' ? (1 + (gameState.soilFertilityBonus || 0)) : 1.0;
 
         const totalYield = Math.round(
-          baseVal * (1 + (lvl - 1) * 0.5) * fMult * sMult * wMult * laborEfficiency
+          baseVal * (1 + (lvl - 1) * 0.5) * fMult * sMult * wMult * laborEfficiency * farmFertilityMult
         );
 
         accumulatedYields[resKey] = (accumulatedYields[resKey] || 0) + totalYield;
@@ -860,12 +952,14 @@ export function useGameState() {
     const costFood = Math.round((tech.requirements?.cost?.food || 0) * discount);
     const costWood = Math.round((tech.requirements?.cost?.wood || 0) * discount);
     const costStone = Math.round((tech.requirements?.cost?.stone || 0) * discount);
+    const costFlora = Math.round((tech.requirements?.cost?.flora || 0) * discount);
 
     if (
       (gameState.resources?.gold || 0) < costGold ||
       (gameState.resources?.food || 0) < costFood ||
       (gameState.resources?.wood || 0) < costWood ||
-      (gameState.resources?.stone || 0) < costStone
+      (gameState.resources?.stone || 0) < costStone ||
+      (gameState.resources?.flora || 0) < costFlora
     ) {
       sounds.playFamineAlarm();
       return false;
@@ -895,7 +989,8 @@ export function useGameState() {
           gold: Math.max(0, (prev.resources?.gold || 0) - costGold),
           food: Math.max(0, (prev.resources?.food || 0) - costFood),
           wood: Math.max(0, (prev.resources?.wood || 0) - costWood),
-          stone: Math.max(0, (prev.resources?.stone || 0) - costStone)
+          stone: Math.max(0, (prev.resources?.stone || 0) - costStone),
+          flora: Math.max(0, (prev.resources?.flora || 0) - costFlora)
         },
         currentResearch: {
           techId,
@@ -905,6 +1000,159 @@ export function useGameState() {
           progress: 0
         },
         battleLogs: [researchLog, ...(prev.battleLogs || [])]
+      };
+    });
+
+    return true;
+  };
+
+  // Active Flora Expenditure ("Verdant Bloom"): Instantly complete production on all agricultural and timber plots
+  const triggerVerdantBloom = (cost = 75) => {
+    if ((gameState.resources?.flora || 0) < cost) {
+      sounds.playFamineAlarm();
+      return false;
+    }
+
+    sounds.playUpgrade();
+    haptics.heavy();
+
+    setGameState(prev => {
+      const season = SEASONS[SEASON_ORDER[prev.timeState?.seasonIndex || 0]] || SEASONS.autumn;
+      const weather = WEATHER_CONDITIONS[prev.timeState?.weather || 'autumn_breeze'] || WEATHER_CONDITIONS.clear;
+      const factionData = FACTIONS[prev.faction] || FACTIONS.elves;
+      const laborEfficiency = getLaborEfficiency(prev);
+      const storageCaps = calculateResourceCaps(prev.buildings, prev.grid);
+      if (factionData.element === 'Flora' && (season.id === 'autumn' || season.id === 'spring')) {
+        storageCaps.food = Math.round(storageCaps.food * 1.25);
+      }
+
+      const updatedRes = { ...prev.resources };
+      updatedRes.flora = Math.max(0, updatedRes.flora - cost);
+
+      const resetTimers = { ...prev.harvestTimers };
+      let harvestedCount = 0;
+
+      const plots = prev.grid && Array.isArray(prev.grid) && prev.grid.some(p => p.buildingId)
+        ? prev.grid.filter(p => p.buildingId)
+        : Object.keys(BUILDINGS).map(bId => ({ id: bId, buildingId: bId, level: prev.buildings[bId] || 1 }));
+
+      plots.forEach(plot => {
+        const isAgriTimber = plot.buildingId === 'farm' || plot.buildingId === 'granary' || plot.buildingId === 'lumber';
+        if (!isAgriTimber) return;
+
+        const bDef = BUILDINGS[plot.buildingId];
+        if (!bDef || !bDef.baseYield) return;
+
+        harvestedCount++;
+        const lvl = plot.level || 1;
+        const [resKey, baseVal] = Object.entries(bDef.baseYield)[0];
+        const fMult = factionData.productionMultipliers?.[resKey] || 1.0;
+        const sMult = season.multipliers?.[resKey] || 1.0;
+        const wMult = weather.multipliers?.[resKey] || 1.0;
+        const farmFertilityMult = plot.buildingId === 'farm' ? (1 + (prev.soilFertilityBonus || 0)) : 1.0;
+
+        const totalYield = Math.round(
+          baseVal * (1 + (lvl - 1) * 0.5) * fMult * sMult * wMult * laborEfficiency * farmFertilityMult
+        );
+
+        const cap = storageCaps[resKey] || 1000;
+        updatedRes[resKey] = Math.min(cap, (updatedRes[resKey] || 0) + totalYield);
+
+        resetTimers[plot.id] = 0;
+        if (plot.buildingId) resetTimers[plot.buildingId] = 0;
+      });
+
+      const bloomLog = {
+        id: `log-bloom-${Date.now()}`,
+        title: 'Verdant Bloom Catalyzed',
+        text: `Channeled ${cost} Flora to catalyze rapid botanical acceleration, instantly harvesting and replenishing ${harvestedCount} agricultural and timber plots.`,
+        type: 'win',
+        timestamp: Date.now()
+      };
+
+      return {
+        ...prev,
+        resources: updatedRes,
+        harvestTimers: resetTimers,
+        battleLogs: [bloomLog, ...(prev.battleLogs || [])]
+      };
+    });
+
+    return true;
+  };
+
+  // Toggle Living Bramble Shield Defense Barrier
+  const toggleBrambleShield = () => {
+    sounds.playWaxSealThud();
+    haptics.heavy();
+
+    setGameState(prev => {
+      const nextActive = !prev.brambleShieldActive;
+      if (nextActive && (prev.resources?.flora || 0) < 2) {
+        sounds.playFamineAlarm();
+        return prev;
+      }
+
+      const shieldLog = {
+        id: `log-shield-${Date.now()}`,
+        title: nextActive ? 'Living Bramble Shield Raised' : 'Living Bramble Shield Lowered',
+        text: nextActive
+          ? 'Perimeter fortified with living briars. Plunder and casualty losses during raids reduced by 40% (Upkeep: 2 Flora/hr, or 1 Flora/hr with Bramble Bastion).'
+          : 'Dismantled living briar barriers.',
+        type: nextActive ? 'win' : 'loss',
+        timestamp: Date.now()
+      };
+
+      return {
+        ...prev,
+        brambleShieldActive: nextActive,
+        battleLogs: [shieldLog, ...(prev.battleLogs || [])]
+      };
+    });
+  };
+
+  // Deep Vault Transmutation (Alchemical Press & Herbal Crucible)
+  const transmuteFlora = (recipeType) => {
+    // Transmute Granite: 100 Flora + 50 Sustenance -> 50 Stone
+    // Herbal Tinctures: 100 Flora + 25 Sustenance -> 40 Gold
+    const isGranite = recipeType === 'stone' || recipeType === 'granite';
+    const reqFlora = 100;
+    const reqFood = isGranite ? 50 : 25;
+    const gainRes = isGranite ? 'stone' : 'gold';
+    const gainAmt = isGranite ? 50 : 40;
+
+    if (
+      (gameState.resources?.flora || 0) < reqFlora ||
+      (gameState.resources?.food || 0) < reqFood
+    ) {
+      sounds.playFamineAlarm();
+      return false;
+    }
+
+    sounds.playCoin();
+    haptics.harvest();
+
+    setGameState(prev => {
+      const storageCaps = calculateResourceCaps(prev.buildings, prev.grid);
+      const targetCap = storageCaps[gainRes] || 1000;
+
+      const transLog = {
+        id: `log-transmute-${Date.now()}`,
+        title: isGranite ? 'Alchemical Press: Transmute Granite' : 'Herbal Crucible: Herbal Tinctures',
+        text: `The Deep Vault crucible transmuted ${reqFlora} Flora & ${reqFood} Sustenance into +${gainAmt} ${isGranite ? 'Stone' : 'Gold'}.`,
+        type: 'win',
+        timestamp: Date.now()
+      };
+
+      return {
+        ...prev,
+        resources: {
+          ...prev.resources,
+          flora: Math.max(0, (prev.resources?.flora || 0) - reqFlora),
+          food: Math.max(0, (prev.resources?.food || 0) - reqFood),
+          [gainRes]: Math.min(targetCap, (prev.resources?.[gainRes] || 0) + gainAmt)
+        },
+        battleLogs: [transLog, ...(prev.battleLogs || [])]
       };
     });
 
@@ -1047,6 +1295,11 @@ export function useGameState() {
     researchProgress: gameState.currentResearch
       ? Math.min(1, Math.max(0, 1 - ((gameState.currentResearch.remaining || 0) / (gameState.currentResearch.duration || 1))))
       : 0,
+    brambleShieldActive: gameState.brambleShieldActive || false,
+    soilFertilityBonus: gameState.soilFertilityBonus || 0,
+    triggerVerdantBloom,
+    toggleBrambleShield,
+    transmuteFlora,
     constructBuilding,
     expandTerritory,
     trainTroops,

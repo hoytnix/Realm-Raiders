@@ -4,6 +4,7 @@ import {
   SEASONS,
   SEASON_ORDER,
   WEATHER_CONDITIONS,
+  getElementalMatchup,
   sounds
 } from '../constants/index.js';
 
@@ -24,9 +25,12 @@ export function useRaidBattle() {
     return () => clearTimeout(timer);
   }, [adModalOpen, adCountdown]);
 
-  const startRaidAdFlow = useCallback((targetRival) => {
+  const startRaidAdFlow = useCallback((targetRival, options = {}) => {
     sounds.playCoin();
-    setPendingRaidTarget(targetRival);
+    setPendingRaidTarget({
+      ...targetRival,
+      isInfused: !!options?.isInfused
+    });
     setAdCountdown(15);
     setAdModalOpen(true);
   }, []);
@@ -37,6 +41,7 @@ export function useRaidBattle() {
     sounds.playLaunch();
     setActiveRaid({
       rival: pendingRaidTarget,
+      isInfused: !!pendingRaidTarget.isInfused,
       strikesLeft: 3,
       targetedBuildings: {},
       lootGained: { gold: 0, food: 0, wood: 0, stone: 0, flora: 0 },
@@ -53,15 +58,22 @@ export function useRaidBattle() {
     setScreenShake(true);
     setTimeout(() => setScreenShake(false), 450);
 
-    const { rival, targetedBuildings, lootGained, strikesLeft } = activeRaid;
+    const { rival, targetedBuildings, lootGained, strikesLeft, isInfused } = activeRaid;
     const currentFactionData = FACTIONS[factionId] || FACTIONS.humans;
+    const playerElement = currentFactionData.element || 'Flora';
+    const rivalElement = rival.element || FACTIONS[rival.faction]?.element || 'Stone';
+    const matchup = getElementalMatchup(playerElement, rivalElement);
 
     const seasonKey = SEASON_ORDER[timeState?.seasonIndex || 0];
     const season = SEASONS[seasonKey] || SEASONS.spring;
     const weather = WEATHER_CONDITIONS[timeState?.weather || 'clear'] || WEATHER_CONDITIONS.clear;
     const weatherRaidMult = weather.multipliers?.raidAtk || 1.0;
     const seasonRaidMult = season.id === 'autumn' ? 1.15 : 1.0;
-    const bonusLootRatio = (currentFactionData.id === 'humans' ? 1.1 : 1.0) * seasonRaidMult * weatherRaidMult;
+
+    const elementalAtkMult = matchup.atkMult || 1.0;
+    const infusionPlunderMult = (isInfused && (rivalElement === 'Stone' || rival.faction === 'dwarves')) ? 1.15 : 1.0;
+
+    const bonusLootRatio = (currentFactionData.id === 'humans' ? 1.1 : 1.0) * seasonRaidMult * weatherRaidMult * elementalAtkMult * infusionPlunderMult;
 
     let lootStolen = 0;
     const newLoot = { ...lootGained };

@@ -126,12 +126,14 @@ export function MobileTechCodexModal({
             const costFood = Math.round((tech.requirements?.cost?.food || 0) * discount);
             const costWood = Math.round((tech.requirements?.cost?.wood || 0) * discount);
             const costStone = Math.round((tech.requirements?.cost?.stone || 0) * discount);
+            const costFlora = Math.round((tech.requirements?.cost?.flora || 0) * discount);
 
             const hasGold = (resources.gold || 0) >= costGold;
             const hasFood = (resources.food || 0) >= costFood;
             const hasWood = (resources.wood || 0) >= costWood;
             const hasStone = (resources.stone || 0) >= costStone;
-            const canAfford = hasGold && hasFood && hasWood && hasStone;
+            const hasFlora = (resources.flora || 0) >= costFlora;
+            const canAfford = hasGold && hasFood && hasWood && hasStone && hasFlora;
 
             const remainingSec = isResearchingThis ? Math.ceil(currentResearch.remaining || 0) : 0;
             const progressPct = isResearchingThis
@@ -208,6 +210,11 @@ export function MobileTechCodexModal({
                     {costStone > 0 && (
                       <span className={`font-bold ${hasStone ? 'text-amber-900' : 'text-rose-700'}`}>
                         🪨 {costStone}
+                      </span>
+                    )}
+                    {costFlora > 0 && (
+                      <span className={`font-bold ${hasFlora ? 'text-emerald-900' : 'text-rose-700'}`}>
+                        🌿 {costFlora}
                       </span>
                     )}
                   </div>

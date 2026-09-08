@@ -1,9 +1,13 @@
 import React from 'react';
-import { ISO_W, ISO_H, gridToParchmentIso } from '../../constants/index.js';
+import { ISO_W, ISO_H, gridToParchmentIso, FACTIONS, getElementalMatchup } from '../../constants/index.js';
 import { haptics } from '../../utils/index.js';
 
 export function ParchmentRaidBattlefieldModal({ raid, onStrike, onDoubleLoot, onClose }) {
-  const { rival, strikesLeft, targetedBuildings, lootGained, isFinished, doubled } = raid;
+  const { rival, strikesLeft, targetedBuildings, lootGained, isFinished, doubled, isInfused } = raid;
+
+  const rivalFaction = FACTIONS[rival.faction] || FACTIONS.humans;
+  const rivalElement = rival.element || rivalFaction.element || 'Stone';
+  const matchup = getElementalMatchup('Flora', rivalElement);
 
   const targets = [
     { key: 'keep', name: 'Town Keep', gx: 2, gy: 2, icon: '🏰' },
@@ -54,6 +58,18 @@ export function ParchmentRaidBattlefieldModal({ raid, onStrike, onDoubleLoot, on
               </button>
             )}
           </div>
+        </div>
+
+        {/* Elemental Affinity Matchup & Infusion Banner */}
+        <div className="flex flex-wrap items-center justify-between gap-1.5 px-3 py-1.5 rounded-xl border bg-[#dfcba6]/70 border-[#bfa379] text-[11px] font-mono">
+          <div className={`px-2 py-0.5 rounded-lg border font-bold flex items-center gap-1 ${matchup.sealColor}`}>
+            <span>{matchup.badge}</span>
+          </div>
+          {isInfused && (
+            <span className="px-2 py-0.5 rounded-lg bg-emerald-900 text-emerald-100 font-bold border border-emerald-600 text-[10px]">
+              🌿 Briar Infused (+15% Plunder)
+            </span>
+          )}
         </div>
 
         {/* 2.5D Raid SVG Map */}
@@ -154,10 +170,12 @@ export function ParchmentRaidBattlefieldModal({ raid, onStrike, onDoubleLoot, on
         {/* Live Loot Tallies */}
         <div className="bg-[#ebdcc1] border-2 border-[#8c6843] p-2.5 rounded-xl flex items-center justify-between text-xs font-mono font-bold shadow-sm">
           <span>Plundered Spoils:</span>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <span className="text-yellow-800">🪙 {lootGained.gold}</span>
             <span className="text-amber-800">🌾 {lootGained.food}</span>
             <span className="text-orange-800">🪵 {lootGained.wood}</span>
+            <span className="text-stone-700">🪨 {lootGained.stone}</span>
+            <span className="text-emerald-800">🌿 {lootGained.flora}</span>
           </div>
         </div>
 

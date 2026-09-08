@@ -103,9 +103,39 @@
       - Expanded catalog with `tech_crop_rotation` (Economy), `tech_phalanx_drills` (Military: +15% defense), `tech_siege_munitions` (Military: +20% raid attack), `tech_crenellated_masonry` (Fortification), and `tech_deep_vault_locks` (Fortification: +15% vault protection).
       - Upgraded desktop `SovereignLedger.jsx` Decrees tab to display all technologies in the expanded catalog.
 
+  - **Flora Elemental Affinity, Verdant Bloom, Bramble Shield & Vault Transmutation Overhaul**:
+    - **Elemental Strategic Matrix (`factions.js`, `rivals.js`, `usePlayerStats.js`)**:
+      - Integrated elemental affinities into the 4 factions: Sylvaeth Elves (Flora), Kingdom of Valor (Water), Bloodfury Horde (Flame), Ironpeak Holds (Stone).
+      - Established cyclic combat advantage matrix: Flora > Stone (+25% Atk), Flora > Water (+15% Def), Flora < Flame (-20% Def penalty).
+      - Surfaced elemental matchup badges and tags across War Council banners and raid dossiers for desktop and mobile.
+    - **Engine & Active Consumption Loops (`useGameState.js`, `usePlayerStats.js`)**:
+      - Verdant Surge: +15% base harvest speed for Farms and Lumber Mills; +20% weather synergy multiplier in Gentle Amber Rain, Overcast, and Mist.
+      - Seasonal crop cap bonus (+25% in Autumn / Spring).
+      - Drought vulnerability (+10% sustenance upkeep in Scorching Heat, mitigated by Canopy Granary).
+      - Composting Decay: 5% of excess Flora above 90% storage capacity converts deterministically each day transition into +1% permanent farm yield (`soilFertilityBonus`).
+      - Verdant Bloom (`triggerVerdantBloom`): Active expenditure of 75 Flora to instantly ripen and collect all growing agricultural and timber plots.
+      - Living Bramble Shield (`toggleBrambleShield`): Consumes 2 Flora/hour (1 Flora/hour with Bramble Bastion), providing -40% plunder loss during incoming enemy raids and +35 Citadel defense. Auto-withers when Flora reaches 0.
+    - **Raid Infusion & Munition Combat (`useRaidBattle.js`, `ParchmentWarCouncil.jsx`, `ParchmentRaidBattlefieldModal.jsx`, `App.jsx`)**:
+      - Briar Infusion: Toggleable pre-raid deployment (3 Flora per dispatched troop), granting +20% raid survivability and +15% plunder against Stone strongholds.
+      - Dynamic deduction of Flora munition cost upon raid launch.
+      - Enhanced Raid Battlefield HUD displaying elemental matchup banners and live plundered Flora and Stone spoils.
+    - **Deep Vault Transmutation (`useGameState.js`, `BuildingInspector.jsx`, `SovereignLedger.jsx`, `ParchmentCitadelMap.jsx`)**:
+      - Alchemical Press & Crucible interface enabled when inspecting the Deep Vault on both mobile bottom sheet and desktop docked drawer/ledger.
+      - Recipe 1 ("Transmute Granite"): 100 Flora + 50 Sustenance -> +50 Stone.
+      - Recipe 2 ("Herbal Tinctures"): 100 Flora + 25 Sustenance -> +40 Gold.
+    - **Flora-Exclusive Tech Codex Decrees (`technology.js`, `MobileTechCodexModal.jsx`, `SovereignLedger.jsx`)**:
+      - `tech_flora_bramble_wall` (Bramble Bastion: Keep T2, 100 Wood, 50 Flora; halves shield upkeep to 1 Flora/hr).
+      - `tech_flora_overgrowth` (Rapid Sprout: Keep T2, 150 Gold, 75 Flora; -20% harvest cycle durations).
+      - `tech_flora_living_granary` (Canopy Granary: Keep T3, 120 Wood, 80 Flora; shields crops from drought penalties).
+      - Integrated Flora cost requirements into both desktop ledger and mobile slide-up codex with color-coded affordability checks.
+    - **Interactive Diegetic HUD Surfacing (`MonarchHeader.jsx`, `MobileFloatingHUD.jsx`, `ParchmentCitadelMap.jsx`)**:
+      - Monarch Header Crest: Interactive dropdown flyout displaying active elemental affinity, weather synergy status, seasonal crop cap, composting yield bonus, Bramble Shield toggle, and combat matchup matrix.
+      - Mobile Floating HUD: Compact `🌱 Flora` pill opening full slide-up status sheet, "Surge Growth (75 🌿)" CTA button, and Flora resource pill.
+      - Citadel Cartography Canvas: Floating desktop controls for instant "Claim All", "Surge Growth (75 🌿)", and Living Bramble Shield status/toggle.
+
 ## Active Focus & Next Steps
-- Continue fine-tuning asymmetric balance across factions under multi-building bulk decree progressions.
-- Explore ambient weather synthesizer soundscapes (rain, wind howling, blizzard hums).
+- Continue balance calibration across Water, Flame, and Stone unique elemental active sinks and decree expansions.
+- Explore procedural ambient audio additions (rain drops, howling wind, crackling embers).
 
 
 

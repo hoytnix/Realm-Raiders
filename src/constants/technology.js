@@ -125,5 +125,65 @@ export const TECHNOLOGIES = {
         stone: 220
       }
     }
+  },
+  tech_flora_bramble_wall: {
+    id: 'tech_flora_bramble_wall',
+    name: 'Bramble Bastion',
+    subtitle: 'Living Briar Fortification',
+    category: 'fortification',
+    inkSymbol: '🌿',
+    description: 'Entwines resilient thorny briars into the outer palisades and stone foundations, blunting enemy plunder and reducing shield upkeep.',
+    benefit: 'Fortifies citadel walls with living briars, permanently reducing rival raid plunder by 30% and halving Bramble Shield hourly upkeep (to 1 Flora/hr).',
+    duration: 25,
+    requirements: {
+      keepTier: 1,
+      cost: {
+        gold: 0,
+        food: 80,
+        wood: 120,
+        stone: 0,
+        flora: 50
+      }
+    }
+  },
+  tech_flora_overgrowth: {
+    id: 'tech_flora_overgrowth',
+    name: 'Rapid Sprout',
+    subtitle: 'Botanical Overgrowth Decree',
+    category: 'economy',
+    inkSymbol: '🌱',
+    description: 'Infuses agricultural and timber acreage with concentrated floral chlorophyll, rapidly accelerating crop maturation cycles.',
+    benefit: 'Permanently cuts base production cycle duration on all Farms and Lumber Mills by 20%.',
+    duration: 30,
+    requirements: {
+      keepTier: 2,
+      cost: {
+        gold: 200,
+        food: 150,
+        wood: 0,
+        stone: 0,
+        flora: 100
+      }
+    }
+  },
+  tech_flora_living_granary: {
+    id: 'tech_flora_living_granary',
+    name: 'Canopy Granary',
+    subtitle: 'Arborial Sustenance Preservation',
+    category: 'economy',
+    inkSymbol: '🍃',
+    description: 'Constructs living woven vine canopies over royal granaries and moisture wells to protect rations against arid droughts and spoilage.',
+    benefit: 'Eliminates crop spoilage, troop starvation penalties, and drought consumption debuffs during extreme weather events.',
+    duration: 30,
+    requirements: {
+      keepTier: 2,
+      cost: {
+        gold: 0,
+        food: 0,
+        wood: 180,
+        stone: 100,
+        flora: 75
+      }
+    }
   }
 };

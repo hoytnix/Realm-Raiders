@@ -16,12 +16,14 @@ export function generateRivals(playerRating) {
     const variance = (Math.random() * 0.14) - 0.07; // within +/- 7%
     const targetRating = Math.max(12, Math.round(playerRating * (1 + variance)));
     const faction = factionKeys[Math.floor(Math.random() * factionKeys.length)];
+    const element = FACTIONS[faction]?.element || 'Stone';
     const name = TITLES[Math.floor(Math.random() * TITLES.length)] + ` #${Math.floor(100 + Math.random() * 900)}`;
 
     return {
       id: `rival-${Date.now()}-${index}`,
       name,
       faction,
+      element,
       rating: targetRating,
       defensePower: Math.round(targetRating * 0.88 + Math.random() * 14),
       lootPool: {

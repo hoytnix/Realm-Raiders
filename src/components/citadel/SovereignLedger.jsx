@@ -29,6 +29,7 @@ export function SovereignLedger({
   onExpandTerritory,
   onTrainTroops,
   onResearchTechnology,
+  onTransmuteFlora,
   activeLedgerTab = 'structure',
   setActiveLedgerTab,
   battleLogs = []
@@ -45,6 +46,7 @@ export function SovereignLedger({
   const hasTroopLogistics = (technologies || []).includes('tech_troop_logistics');
   const isHarvestBuilding = selectedDef?.cycleDuration && selectedDef?.baseYield;
   const isAutomated = hasTroopLogistics && (troops?.total || 0) >= 1 && isHarvestBuilding;
+  const isVault = selectedDef?.id === 'vault' || selectedBuildingId === 'vault';
 
   const discount = stats.currentFaction?.id === 'humans' ? 0.5 : 1.0;
   const costGold = isEmptyPlot ? 0 : Math.round((selectedDef.baseCost?.gold || 0) * Math.pow(selectedDef.costMult || 1.5, currentLvl - 1) * discount);
@@ -458,6 +460,86 @@ export function SovereignLedger({
                   </div>
                 )}
 
+                {/* DEEP VAULT ALCHEMICAL PRESS & HERBAL CRUCIBLE */}
+                {isVault && (
+                  <div className="bg-[#dfcba6] p-2.5 rounded-xl border border-amber-800/40 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-base">⚗️</span>
+                        <div>
+                          <h4 className="text-xs font-black text-[#442813]">Alchemical Press & Crucible</h4>
+                          <span className="text-[9px] text-[#6b4a2e]">Transmute Flora into stone & gold</span>
+                        </div>
+                      </div>
+                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-950/15 text-emerald-900 border border-emerald-800/30">
+                        🌿 {Math.floor(resources.flora || 0)} Avail
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5 pt-1">
+                      {/* Recipe 1: Transmute Granite */}
+                      <div className="bg-[#ebdcc1] p-2 rounded-xl border border-[#bfa379] flex items-center justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-bold text-[#442813]">Transmute Granite</span>
+                            <span className="text-[10px] font-mono font-bold text-stone-800">🪨 +50</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-[9.5px] font-mono mt-0.5">
+                            <span className={(resources.flora || 0) >= 100 ? 'text-emerald-900 font-bold' : 'text-red-900 font-bold'}>
+                              🌿 100
+                            </span>
+                            <span>+</span>
+                            <span className={(resources.food || 0) >= 50 ? 'text-amber-900 font-bold' : 'text-red-900 font-bold'}>
+                              🌾 50
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => onTransmuteFlora && onTransmuteFlora('stone')}
+                          disabled={(resources.flora || 0) < 100 || (resources.food || 0) < 50}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition shadow-sm ${
+                            (resources.flora || 0) >= 100 && (resources.food || 0) >= 50
+                              ? 'bg-stone-800 hover:bg-stone-900 text-amber-100 active:scale-95 border border-stone-700'
+                              : 'bg-stone-300 text-stone-500 cursor-not-allowed'
+                          }`}
+                        >
+                          Transmute
+                        </button>
+                      </div>
+
+                      {/* Recipe 2: Herbal Tinctures */}
+                      <div className="bg-[#ebdcc1] p-2 rounded-xl border border-[#bfa379] flex items-center justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-bold text-[#442813]">Herbal Tinctures</span>
+                            <span className="text-[10px] font-mono font-bold text-yellow-800">🪙 +40</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-[9.5px] font-mono mt-0.5">
+                            <span className={(resources.flora || 0) >= 100 ? 'text-emerald-900 font-bold' : 'text-red-900 font-bold'}>
+                              🌿 100
+                            </span>
+                            <span>+</span>
+                            <span className={(resources.food || 0) >= 25 ? 'text-amber-900 font-bold' : 'text-red-900 font-bold'}>
+                              🌾 25
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => onTransmuteFlora && onTransmuteFlora('gold')}
+                          disabled={(resources.flora || 0) < 100 || (resources.food || 0) < 25}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition shadow-sm ${
+                            (resources.flora || 0) >= 100 && (resources.food || 0) >= 25
+                              ? 'bg-amber-800 hover:bg-amber-900 text-amber-100 active:scale-95 border border-amber-600'
+                              : 'bg-stone-300 text-stone-500 cursor-not-allowed'
+                          }`}
+                        >
+                          Distill
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Upgrade Requirement & Royal Wax Seal Button */}
                 <div className="bg-[#dfcba6] p-2.5 rounded-xl border border-[#bfa379] space-y-2">
                   <div className="flex items-center justify-between text-[10px] font-mono font-bold text-[#6b4a2e] uppercase">
@@ -512,12 +594,14 @@ export function SovereignLedger({
               const costFood = Math.round((tech.requirements?.cost?.food || 0) * discount);
               const costWood = Math.round((tech.requirements?.cost?.wood || 0) * discount);
               const costStone = Math.round((tech.requirements?.cost?.stone || 0) * discount);
+              const costFlora = Math.round((tech.requirements?.cost?.flora || 0) * discount);
 
               const canAfford =
                 (resources.gold || 0) >= costGold &&
                 (resources.food || 0) >= costFood &&
                 (resources.wood || 0) >= costWood &&
                 (resources.stone || 0) >= costStone &&
+                (resources.flora || 0) >= costFlora &&
                 meetsKeep;
 
               return (
@@ -552,11 +636,12 @@ export function SovereignLedger({
                         <span className={meetsKeep ? 'text-green-800 font-bold' : 'text-red-800 font-bold'}>
                           Requires Keep T{reqKeep}
                         </span>
-                        <div className="flex gap-1.5">
+                        <div className="flex flex-wrap gap-1.5">
                           {costGold > 0 && <span className={(resources.gold || 0) >= costGold ? 'text-amber-900 font-bold' : 'text-red-900 font-bold'}>🪙 {costGold}</span>}
                           {costFood > 0 && <span className={(resources.food || 0) >= costFood ? 'text-amber-900 font-bold' : 'text-red-900 font-bold'}>🌾 {costFood}</span>}
                           {costWood > 0 && <span className={(resources.wood || 0) >= costWood ? 'text-amber-900 font-bold' : 'text-red-900 font-bold'}>🪵 {costWood}</span>}
                           {costStone > 0 && <span className={(resources.stone || 0) >= costStone ? 'text-amber-900 font-bold' : 'text-red-900 font-bold'}>🪨 {costStone}</span>}
+                          {costFlora > 0 && <span className={(resources.flora || 0) >= costFlora ? 'text-emerald-900 font-bold' : 'text-red-900 font-bold'}>🌿 {costFlora}</span>}
                         </div>
                       </div>
                       <button

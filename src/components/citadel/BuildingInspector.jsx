@@ -29,7 +29,8 @@ export function BuildingInspector({
   onConstructBuilding,
   onExpandTerritory,
   onTrainTroops,
-  onResearchTechnology
+  onResearchTechnology,
+  onTransmuteFlora
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedBlueprintKey, setSelectedBlueprintKey] = useState('farm');
@@ -39,6 +40,7 @@ export function BuildingInspector({
   const isEmptyPlot = selectedDef?.type === 'plot' || selectedDef?.id === 'empty_plot';
   const isKeep = selectedDef?.id === 'keep' || selectedBuildingId === 'keep';
   const isBarracks = selectedDef?.id === 'barracks' || selectedBuildingId === 'barracks';
+  const isVault = selectedDef?.id === 'vault' || selectedBuildingId === 'vault';
   const isHarvestBuilding = selectedDef?.cycleDuration && selectedDef?.baseYield;
   const hasTroopLogistics = technologies.includes('tech_troop_logistics');
   const isAutomated = hasTroopLogistics && (troops?.total || 0) >= 1 && isHarvestBuilding;
@@ -324,6 +326,86 @@ export function BuildingInspector({
                     </div>
                   </div>
                 )}
+
+                {/* DEEP VAULT ALCHEMICAL PRESS & HERBAL CRUCIBLE */}
+                {isVault && (
+                  <div className="bg-[#dfcba6] p-2.5 rounded-xl border border-amber-800/40 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-base">⚗️</span>
+                        <div>
+                          <h4 className="text-xs font-black text-[#442813]">Alchemical Press & Crucible</h4>
+                          <span className="text-[9px] text-[#6b4a2e]">Transmute Flora into stone & gold</span>
+                        </div>
+                      </div>
+                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-950/15 text-emerald-900 border border-emerald-800/30">
+                        🌿 {Math.floor(resources.flora || 0)} Avail
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5 pt-1">
+                      {/* Recipe 1: Transmute Granite */}
+                      <div className="bg-[#ebdcc1] p-2 rounded-xl border border-[#bfa379] flex items-center justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-bold text-[#442813]">Transmute Granite</span>
+                            <span className="text-[10px] font-mono font-bold text-stone-800">🪨 +50</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-[9.5px] font-mono mt-0.5">
+                            <span className={(resources.flora || 0) >= 100 ? 'text-emerald-900 font-bold' : 'text-red-900 font-bold'}>
+                              🌿 100
+                            </span>
+                            <span>+</span>
+                            <span className={(resources.food || 0) >= 50 ? 'text-amber-900 font-bold' : 'text-red-900 font-bold'}>
+                              🌾 50
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => onTransmuteFlora && onTransmuteFlora('stone')}
+                          disabled={(resources.flora || 0) < 100 || (resources.food || 0) < 50}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition shadow-sm ${
+                            (resources.flora || 0) >= 100 && (resources.food || 0) >= 50
+                              ? 'bg-stone-800 hover:bg-stone-900 text-amber-100 active:scale-95 border border-stone-700'
+                              : 'bg-stone-300 text-stone-500 cursor-not-allowed'
+                          }`}
+                        >
+                          Transmute
+                        </button>
+                      </div>
+
+                      {/* Recipe 2: Herbal Tinctures */}
+                      <div className="bg-[#ebdcc1] p-2 rounded-xl border border-[#bfa379] flex items-center justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-bold text-[#442813]">Herbal Tinctures</span>
+                            <span className="text-[10px] font-mono font-bold text-yellow-800">🪙 +40</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-[9.5px] font-mono mt-0.5">
+                            <span className={(resources.flora || 0) >= 100 ? 'text-emerald-900 font-bold' : 'text-red-900 font-bold'}>
+                              🌿 100
+                            </span>
+                            <span>+</span>
+                            <span className={(resources.food || 0) >= 25 ? 'text-amber-900 font-bold' : 'text-red-900 font-bold'}>
+                              🌾 25
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => onTransmuteFlora && onTransmuteFlora('gold')}
+                          disabled={(resources.flora || 0) < 100 || (resources.food || 0) < 25}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition shadow-sm ${
+                            (resources.flora || 0) >= 100 && (resources.food || 0) >= 25
+                              ? 'bg-amber-800 hover:bg-amber-900 text-amber-100 active:scale-95 border border-amber-600'
+                              : 'bg-stone-300 text-stone-500 cursor-not-allowed'
+                          }`}
+                        >
+                          Distill
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -517,6 +599,47 @@ export function BuildingInspector({
                 >
                   Recruit
                 </button>
+              </div>
+            )}
+
+            {/* VAULT SPECIAL ACTION: ALCHEMICAL TRANSMUTATION */}
+            {isVault && (
+              <div className="bg-[#dfcba6] px-2.5 py-1.5 rounded-xl border border-[#bfa379] flex items-center gap-2 text-xs">
+                <div>
+                  <div className="font-bold text-[#442813] text-[11px] flex items-center gap-1">
+                    <span>⚗️ Alchemical Press</span>
+                    <span className="text-[9px] font-mono text-emerald-900 bg-emerald-950/15 px-1 rounded">🌿 {Math.floor(resources.flora || 0)}</span>
+                  </div>
+                  <div className="text-[9px] font-mono text-[#6b4a2e]">
+                    Transmute Flora into stone or gold
+                  </div>
+                </div>
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={() => onTransmuteFlora && onTransmuteFlora('stone')}
+                    disabled={(resources.flora || 0) < 100 || (resources.food || 0) < 50}
+                    className={`px-2 py-1 rounded text-[10px] font-bold transition ${
+                      (resources.flora || 0) >= 100 && (resources.food || 0) >= 50
+                        ? 'bg-stone-800 text-amber-100 hover:bg-stone-900 border border-stone-700 active:scale-95'
+                        : 'bg-stone-300 text-stone-500 cursor-not-allowed'
+                    }`}
+                    title="100 Flora + 50 Sustenance -> 50 Stone"
+                  >
+                    🪨 Granite (+50)
+                  </button>
+                  <button
+                    onClick={() => onTransmuteFlora && onTransmuteFlora('gold')}
+                    disabled={(resources.flora || 0) < 100 || (resources.food || 0) < 25}
+                    className={`px-2 py-1 rounded text-[10px] font-bold transition ${
+                      (resources.flora || 0) >= 100 && (resources.food || 0) >= 25
+                        ? 'bg-amber-800 text-amber-100 hover:bg-amber-900 border border-amber-600 active:scale-95'
+                        : 'bg-stone-300 text-stone-500 cursor-not-allowed'
+                    }`}
+                    title="100 Flora + 25 Sustenance -> 40 Gold"
+                  >
+                    🪙 Tincture (+40)
+                  </button>
+                </div>
               </div>
             )}
 

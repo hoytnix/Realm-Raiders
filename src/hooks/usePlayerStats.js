@@ -35,7 +35,11 @@ export function usePlayerStats(gameState) {
     const weather = WEATHER_CONDITIONS[weatherKey] || WEATHER_CONDITIONS.clear;
 
     const troopCount = troops?.total ?? (garrison || 20);
-    const baseUpkeepFood = (population * 0.35 + troopCount * 0.65) * currentFaction.upkeepMultiplier * (season.multipliers.upkeep || 1.0);
+    const hasCanopyGranary = (gameState.technologies || []).includes('tech_flora_living_granary');
+    const isDrought = weatherKey === 'heatwave';
+    const droughtMultiplier = (currentFaction.element === 'Flora' && isDrought && !hasCanopyGranary) ? 1.10 : 1.0;
+
+    const baseUpkeepFood = (population * 0.35 + (troopCount * 0.65 * droughtMultiplier)) * currentFaction.upkeepMultiplier * (season.multipliers.upkeep || 1.0);
     const baseUpkeepWater = (population * 0.30 + troopCount * 0.55) * currentFaction.upkeepMultiplier * (season.multipliers.upkeep || 1.0);
 
     const starving = (gameState.resources?.food ?? 0) <= 0.1 || (gameState.resources?.water ?? 0) <= 0.1;
@@ -59,6 +63,10 @@ export function usePlayerStats(gameState) {
 
     // Dynamic storage caps computed across all grid structures
     const caps = calculateResourceCaps(bLevels, grid);
+    // Flora Seasonal Affinity: During Autumn & Spring, +25% crop yield storage caps
+    if (currentFaction.element === 'Flora' && (seasonKey === 'autumn' || seasonKey === 'spring')) {
+      caps.food = Math.round(caps.food * 1.25);
+    }
 
     // Troop capacity scaling with Barracks across all plots
     const totalBarracksLvl = grid && Array.isArray(grid)
@@ -69,6 +77,9 @@ export function usePlayerStats(gameState) {
     const hasDeepVaultLocks = (gameState.technologies || []).includes('tech_deep_vault_locks');
     const hasPhalanxDrills = (gameState.technologies || []).includes('tech_phalanx_drills');
     const hasSiegeMunitions = (gameState.technologies || []).includes('tech_siege_munitions');
+    const hasBrambleWall = (gameState.technologies || []).includes('tech_flora_bramble_wall');
+    const hasOvergrowth = (gameState.technologies || []).includes('tech_flora_overgrowth');
+    const brambleShieldActive = !!gameState.brambleShieldActive;
 
     const highestVaultLvl = grid && Array.isArray(grid)
       ? Math.max(1, ...grid.filter(p => p.buildingId === 'vault').map(p => p.level || 1))
@@ -90,8 +101,9 @@ export function usePlayerStats(gameState) {
       ? grid.filter(p => p.buildingId === 'watchtower').reduce((sum, p) => sum + (p.level || 1), 0)
       : (bLevels.watchtower || 0);
 
+    const brambleDefBonus = brambleShieldActive ? 35 : 0;
     const baseAtk = (troopCount * 12 + (keepLvl * 15)) * (1 + currentFaction.raidAttackBonus) * (weather.multipliers.raidAtk || 1.0) * (hasSiegeMunitions ? 1.2 : 1.0);
-    const baseDef = ((totalWatchtowerLvl * 42) + (keepLvl * 26) + (totalBarracksLvl * 25)) * (starving ? 0.5 : 1.0) * (currentFaction.id === 'elves' ? 0.75 : 1.0) * (hasPhalanxDrills ? 1.15 : 1.0);
+    const baseDef = ((totalWatchtowerLvl * 42) + (keepLvl * 26) + (totalBarracksLvl * 25) + brambleDefBonus) * (starving ? 0.5 : 1.0) * (currentFaction.id === 'elves' ? 0.75 : 1.0) * (hasPhalanxDrills ? 1.15 : 1.0);
     const totalGridLevels = grid && Array.isArray(grid)
       ? grid.filter(p => p.buildingId).reduce((sum, p) => sum + (p.level || 1), 0)
       : Object.values(bLevels).reduce((a, b) => a + (b || 0), 0);
@@ -106,7 +118,13 @@ export function usePlayerStats(gameState) {
       overallRating,
       totalLaborDemand,
       laborEfficiency,
-      maxTroopCapacity
+      maxTroopCapacity,
+      brambleShieldActive,
+      hasBrambleWall,
+      hasCanopyGranary,
+      hasOvergrowth,
+      soilFertilityBonus: gameState.soilFertilityBonus || 0,
+      element: currentFaction.element || 'Flora'
     };
   }, [gameState, currentFaction]);
 

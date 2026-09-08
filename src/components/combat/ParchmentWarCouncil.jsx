@@ -1,12 +1,20 @@
 import React, { useState } from 'react';
-import { FACTIONS, sounds } from '../../constants/index.js';
+import { FACTIONS, getElementalMatchup, sounds } from '../../constants/index.js';
 import { generateRivals, haptics } from '../../utils/index.js';
 
 export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBloodFeud, onResearchTechnology }) {
   const [rivals, setRivals] = useState(() => generateRivals(stats.overallRating));
   const [selectedRivalId, setSelectedRivalId] = useState(() => rivals[0]?.id || null);
+  const [isInfused, setIsInfused] = useState(false);
 
   const activeSelectedRival = rivals.find(r => r.id === selectedRivalId) || rivals[0] || null;
+
+  const playerFactionData = FACTIONS[state.faction] || FACTIONS.humans;
+  const playerElement = playerFactionData.element || 'Flora';
+
+  const dispatchedSoldiers = Math.max(1, state.troops?.total || 10);
+  const infusionFloraCost = dispatchedSoldiers * 3;
+  const canAffordInfusion = (state.resources?.flora || 0) >= infusionFloraCost;
 
   const hasTroopLogistics = (state.technologies || []).includes('tech_troop_logistics');
   const keepTier = state.buildings?.keep || 1;
@@ -28,7 +36,8 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
 
   const handleRaidClick = (rival) => {
     haptics.heavy();
-    onLaunchRaid(rival);
+    const useInfusion = isInfused && canAffordInfusion;
+    onLaunchRaid(rival, { isInfused: useInfusion, floraCost: useInfusion ? infusionFloraCost : 0 });
   };
 
   const handleFeudClick = (record) => {
@@ -70,6 +79,7 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
             {rivals.map(rival => {
               const rFaction = FACTIONS[rival.faction] || FACTIONS.humans;
               const isSelected = rival.id === selectedRivalId;
+              const rMatchup = getElementalMatchup(playerElement, rival.element || rFaction.element || 'Stone');
               return (
                 <div
                   key={rival.id}
@@ -77,26 +87,32 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
                     sounds.playCoin();
                     setSelectedRivalId(rival.id);
                   }}
-                  className={`p-2.5 rounded-xl border-2 cursor-pointer transition flex items-center justify-between ${
+                  className={`p-2.5 rounded-xl border-2 cursor-pointer transition flex flex-col gap-1.5 ${
                     isSelected
                       ? 'bg-[#e2ceaa] border-[#78350f] shadow-md scale-[1.01]'
                       : 'bg-[#ebdcc1]/80 border-[#8c6843]/60 hover:bg-[#dfcba6]'
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{rFaction.sigil || '🏰'}</span>
-                    <div>
-                      <h4 className="text-xs font-black text-[#442813]">{rival.name}</h4>
-                      <span className="text-[9px] uppercase tracking-wider text-[#6b4a2e]">
-                        {rFaction.name} • Def {rival.defensePower}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{rFaction.sigil || '🏰'}</span>
+                      <div>
+                        <h4 className="text-xs font-black text-[#442813]">{rival.name}</h4>
+                        <span className="text-[9px] uppercase tracking-wider text-[#6b4a2e]">
+                          {rFaction.name} • Def {rival.defensePower}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs font-mono font-bold text-amber-900 block">⭐ {rival.rating}</span>
+                      <span className="text-[9px] font-mono text-[#6b4a2e]">
+                        🪙{rival.lootPool?.gold || 0} 🌾{rival.lootPool?.food || 0}
                       </span>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <span className="text-xs font-mono font-bold text-amber-900 block">⭐ {rival.rating}</span>
-                    <span className="text-[9px] font-mono text-[#6b4a2e]">
-                      🪙{rival.lootPool?.gold || 0} 🌾{rival.lootPool?.food || 0}
-                    </span>
+                  {/* Elemental Matchup Badge */}
+                  <div className={`px-2 py-0.5 rounded-md border text-[9px] font-mono font-bold flex items-center justify-between ${rMatchup.sealColor}`}>
+                    <span>{rMatchup.badge}</span>
                   </div>
                 </div>
               );
@@ -154,66 +170,121 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
             RIGHT PAGE: Vanguard Deployment Order & Royal Logistics Decree
             ------------------------------------------------------------- */}
         <div className="flex flex-col h-full bg-[#f2e7ce] border-2 border-[#8c6843] rounded-2xl p-4 shadow-inner overflow-hidden justify-between">
-          {activeSelectedRival ? (
-            <div className="space-y-3">
-              {/* Selected Rival Dossier Header */}
-              <div className="flex items-center justify-between border-b-2 border-[#bfa379]/70 pb-2">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-2xl">{selectedFaction.sigil || '🏰'}</span>
-                  <div>
-                    <h3 className="text-sm font-black text-[#442813]">{activeSelectedRival.name}</h3>
-                    <span className="text-[10px] font-mono uppercase text-[#6b4a2e]">
-                      {selectedFaction.name} • {selectedFaction.doctrine || 'Fortified Domain'}
+          {activeSelectedRival ? (() => {
+            const selectedMatchup = getElementalMatchup(
+              playerElement,
+              activeSelectedRival.element || selectedFaction.element || 'Stone'
+            );
+
+            return (
+              <div className="space-y-2.5">
+                {/* Selected Rival Dossier Header */}
+                <div className="flex items-center justify-between border-b-2 border-[#bfa379]/70 pb-2">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-2xl">{selectedFaction.sigil || '🏰'}</span>
+                    <div>
+                      <h3 className="text-sm font-black text-[#442813]">{activeSelectedRival.name}</h3>
+                      <span className="text-[10px] font-mono uppercase text-[#6b4a2e]">
+                        {selectedFaction.name} • {selectedFaction.doctrine || 'Fortified Domain'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="px-2 py-0.5 rounded bg-amber-900/15 border border-amber-800/40 text-xs font-mono font-bold text-amber-900">
+                      ⭐ {activeSelectedRival.rating}
                     </span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="px-2 py-0.5 rounded bg-amber-900/15 border border-amber-800/40 text-xs font-mono font-bold text-amber-900">
-                    ⭐ {activeSelectedRival.rating}
-                  </span>
-                </div>
-              </div>
 
-              {/* Tactical Comparison Bar */}
-              <div className="bg-[#dfcba6]/70 p-2.5 rounded-xl border border-[#bfa379]/50 text-[11px] font-mono space-y-1.5">
-                <div className="flex justify-between items-center text-[#442813]">
-                  <span>Enemy Fortification:</span>
-                  <span className="font-bold text-red-900">🛡️ Def {activeSelectedRival.defensePower}</span>
+                {/* Elemental Affinity Matchup Seal */}
+                <div className={`p-2 rounded-xl border text-[11px] font-mono font-bold flex items-center justify-between shadow-sm ${selectedMatchup.sealColor}`}>
+                  <span>{selectedMatchup.badge}</span>
                 </div>
-                <div className="flex justify-between items-center text-[#442813]">
-                  <span>Your Catapult Force:</span>
-                  <span className="font-bold text-green-900">⚔️ Atk {Math.round(stats.attackPower)}</span>
-                </div>
-              </div>
 
-              {/* Exposed Plunder Loot Pool */}
-              <div className="bg-[#dfcba6]/70 p-2.5 rounded-xl border border-[#bfa379]/50">
-                <span className="text-[10px] font-mono text-[#6b4a2e] uppercase font-bold block mb-1.5">
-                  Unbanked Stores Vulnerable to Catapult Strikes:
-                </span>
-                <div className="grid grid-cols-3 gap-1.5 text-xs font-mono">
-                  <span className="p-1.5 rounded bg-[#ebdcc1] border border-[#bfa379]/60 text-yellow-900 font-bold text-center">
-                    🪙 {activeSelectedRival.lootPool?.gold || 0}
-                  </span>
-                  <span className="p-1.5 rounded bg-[#ebdcc1] border border-[#bfa379]/60 text-amber-900 font-bold text-center">
-                    🌾 {activeSelectedRival.lootPool?.food || 0}
-                  </span>
-                  <span className="p-1.5 rounded bg-[#ebdcc1] border border-[#bfa379]/60 text-orange-900 font-bold text-center">
-                    🪵 {activeSelectedRival.lootPool?.wood || 0}
-                  </span>
+                {/* Tactical Comparison Bar */}
+                <div className="bg-[#dfcba6]/70 p-2 rounded-xl border border-[#bfa379]/50 text-[11px] font-mono space-y-1">
+                  <div className="flex justify-between items-center text-[#442813]">
+                    <span>Enemy Fortification:</span>
+                    <span className="font-bold text-red-900">🛡️ Def {activeSelectedRival.defensePower}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-[#442813]">
+                    <span>Your Catapult Force:</span>
+                    <span className="font-bold text-green-900">⚔️ Atk {Math.round(stats.attackPower)}</span>
+                  </div>
                 </div>
-              </div>
 
-              {/* Prominent March Vanguard CTA */}
-              <button
-                onClick={() => handleRaidClick(activeSelectedRival)}
-                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-red-800 via-rose-900 to-red-950 hover:brightness-110 active:scale-95 text-amber-100 font-black text-sm shadow-xl transition flex items-center justify-center gap-2 border-2 border-amber-600/60"
-              >
-                <span className="text-base">📺</span>
-                <span>March Vanguard (Watch Ad & Launch Catapults)</span>
-              </button>
-            </div>
-          ) : null}
+                {/* Briar / Verdant Infusion Toggle Card */}
+                <div className={`p-2.5 rounded-xl border-2 transition flex items-center justify-between gap-2 ${
+                  isInfused
+                    ? 'bg-emerald-900/20 border-emerald-700/80 shadow-md'
+                    : 'bg-[#dfcba6]/70 border-[#bfa379]/50'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🌿</span>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="text-xs font-black text-[#442813]">Briar Infusion</h4>
+                        <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-emerald-950/20 text-emerald-900">
+                          {infusionFloraCost} Flora ({dispatchedSoldiers} troops)
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-[#6b4a2e] leading-tight">
+                        +20% troop survivability & +15% plunder vs Stone strongholds
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (!isInfused && !canAffordInfusion) {
+                        sounds.playFamineAlarm();
+                        return;
+                      }
+                      sounds.playCoin();
+                      haptics.light();
+                      setIsInfused(v => !v);
+                    }}
+                    disabled={!isInfused && !canAffordInfusion}
+                    className={`px-2.5 py-1.5 rounded-xl text-xs font-mono font-bold border transition ${
+                      isInfused
+                        ? 'bg-emerald-800 text-emerald-100 border-emerald-600 shadow-inner'
+                        : canAffordInfusion
+                        ? 'bg-[#ebdcc1] text-[#442813] border-[#8c6843] hover:bg-[#dfcba6]'
+                        : 'bg-stone-300 text-stone-500 border-stone-400 cursor-not-allowed'
+                    }`}
+                  >
+                    {isInfused ? 'Infused ✓' : 'Infuse'}
+                  </button>
+                </div>
+
+                {/* Exposed Plunder Loot Pool */}
+                <div className="bg-[#dfcba6]/70 p-2 rounded-xl border border-[#bfa379]/50">
+                  <span className="text-[10px] font-mono text-[#6b4a2e] uppercase font-bold block mb-1">
+                    Unbanked Stores Vulnerable to Catapult Strikes:
+                  </span>
+                  <div className="grid grid-cols-3 gap-1.5 text-xs font-mono">
+                    <span className="p-1.5 rounded bg-[#ebdcc1] border border-[#bfa379]/60 text-yellow-900 font-bold text-center">
+                      🪙 {activeSelectedRival.lootPool?.gold || 0}
+                    </span>
+                    <span className="p-1.5 rounded bg-[#ebdcc1] border border-[#bfa379]/60 text-amber-900 font-bold text-center">
+                      🌾 {activeSelectedRival.lootPool?.food || 0}
+                    </span>
+                    <span className="p-1.5 rounded bg-[#ebdcc1] border border-[#bfa379]/60 text-orange-900 font-bold text-center">
+                      🪵 {activeSelectedRival.lootPool?.wood || 0}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Prominent March Vanguard CTA */}
+                <button
+                  onClick={() => handleRaidClick(activeSelectedRival)}
+                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-red-800 via-rose-900 to-red-950 hover:brightness-110 active:scale-95 text-amber-100 font-black text-sm shadow-xl transition flex items-center justify-center gap-2 border-2 border-amber-600/60"
+                >
+                  <span className="text-base">📺</span>
+                  <span>March Vanguard {isInfused ? '(Briar Infused)' : ''}</span>
+                </button>
+              </div>
+            );
+          })() : null}
 
           {/* Royal Logistics Decree Card at Bottom */}
           <div className="bg-[#ebdcc1] border-2 border-[#8c6843] rounded-xl p-3 shadow-md flex items-center justify-between gap-3 mt-3">
@@ -270,13 +341,57 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
           </button>
         </div>
 
+        {/* Mobile Briar Infusion Toggle Bar */}
+        <div className={`p-2.5 rounded-2xl border-2 transition flex items-center justify-between gap-2 shadow-sm ${
+          isInfused
+            ? 'bg-emerald-900/20 border-emerald-700/80'
+            : 'bg-[#ebdcc1] border-[#8c6843]'
+        }`}>
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🌿</span>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <h4 className="text-xs font-black text-[#442813]">Briar Infusion</h4>
+                <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-emerald-950/20 text-emerald-900">
+                  {infusionFloraCost} Flora
+                </span>
+              </div>
+              <p className="text-[10px] text-[#6b4a2e]">
+                +20% survivability & +15% plunder vs Stone targets
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              if (!isInfused && !canAffordInfusion) {
+                sounds.playFamineAlarm();
+                return;
+              }
+              sounds.playCoin();
+              haptics.light();
+              setIsInfused(v => !v);
+            }}
+            disabled={!isInfused && !canAffordInfusion}
+            className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold border transition ${
+              isInfused
+                ? 'bg-emerald-800 text-emerald-100 border-emerald-600'
+                : canAffordInfusion
+                ? 'bg-[#dfcba6] text-[#442813] border-[#8c6843]'
+                : 'bg-stone-300 text-stone-500 border-stone-400 cursor-not-allowed'
+            }`}
+          >
+            {isInfused ? 'Infused ✓' : 'Infuse'}
+          </button>
+        </div>
+
         <div className="grid grid-cols-1 gap-3">
           {rivals.map(rival => {
             const rivalFaction = FACTIONS[rival.faction] || FACTIONS.humans;
+            const rMatchup = getElementalMatchup(playerElement, rival.element || rivalFaction.element || 'Stone');
             return (
               <div
                 key={rival.id}
-                className="bg-[#ebdcc1] border-2 border-[#8c6843] rounded-2xl p-3 shadow-md flex flex-col justify-between"
+                className="bg-[#ebdcc1] border-2 border-[#8c6843] rounded-2xl p-3 shadow-md flex flex-col justify-between gap-2"
               >
                 <div>
                   <div className="flex items-start justify-between">
@@ -288,6 +403,11 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
                   <span className="text-[9px] uppercase tracking-wider text-[#6b4a2e] block mt-0.5">
                     {rivalFaction.badge} • Def {rival.defensePower}
                   </span>
+
+                  {/* Elemental Matchup Badge */}
+                  <div className={`mt-1.5 px-2 py-0.5 rounded-md border text-[9px] font-mono font-bold ${rMatchup.sealColor}`}>
+                    {rMatchup.badge}
+                  </div>
 
                   <div className="mt-2 pt-2 border-t border-[#bfa379]/60">
                     <span className="text-[9px] font-mono text-[#6b4a2e] uppercase font-bold block mb-1">
@@ -309,10 +429,10 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
 
                 <button
                   onClick={() => handleRaidClick(rival)}
-                  className="mt-3 w-full min-h-[48px] py-2.5 px-3 rounded-xl bg-gradient-to-r from-red-800 to-rose-900 hover:brightness-110 active:scale-95 text-amber-100 font-black text-xs shadow transition flex items-center justify-center gap-1.5"
+                  className="mt-2 w-full min-h-[48px] py-2.5 px-3 rounded-xl bg-gradient-to-r from-red-800 to-rose-900 hover:brightness-110 active:scale-95 text-amber-100 font-black text-xs shadow transition flex items-center justify-center gap-1.5"
                 >
                   <span>📺</span>
-                  <span>March Vanguard (Watch Ad)</span>
+                  <span>March Vanguard {isInfused ? '(Briar Infused)' : '(Watch Ad)'}</span>
                 </button>
               </div>
             );

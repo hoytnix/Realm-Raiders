@@ -33,7 +33,11 @@ export function ParchmentCitadelMap({
   onBulkUpgrade,
   activeLedgerTab = 'structure',
   setActiveLedgerTab,
-  battleLogs = []
+  battleLogs = [],
+  onTransmuteFlora,
+  onTriggerVerdantBloom,
+  brambleShieldActive = false,
+  onToggleBrambleShield
 }) {
   const selectedPlot = (grid || []).find(p => p.id === selectedBuildingId || p.buildingId === selectedBuildingId);
   const isEmptyPlot = selectedPlot ? !selectedPlot.buildingId : (selectedBuildingId?.startsWith('plot-') || false);
@@ -103,20 +107,47 @@ export function ParchmentCitadelMap({
           )}
         </div>
 
-        {/* Floating "Claim All" Action Seal Button when crops are ready */}
-        {readyCount > 0 && onHarvestAll && (
-          <button
-            onClick={() => onHarvestAll(stats.caps, faction)}
-            className="hidden md:flex absolute top-2 left-2 z-20 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-800 to-green-700 hover:brightness-110 active:scale-95 border-2 border-emerald-400 text-emerald-100 text-xs font-mono font-black shadow-2xl items-center gap-1.5 animate-bounce transition"
-            title="Claim all ripe yields immediately [Space]"
-          >
-            <span className="text-base">🌾</span>
-            <span>Claim All ({readyCount})</span>
-            <kbd className="hidden sm:inline-block px-1 py-0.2 rounded bg-emerald-950/80 text-[9px] text-emerald-300 font-mono border border-emerald-600/60">
-              SPACE
-            </kbd>
-          </button>
-        )}
+        {/* Floating Quick Action Controls (Desktop Canvas) */}
+        <div className="hidden md:flex absolute top-2 left-2 z-20 items-center gap-2 pointer-events-auto">
+          {readyCount > 0 && onHarvestAll && (
+            <button
+              onClick={() => onHarvestAll(stats.caps, faction)}
+              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-800 to-green-700 hover:brightness-110 active:scale-95 border-2 border-emerald-400 text-emerald-100 text-xs font-mono font-black shadow-2xl flex items-center gap-1.5 animate-bounce transition"
+              title="Claim all ripe yields immediately [Space]"
+            >
+              <span className="text-base">🌾</span>
+              <span>Claim All ({readyCount})</span>
+              <kbd className="hidden sm:inline-block px-1 py-0.2 rounded bg-emerald-950/80 text-[9px] text-emerald-300 font-mono border border-emerald-600/60">
+                SPACE
+              </kbd>
+            </button>
+          )}
+
+          {onTriggerVerdantBloom && (resources.flora || 0) >= 75 && (
+            <button
+              onClick={() => onTriggerVerdantBloom()}
+              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-teal-900 to-emerald-800 hover:brightness-110 active:scale-95 border-2 border-emerald-400/80 text-emerald-100 text-xs font-mono font-black shadow-2xl flex items-center gap-1.5 transition"
+              title="Verdant Bloom: Spend 75 Flora to instantly ripen all growing crops & timber plots"
+            >
+              <span className="text-base animate-pulse">🌱</span>
+              <span>Surge Growth (75 🌿)</span>
+            </button>
+          )}
+
+          {onToggleBrambleShield && (
+            <button
+              onClick={() => onToggleBrambleShield()}
+              className={`px-2.5 py-1.5 rounded-xl border text-xs font-mono font-bold shadow-lg flex items-center gap-1.5 transition ${
+                brambleShieldActive
+                  ? 'bg-emerald-950/80 border-emerald-500 text-emerald-200 shadow-emerald-900/30'
+                  : 'bg-stone-900/60 border-stone-600 text-stone-300 hover:border-emerald-700'
+              }`}
+              title={brambleShieldActive ? 'Living Bramble Shield active: -40% raid plunder losses, drains 2 Flora/hr (1 with Bastion)' : 'Activate Living Bramble Shield (-40% raid plunder losses)'}
+            >
+              <span>{brambleShieldActive ? '🛡️🌿 Bramble Shield (Active)' : '🛡️ Bramble Shield (Off)'}</span>
+            </button>
+          )}
+        </div>
 
         {/* The 2.5D Isometric SVG Living Ink Canvas */}
         <CitadelSvgGrid
@@ -162,6 +193,7 @@ export function ParchmentCitadelMap({
             onExpandTerritory={onExpandTerritory}
             onTrainTroops={onTrainTroops}
             onResearchTechnology={onResearchTechnology}
+            onTransmuteFlora={onTransmuteFlora}
           />
         </div>
       </div>
@@ -188,6 +220,7 @@ export function ParchmentCitadelMap({
           onExpandTerritory={onExpandTerritory}
           onTrainTroops={onTrainTroops}
           onResearchTechnology={onResearchTechnology}
+          onTransmuteFlora={onTransmuteFlora}
           activeLedgerTab={activeLedgerTab}
           setActiveLedgerTab={setActiveLedgerTab}
           battleLogs={battleLogs}
