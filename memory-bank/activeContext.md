@@ -41,8 +41,23 @@
     - Royal Keep inspector includes territory annexation decree card.
     - Famine warning HUD reports dynamic troop casualties and active labor saturation percentage.
   - Production build successfully validated via `pnpm run build` (clean Vite 5 bundle generated in ~1.8s).
+- **Troop Auto-Collection, Realm Calendar & Seasonal Weather Overhaul**:
+  - **Realm Calendar & Chronology Initialization (`src/constants/initialState.js`, `src/constants/seasons.js`, `src/components/hud/RealmChronometerHUD.jsx`)**:
+    - Aligned initial starting epoch to **September 1, Year 26 ADX** (`{ day: 1, month: 9, monthName: 'Harvestide (September)', year: 26, era: 'ADX', hour: 8, minute: 0, seasonIndex: 2, weather: 'autumn_breeze' }`).
+    - Implemented 12-month realm calendar with 30-day month cycles advancing months and years deterministically.
+    - Updated `RealmChronometerHUD.jsx` with clean diegetic ordinal date display: `1st of Harvestide, 26 ADX • 08:00` (desktop) and compact `1st Harvestide • 08:00` (mobile) alongside season/weather glyphs and astronomical sun/moon orb.
+  - **Seasonal Weather Engine & Volatility Elimination (`src/constants/weather.js`, `src/hooks/useGameState.js`)**:
+    - Eliminated micro-interval weather rerolls. Weather states now persist in stable 6-hour macro blocks, evaluating transitions strictly on day-phase shifts: Dawn (06:00), Midday (12:00), Dusk (18:00), and Midnight (00:00).
+    - Established month-aware weighted probability matrix: September Early Autumn yields Crisp Autumn Breeze (40%), Overcast Cloudcover (25%), Gentle Amber Rain (20%), Morning Mist/Fog (15%) with absolute 0% snow/blizzard probability; Summer months feature Radiant Sun, Sweltering Heat, Summer Thunderstorm (0% freezing); Winter months feature Bitter Frost, Flurries, Heavy Snow, Whiteout Gale.
+    - Integrated transition dampening (`getNextWeather`) preventing abrupt meteorological leaps (e.g. violent downpour to clear sun).
+  - **Technology / Royal Decree: Troop Auto-Collection (`src/constants/technology.js`, `src/hooks/useGameState.js`, `BuildingInspector.jsx`, `ParchmentWarCouncil.jsx`, `CitadelSvgGrid.jsx`)**:
+    - Defined `tech_troop_logistics` ("Vassal Foraging Lines" / "Troop Quartermaster"), requiring Royal Keep Tier 2, 150 Gold, and 100 Sustenance.
+    - Implemented tick loop automation: when unlocked and troops >= 1, completed yields (`isReady === true`) from Farms, Mills, Quarries, Granaries, and Mints are automatically reaped into player storage caps, resetting timers and triggering diegetic coin chimes.
+    - Manual clicking on buildings and "Claim All" retained as instant fallback.
+    - Added "Seal Logistics Decree" controls in Royal Keep and War Council, plus "Automated by Garrison" status badges on harvesting structures in inspector and isometric grid.
 
 ## Active Focus & Next Steps
 - Push or link repository to Netlify for continuous static deployment.
-- Continue verifying balance tuning across the 4 asymmetric factions and 7-day seasonal shifts.
+- Continue verifying balance tuning across the 4 asymmetric factions and seasonal shifts.
 - Explore procedural ambient audio additions (rain, wind, blizzard synthesizer nodes) within `SoundController`.
+

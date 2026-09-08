@@ -95,6 +95,7 @@ export default function App() {
     handleHarvestBuilding,
     handleHarvestAll,
     handleIssueRoyalDecree,
+    handleResearchTechnology,
     constructBuilding,
     expandTerritory,
     trainTroops,
@@ -138,6 +139,16 @@ export default function App() {
       }
     });
   }, [handleIssueRoyalDecree, currentFaction, triggerWaxSplat]);
+
+  // Technology Research Decree with Diegetic Wax Stamp Trigger
+  const onResearchTechnology = useCallback((techId, e) => {
+    handleResearchTechnology(techId, () => {
+      triggerWaxSplat(
+        e?.clientX || (typeof window !== 'undefined' ? window.innerWidth / 2 : 200),
+        e?.clientY || (typeof window !== 'undefined' ? window.innerHeight / 2 : 200)
+      );
+    });
+  }, [handleResearchTechnology, triggerWaxSplat]);
 
   // Building Yield Harvest
   const onHarvest = useCallback((bId) => {
@@ -282,6 +293,7 @@ export default function App() {
             grid={gameState.grid}
             territoryTier={gameState.territoryTier || 1}
             troops={gameState.troops}
+            technologies={gameState.technologies || []}
             onHarvest={onHarvest}
             onHarvestAll={handleHarvestAll}
             selectedBuildingId={selectedBuildingId}
@@ -290,6 +302,7 @@ export default function App() {
             onConstructBuilding={constructBuilding}
             onExpandTerritory={expandTerritory}
             onTrainTroops={trainTroops}
+            onResearchTechnology={onResearchTechnology}
             resources={gameState.resources}
             faction={currentFaction}
             stats={stats}
@@ -306,6 +319,7 @@ export default function App() {
             state={gameState}
             onLaunchRaid={startRaidAdFlow}
             onDeclareBloodFeud={onDeclareBloodFeud}
+            onResearchTechnology={onResearchTechnology}
           />
         )}
 

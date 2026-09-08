@@ -9,6 +9,7 @@ export function ParchmentCitadelMap({
   grid,
   territoryTier = 1,
   troops = { total: 20, maxCapacity: 30 },
+  technologies = [],
   onHarvest,
   onHarvestAll,
   selectedBuildingId,
@@ -17,6 +18,7 @@ export function ParchmentCitadelMap({
   onConstructBuilding,
   onExpandTerritory,
   onTrainTroops,
+  onResearchTechnology,
   resources,
   faction,
   stats,
@@ -63,14 +65,20 @@ export function ParchmentCitadelMap({
         }}
       >
         {/* Visual Weather Particles */}
-        {timeState.weather === 'downpour' && (
+        {(timeState.weather === 'downpour' || timeState.weather === 'amber_rain' || timeState.weather === 'thunderstorm') && (
           <div className="absolute inset-0 opacity-35 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:14px_14px] animate-pulse" />
         )}
-        {timeState.weather === 'blizzard' && (
+        {(timeState.weather === 'blizzard' || timeState.weather === 'heavy_snow' || timeState.weather === 'flurries') && (
           <div className="absolute inset-0 opacity-40 bg-[radial-gradient(#ffffff_1.5px,transparent_1.5px)] [background-size:20px_20px] animate-ping" />
         )}
-        {timeState.weather === 'heatwave' && (
+        {(timeState.weather === 'heatwave' || timeState.weather === 'radiant_sun') && (
           <div className="absolute inset-0 bg-gradient-to-t from-amber-600/10 via-transparent to-orange-500/10 animate-pulse" />
+        )}
+        {(timeState.weather === 'mist' || timeState.weather === 'overcast') && (
+          <div className="absolute inset-0 bg-stone-500/10" />
+        )}
+        {timeState.weather === 'autumn_breeze' && (
+          <div className="absolute inset-0 bg-gradient-to-r from-amber-700/5 via-transparent to-orange-700/5" />
         )}
       </div>
 
@@ -92,6 +100,8 @@ export function ParchmentCitadelMap({
         harvestTimers={harvestTimers}
         grid={grid}
         territoryTier={territoryTier}
+        technologies={technologies}
+        troops={troops}
         onHarvest={onHarvest}
         selectedBuildingId={selectedBuildingId}
         onSelectBuilding={onSelectBuilding}
@@ -116,9 +126,11 @@ export function ParchmentCitadelMap({
         territoryTier={territoryTier}
         troops={troops}
         stats={stats}
+        technologies={technologies}
         onConstructBuilding={onConstructBuilding}
         onExpandTerritory={onExpandTerritory}
         onTrainTroops={onTrainTroops}
+        onResearchTechnology={onResearchTechnology}
       />
     </div>
   );

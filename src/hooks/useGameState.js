@@ -8,6 +8,10 @@ import {
   SEASON_ORDER,
   WEATHER_CONDITIONS,
   WEATHER_POOL,
+  REALM_MONTHS,
+  getNextWeather,
+  calculateResourceCaps,
+  TECHNOLOGIES,
   TERRITORY_TIERS,
   MAX_TERRITORY_TIER,
   TROOP_RECRUIT_COST,
@@ -33,12 +37,28 @@ export function useGameState() {
         if (!parsed.timeState) {
           parsed.timeState = {
             day: 1,
+            month: 9,
+            monthName: 'Harvestide (September)',
+            year: 26,
+            era: 'ADX',
             hour: 8,
             minute: 0,
-            seasonIndex: 0,
-            weather: 'clear',
+            seasonIndex: 2,
+            weather: 'autumn_breeze',
             timeSpeed: 1
           };
+        } else {
+          if (parsed.timeState.month === undefined) parsed.timeState.month = 9;
+          if (!parsed.timeState.monthName) parsed.timeState.monthName = 'Harvestide (September)';
+          if (parsed.timeState.year === undefined) parsed.timeState.year = 26;
+          if (!parsed.timeState.era) parsed.timeState.era = 'ADX';
+          if (parsed.timeState.seasonIndex === undefined) parsed.timeState.seasonIndex = 2;
+          if (!parsed.timeState.weather || parsed.timeState.weather === 'clear') {
+            parsed.timeState.weather = 'autumn_breeze';
+          }
+        }
+        if (!parsed.technologies || !Array.isArray(parsed.technologies)) {
+          parsed.technologies = [];
         }
         if (!parsed.territoryTier) {
           parsed.territoryTier = 1;
@@ -67,6 +87,7 @@ export function useGameState() {
   const [isStarving, setIsStarving] = useState(false);
   const [starvationDeaths, setStarvationDeaths] = useState(0);
   const [inkPulseTick, setInkPulseTick] = useState(0);
+  const [autoCollectNotice, setAutoCollectNotice] = useState(null);
 
   // Sync mute state with procedural audio synthesizer
   useEffect(() => {
@@ -98,19 +119,17 @@ export function useGameState() {
         let newMinute = (prev.timeState?.minute || 0) + (10 * speed);
         let newHour = prev.timeState?.hour ?? 8;
         let newDay = prev.timeState?.day ?? 1;
-        let newSeasonIdx = prev.timeState?.seasonIndex ?? 0;
-        let currentWeather = prev.timeState?.weather || 'clear';
+        let newMonth = prev.timeState?.month ?? 9;
+        let newYear = prev.timeState?.year ?? 26;
+        const era = prev.timeState?.era || 'ADX';
+        let currentWeather = prev.timeState?.weather || 'autumn_breeze';
+        const prevHour = newHour;
         let dayPassed = false;
 
         if (newMinute >= 60) {
           const hoursElapsed = Math.floor(newMinute / 60);
           newMinute = newMinute % 60;
           newHour += hoursElapsed;
-
-          // Shift weather every few hours probabilistically
-          if (Math.random() < 0.28) {
-            currentWeather = WEATHER_POOL[Math.floor(Math.random() * WEATHER_POOL.length)];
-          }
         }
 
         if (newHour >= 24) {
@@ -119,12 +138,31 @@ export function useGameState() {
           newHour = newHour % 24;
           dayPassed = true;
 
-          // Rotate seasons every 7 in-game days
-          newSeasonIdx = Math.floor((newDay - 1) / 7) % 4;
+          // 30 days per realm month
+          while (newDay > 30) {
+            newDay -= 30;
+            newMonth += 1;
+            if (newMonth > 12) {
+              newMonth = 1;
+              newYear += 1;
+            }
+          }
         }
 
+        // Macro Weather Duration: Transition only on day-phase shifts (Dawn: 6:00, Midday: 12:00, Dusk: 18:00, Midnight: 0:00)
+        const oldPhase = Math.floor(prevHour / 6);
+        const newPhase = Math.floor(newHour / 6);
+        const phaseShifted = (oldPhase !== newPhase) || dayPassed;
+
+        if (phaseShifted) {
+          currentWeather = getNextWeather(currentWeather, newMonth);
+        }
+
+        const monthData = REALM_MONTHS[newMonth] || REALM_MONTHS[9];
+        const newMonthName = monthData.name;
+        const newSeasonIdx = monthData.seasonIndex;
         const seasonKey = SEASON_ORDER[newSeasonIdx];
-        const season = SEASONS[seasonKey] || SEASONS.spring;
+        const season = SEASONS[seasonKey] || SEASONS.autumn;
 
         const starvingNow = (prev.resources?.food ?? 0) <= 0.05 || (prev.resources?.water ?? 0) <= 0.05;
         if (starvingNow !== isStarving) {
@@ -172,17 +210,53 @@ export function useGameState() {
           setStarvationDeaths(0);
         }
 
-        // Advance harvest cycle timers scaled by speed
+        // Advance harvest cycle timers scaled by speed & handle Troop Auto-Collection
+        const hasTroopLogistics = (prev.technologies || []).includes('tech_troop_logistics');
+        const canAutoCollect = hasTroopLogistics && nextTroops.total >= 1;
+        const laborEfficiency = getLaborEfficiency(prev);
+        const storageCaps = calculateResourceCaps(prev.buildings);
+
         const updatedTimers = { ...prev.harvestTimers };
+        const autoYields = {};
+        let autoHarvestCount = 0;
+
         Object.keys(updatedTimers).forEach(bId => {
           const bDef = BUILDINGS[bId];
-          if (bDef && bDef.cycleDuration) {
+          if (bDef && bDef.cycleDuration && bDef.baseYield) {
             const currentVal = updatedTimers[bId] || 0;
-            if (currentVal < bDef.cycleDuration) {
-              updatedTimers[bId] = Math.min(bDef.cycleDuration, currentVal + (1 * speed));
+            const nextVal = currentVal + (1 * speed);
+
+            if (canAutoCollect && nextVal >= bDef.cycleDuration) {
+              // Troop Quartermaster / Garrison automatically collects completed harvest!
+              autoHarvestCount++;
+              const lvl = prev.buildings[bId] || 1;
+              const [resKey, baseVal] = Object.entries(bDef.baseYield)[0];
+              const fMult = factionData.productionMultipliers?.[resKey] || 1.0;
+              const sMult = season.multipliers?.[resKey] || 1.0;
+              const wCond = WEATHER_CONDITIONS[currentWeather] || WEATHER_CONDITIONS.autumn_breeze || WEATHER_CONDITIONS.clear;
+              const wMult = wCond.multipliers?.[resKey] || 1.0;
+
+              const totalYield = Math.round(
+                baseVal * (1 + (lvl - 1) * 0.5) * fMult * sMult * wMult * laborEfficiency
+              );
+
+              autoYields[resKey] = (autoYields[resKey] || 0) + totalYield;
+              updatedTimers[bId] = 0; // Harvest cycle harvested and restarted
+            } else {
+              updatedTimers[bId] = Math.min(bDef.cycleDuration, nextVal);
             }
           }
         });
+
+        // Award auto-collected yields to stockpiles
+        if (autoHarvestCount > 0) {
+          Object.entries(autoYields).forEach(([resKey, amt]) => {
+            const cap = storageCaps[resKey] || 1000;
+            nextRes[resKey] = Math.min(cap, (nextRes[resKey] || 0) + amt);
+          });
+          setAutoCollectNotice({ count: autoHarvestCount, timestamp: Date.now() });
+          sounds.playCoin();
+        }
 
         return {
           ...prev,
@@ -193,6 +267,10 @@ export function useGameState() {
           battleLogs: newBattleLogs,
           timeState: {
             day: newDay,
+            month: newMonth,
+            monthName: newMonthName,
+            year: newYear,
+            era: era,
             hour: newHour,
             minute: newMinute,
             seasonIndex: newSeasonIdx,
@@ -215,7 +293,17 @@ export function useGameState() {
       return {
         ...prev,
         timeState: {
-          ...(prev.timeState || { day: 1, hour: 8, minute: 0, seasonIndex: 0, weather: 'clear' }),
+          ...(prev.timeState || {
+            day: 1,
+            month: 9,
+            monthName: 'Harvestide (September)',
+            year: 26,
+            era: 'ADX',
+            hour: 8,
+            minute: 0,
+            seasonIndex: 2,
+            weather: 'autumn_breeze'
+          }),
           timeSpeed: nextSpeed
         }
       };
@@ -612,6 +700,62 @@ export function useGameState() {
     }));
   };
 
+  const handleResearchTechnology = (techId, onTriggerDecreeStamp) => {
+    const tech = TECHNOLOGIES[techId];
+    if (!tech) return false;
+
+    const keepLvl = gameState.buildings?.keep || 1;
+    if (tech.requirements?.keepTier && keepLvl < tech.requirements.keepTier) {
+      sounds.playFamineAlarm();
+      return false;
+    }
+
+    const costGold = tech.requirements?.cost?.gold || 0;
+    const costFood = tech.requirements?.cost?.food || 0;
+
+    if (
+      (gameState.resources?.gold || 0) < costGold ||
+      (gameState.resources?.food || 0) < costFood
+    ) {
+      sounds.playFamineAlarm();
+      return false;
+    }
+
+    sounds.playWaxSealThud();
+    haptics.heavy();
+    if (onTriggerDecreeStamp) onTriggerDecreeStamp();
+
+    setTimeout(() => {
+      sounds.playUpgrade();
+    }, 350);
+
+    setGameState(prev => {
+      const currentTechs = prev.technologies || [];
+      if (currentTechs.includes(techId)) return prev;
+
+      const researchLog = {
+        id: `log-tech-${Date.now()}`,
+        title: `Decree Sealed: ${tech.name}`,
+        text: `Ratified the royal decree for ${tech.name} (${tech.subtitle}). Standing garrison levies will now automatically reap completed harvests from realm silos into stockpiles.`,
+        type: 'win',
+        timestamp: Date.now()
+      };
+
+      return {
+        ...prev,
+        resources: {
+          ...prev.resources,
+          gold: Math.max(0, (prev.resources?.gold || 0) - costGold),
+          food: Math.max(0, (prev.resources?.food || 0) - costFood)
+        },
+        technologies: [...currentTechs, techId],
+        battleLogs: [researchLog, ...(prev.battleLogs || [])]
+      };
+    });
+
+    return true;
+  };
+
   const handleResetKingdom = () => {
     localStorage.removeItem(STORAGE_KEY);
     setGameState(DEFAULT_STATE);
@@ -631,10 +775,12 @@ export function useGameState() {
     isStarving,
     starvationDeaths,
     inkPulseTick,
+    autoCollectNotice,
     handleToggleSpeed,
     handleHarvestBuilding,
     handleHarvestAll,
     handleIssueRoyalDecree,
+    handleResearchTechnology,
     constructBuilding,
     expandTerritory,
     trainTroops,

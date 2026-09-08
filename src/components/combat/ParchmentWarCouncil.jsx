@@ -2,8 +2,16 @@ import React, { useState } from 'react';
 import { FACTIONS, sounds } from '../../constants/index.js';
 import { generateRivals, haptics } from '../../utils/index.js';
 
-export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBloodFeud }) {
+export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBloodFeud, onResearchTechnology }) {
   const [rivals, setRivals] = useState(() => generateRivals(stats.overallRating));
+
+  const hasTroopLogistics = (state.technologies || []).includes('tech_troop_logistics');
+  const keepTier = state.buildings?.keep || 1;
+  const canAffordLogistics =
+    !hasTroopLogistics &&
+    keepTier >= 2 &&
+    (state.resources?.gold || 0) >= 150 &&
+    (state.resources?.food || 0) >= 100;
 
   const handleRefresh = () => {
     sounds.playCoin();
@@ -91,6 +99,63 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
             </div>
           );
         })}
+      </div>
+
+      {/* Royal Logistics Decree: Troop Quartermaster */}
+      <div className="bg-[#ebdcc1] border-2 border-[#8c6843] rounded-2xl p-3 sm:p-4 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#cbb38b] border border-[#8c6843] flex items-center justify-center text-xl shadow-inner flex-shrink-0">
+            🛡️
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-xs sm:text-sm font-black text-[#442813]">
+                Royal Logistics: Vassal Foraging Lines
+              </h3>
+              {hasTroopLogistics ? (
+                <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-800 text-emerald-100 border border-emerald-600">
+                  Decree Sealed 🛡️
+                </span>
+              ) : (
+                <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ${keepTier >= 2 ? 'bg-green-900/10 text-green-900' : 'bg-red-900/10 text-red-900'}`}>
+                  Req Keep T2
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-[#6b4a2e]">
+              Orders idle garrison levies to automatically collect ripe harvests from all realm silos into stockpiles.
+            </p>
+          </div>
+        </div>
+
+        {hasTroopLogistics ? (
+          <div className="text-[10px] font-mono font-bold text-emerald-900 bg-emerald-900/10 border border-emerald-700/40 rounded-xl px-3 py-1.5 whitespace-nowrap">
+            ✓ Auto-Collection Active
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <div className="text-[10px] font-mono flex items-center gap-1.5">
+              <span className={`px-1.5 py-0.5 rounded border ${(state.resources?.gold || 0) >= 150 ? 'bg-yellow-900/10 border-yellow-800 text-yellow-900 font-bold' : 'bg-red-900/10 border-red-800 text-red-900 font-bold'}`}>
+                🪙 150
+              </span>
+              <span className={`px-1.5 py-0.5 rounded border ${(state.resources?.food || 0) >= 100 ? 'bg-orange-900/10 border-orange-800 text-orange-900 font-bold' : 'bg-red-900/10 border-red-800 text-red-900 font-bold'}`}>
+                🌾 100
+              </span>
+            </div>
+            <button
+              onClick={() => onResearchTechnology && onResearchTechnology('tech_troop_logistics')}
+              disabled={!canAffordLogistics}
+              className={`min-h-[40px] px-3 py-1.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 shadow ${
+                canAffordLogistics
+                  ? 'bg-gradient-to-r from-red-800 to-rose-900 text-amber-100 hover:brightness-110 active:scale-95 shadow border border-red-700'
+                  : 'bg-stone-400 text-stone-600 cursor-not-allowed'
+              }`}
+            >
+              <span>🩸</span>
+              <span>Seal Logistics Decree</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Pinned Retaliation / Blood Feud Ledger */}

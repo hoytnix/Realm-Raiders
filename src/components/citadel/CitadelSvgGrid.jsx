@@ -16,6 +16,8 @@ export function CitadelSvgGrid({
   harvestTimers = {},
   grid = null,
   territoryTier = 1,
+  technologies = [],
+  troops = null,
   onHarvest,
   selectedBuildingId,
   onSelectBuilding,
@@ -339,6 +341,8 @@ export function CitadelSvgGrid({
           const timerVal = harvestTimers[b.id] || 0;
           const progressRatio = cycleDur > 0 ? Math.min(1, timerVal / cycleDur) : 0;
           const isReadyToHarvest = cycleDur > 0 && progressRatio >= 1;
+          const hasTroopLogistics = (technologies || []).includes('tech_troop_logistics');
+          const isAutomated = hasTroopLogistics && (troops?.total ?? 20) >= 1 && cycleDur > 0 && b.baseYield;
 
           return (
             <g
@@ -437,38 +441,38 @@ export function CitadelSvgGrid({
                 {b.inkSymbol}
               </text>
               <rect
-                x={x - 14}
+                x={x - (isAutomated ? 18 : 14)}
                 y={y - height + 8}
-                width="28"
+                width={isAutomated ? 36 : 28}
                 height="12"
                 rx="3"
                 fill="#3f2314"
-                stroke="#eab308"
-                strokeWidth="1"
+                stroke={isAutomated ? '#22c55e' : '#eab308'}
+                strokeWidth={isAutomated ? '1.5' : '1'}
               />
               <text
                 x={x}
                 y={y - height + 17}
                 textAnchor="middle"
-                fill="#fef08a"
-                fontSize="9"
+                fill={isAutomated ? '#86efac' : '#fef08a'}
+                fontSize="8.5"
                 fontWeight="bold"
                 fontFamily="monospace"
               >
-                T{level}
+                {isAutomated ? `🛡️ T${level}` : `T${level}`}
               </text>
 
               {/* Click-to-Collect Floating Ink Banner */}
               {isReadyToHarvest && (
                 <g className="animate-bounce">
                   <rect
-                    x={x - 32}
+                    x={x - 38}
                     y={y - height - 24}
-                    width="64"
+                    width="76"
                     height="16"
                     rx="4"
-                    fill="#15803d"
-                    stroke="#86efac"
+                    fill={isAutomated ? '#065f46' : '#15803d'}
+                    stroke={isAutomated ? '#34d399' : '#86efac'}
                     strokeWidth="1.2"
                     className="shadow"
                   />
@@ -477,11 +481,11 @@ export function CitadelSvgGrid({
                     y={y - height - 12}
                     textAnchor="middle"
                     fill="#f0fdf4"
-                    fontSize="9"
+                    fontSize="8.5"
                     fontWeight="black"
                     fontFamily="sans-serif"
                   >
-                    CLAIM YIELD!
+                    {isAutomated ? 'GARRISON AUTO 🛡️' : 'CLAIM YIELD!'}
                   </text>
                 </g>
               )}

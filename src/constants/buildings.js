@@ -193,3 +193,18 @@ export const TROOP_RECRUIT_COST = {
   gold: 15,
   food: 10
 };
+
+export function calculateResourceCaps(buildings = {}) {
+  const foodGranaryCap = (BUILDINGS.granary?.baseCapacity || 1200) * (buildings.granary || 1);
+  const foodFarmCap = (BUILDINGS.farm?.baseCapacity || 800) * (buildings.farm || 0);
+
+  return {
+    food: foodGranaryCap + foodFarmCap,
+    water: (BUILDINGS.well?.baseCapacity || 1200) * (buildings.well || 1),
+    wood: (BUILDINGS.lumber?.baseCapacity || 1500) * (buildings.lumber || 1),
+    stone: (BUILDINGS.quarry?.baseCapacity || 1500) * (buildings.quarry || 1),
+    flora: (BUILDINGS.greenhouse?.baseCapacity || 800) * (buildings.greenhouse || 1),
+    gold: (BUILDINGS.vault?.baseCapacity || 2000) * (buildings.vault || 1)
+  };
+}
+

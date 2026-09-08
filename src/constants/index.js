@@ -5,3 +5,5 @@ export * from './factions.js';
 export * from './buildings.js';
 export * from './initialState.js';
 export * from './isometric.js';
+export * from './technology.js';
+

@@ -49,7 +49,22 @@
   - [x] Replaced flat 50% famine penalty with continuous Labor Efficiency saturation curve (`min(1.0, troops / laborDemand)` with 8% floor).
   - [x] Daily Starvation Mortality Engine (10% casualties when food/water stores hit zero, chronicled in battle tome).
   - [x] Dynamic Demographic Famine Warning banner and interactive crisis modal.
+- [x] **Realm Calendar & Chronology Alignment**:
+  - [x] Aligned initial starting epoch to September 1, Year 26 ADX (`Harvestide (September)`).
+  - [x] 12-month realm calendar with 30-day month cycles and year advancement.
+  - [x] Diegetic ordinal date HUD (`1st of Harvestide, 26 ADX • 08:00`).
+- [x] **Seasonal Weather Engine & Volatility Elimination**:
+  - [x] Macro weather duration persisting in stable 6-hour blocks transitioning exclusively on day-phase shifts (Dawn, Midday, Dusk, Midnight).
+  - [x] Month-weighted probability distributions (September: 40% breeze, 25% overcast, 20% amber rain, 15% mist, 0% snow; Summer 0% freezing).
+  - [x] Transition dampening preventing abrupt meteorological leaps.
+- [x] **Technology / Royal Decree: Troop Auto-Collection**:
+  - [x] `tech_troop_logistics` ("Vassal Foraging Lines" / "Troop Quartermaster") decree definition with Keep T2, 150 Gold, 100 Sustenance requirements.
+  - [x] Automated harvest reap loop in 1000ms simulation tick when troops >= 1.
+  - [x] Instant manual clicking and Claim All fallbacks retained.
+  - [x] Inspector and War Council "Seal Logistics Decree" action buttons.
+  - [x] "Automated by Garrison" diegetic status badges on harvesting structures.
 
 ## Planned / In Progress
 - [ ] Additional sound synthesizers (ambient wind, rain, blizzard noise nodes).
 - [ ] Expanded battle animations (projectile arcs and particle debris on the SVG canvas).
+

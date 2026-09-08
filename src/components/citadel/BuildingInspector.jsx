@@ -25,9 +25,11 @@ export function BuildingInspector({
   territoryTier = 1,
   troops = { total: 20, maxCapacity: 30, sustenanceUpkeepPerDay: 1 },
   stats = {},
+  technologies = [],
   onConstructBuilding,
   onExpandTerritory,
-  onTrainTroops
+  onTrainTroops,
+  onResearchTechnology
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedBlueprintKey, setSelectedBlueprintKey] = useState('farm');
@@ -37,6 +39,15 @@ export function BuildingInspector({
   const isEmptyPlot = selectedBuildingId?.startsWith('plot-') || selectedDef?.type === 'plot';
   const isKeep = selectedBuildingId === 'keep';
   const isBarracks = selectedBuildingId === 'barracks';
+  const isHarvestBuilding = selectedDef?.cycleDuration && selectedDef?.baseYield;
+  const hasTroopLogistics = technologies.includes('tech_troop_logistics');
+  const isAutomated = hasTroopLogistics && (troops?.total || 0) >= 1 && isHarvestBuilding;
+
+  const canAffordLogistics =
+    !hasTroopLogistics &&
+    currentLvl >= 2 &&
+    (resources.gold || 0) >= 150 &&
+    (resources.food || 0) >= 100;
 
   const toggleExpand = () => {
     haptics.light();
@@ -120,6 +131,11 @@ export function BuildingInspector({
               {!isEmptyPlot && (
                 <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#6b4724] text-amber-200 font-bold">
                   T{currentLvl}
+                </span>
+              )}
+              {isAutomated && (
+                <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-900/20 text-emerald-900 font-bold border border-emerald-700/40 flex items-center gap-0.5">
+                  🛡️ Auto
                 </span>
               )}
               {isEmptyPlot ? (
@@ -221,6 +237,66 @@ export function BuildingInspector({
                     </span>
                   </div>
                 </div>
+
+                {/* HARVEST AUTOMATION STATUS */}
+                {isHarvestBuilding && isAutomated && (
+                  <div className="bg-emerald-900/10 border border-emerald-700/40 rounded-xl p-2 flex items-center gap-2">
+                    <span className="text-base">🛡️</span>
+                    <div className="text-[10px] text-emerald-950 leading-snug">
+                      <span className="font-bold">Automated by Garrison:</span> Standing levies automatically reap completed harvests into stockpiles.
+                    </div>
+                  </div>
+                )}
+
+                {/* KEEP ROYAL LOGISTICS DECREE (TROOP AUTO-COLLECTION) */}
+                {isKeep && (
+                  <div className="bg-[#dfcba6] p-2.5 rounded-xl border border-amber-800/40 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm">📜</span>
+                        <div>
+                          <span className="text-xs font-black text-[#442813] block">Vassal Foraging Lines</span>
+                          <span className="text-[9px] text-[#6b4a2e]">Troop Quartermaster & Automated Logistics</span>
+                        </div>
+                      </div>
+                      {hasTroopLogistics ? (
+                        <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-800 text-emerald-100 border border-emerald-600">
+                          Sealed 🛡️
+                        </span>
+                      ) : (
+                        <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ${currentLvl >= 2 ? 'bg-green-900/10 text-green-900' : 'bg-red-900/10 text-red-900'}`}>
+                          Req Keep T2
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-[#6b4a2e]">
+                      When sealed, idle garrisoned troops automatically reap completed harvests from Farms, Mills, Quarries, and Mints without manual tapping.
+                    </p>
+                    {!hasTroopLogistics && (
+                      <div className="flex items-center justify-between pt-1">
+                        <div className="flex items-center gap-1.5 text-[10px] font-mono">
+                          <span className={`px-1.5 py-0.5 rounded border ${(resources.gold || 0) >= 150 ? 'bg-yellow-900/10 border-yellow-800 text-yellow-900' : 'bg-red-900/10 border-red-800 text-red-900 font-bold'}`}>
+                            🪙 150
+                          </span>
+                          <span className={`px-1.5 py-0.5 rounded border ${(resources.food || 0) >= 100 ? 'bg-orange-900/10 border-orange-800 text-orange-900' : 'bg-red-900/10 border-red-800 text-red-900 font-bold'}`}>
+                            🌾 100
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => onResearchTechnology && onResearchTechnology('tech_troop_logistics')}
+                          disabled={!canAffordLogistics}
+                          className={`px-3 py-1 rounded-lg text-xs font-black transition ${
+                            canAffordLogistics
+                              ? 'bg-gradient-to-r from-red-800 to-rose-900 text-amber-100 hover:brightness-110 active:scale-95 shadow border border-red-700'
+                              : 'bg-stone-400 text-stone-600 cursor-not-allowed'
+                          }`}
+                        >
+                          Seal Logistics Decree
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* KEEP TERRITORY ANNEXATION CARD */}
                 {isKeep && nextTierDef && (
@@ -341,10 +417,47 @@ export function BuildingInspector({
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#6b4724] text-amber-200 font-bold">
                     Tier {currentLvl}
                   </span>
+                  {isAutomated && (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-900/20 text-emerald-900 font-bold border border-emerald-700/40 flex items-center gap-1">
+                      🛡️ Automated by Garrison
+                    </span>
+                  )}
                 </div>
                 <p className="text-[11px] text-[#6b4a2e] max-w-sm line-clamp-1">{selectedDef?.description}</p>
               </div>
             </div>
+
+            {/* KEEP SPECIAL ACTION: ROYAL LOGISTICS DECREE */}
+            {isKeep && (
+              <div className="bg-[#dfcba6] px-2.5 py-1.5 rounded-xl border border-[#bfa379] flex items-center gap-2 text-xs">
+                <div>
+                  <div className="font-bold text-[#442813] text-[11px] flex items-center gap-1">
+                    <span>📜 Logistics Decree</span>
+                    {hasTroopLogistics && <span className="text-emerald-800 font-bold text-[10px]">✓ Active</span>}
+                  </div>
+                  <div className="text-[9px] font-mono text-[#6b4a2e]">
+                    {hasTroopLogistics ? 'Garrison foraging active' : '🪙150 🌾100 • Req Keep T2'}
+                  </div>
+                </div>
+                {hasTroopLogistics ? (
+                  <span className="px-2 py-1 rounded-lg text-[10px] font-mono font-bold bg-emerald-800 text-emerald-100 border border-emerald-600">
+                    Sealed 🛡️
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => onResearchTechnology && onResearchTechnology('tech_troop_logistics')}
+                    disabled={!canAffordLogistics}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-black transition ${
+                      canAffordLogistics
+                        ? 'bg-gradient-to-r from-red-800 to-rose-900 text-amber-100 hover:brightness-110 active:scale-95 shadow border border-red-700'
+                        : 'bg-stone-400 text-stone-600 cursor-not-allowed'
+                    }`}
+                  >
+                    Seal Decree
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* KEEP SPECIAL ACTION: ANNEX TERRITORY */}
             {isKeep && nextTierDef && (

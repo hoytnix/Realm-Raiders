@@ -1,5 +1,5 @@
 // ==========================================
-// ASTRONOMICAL SEASONS
+// ASTRONOMICAL SEASONS & REALM CALENDAR
 // ==========================================
 export const SEASONS = {
   spring: {
@@ -37,3 +37,20 @@ export const SEASONS = {
 };
 
 export const SEASON_ORDER = ['spring', 'summer', 'autumn', 'winter'];
+
+export const DAYS_PER_MONTH = 30;
+
+export const REALM_MONTHS = {
+  1: { id: 1, name: 'Frostfall (January)', shortName: 'Frostfall', season: 'winter', seasonIndex: 3 },
+  2: { id: 2, name: 'Deeprime (February)', shortName: 'Deeprime', season: 'winter', seasonIndex: 3 },
+  3: { id: 3, name: 'Verdant Thaw (March)', shortName: 'Verdant Thaw', season: 'spring', seasonIndex: 0 },
+  4: { id: 4, name: 'Bloomtide (April)', shortName: 'Bloomtide', season: 'spring', seasonIndex: 0 },
+  5: { id: 5, name: 'Blossomveil (May)', shortName: 'Blossomveil', season: 'spring', seasonIndex: 0 },
+  6: { id: 6, name: 'Solstice Sun (June)', shortName: 'Solstice Sun', season: 'summer', seasonIndex: 1 },
+  7: { id: 7, name: 'Sunfire (July)', shortName: 'Sunfire', season: 'summer', seasonIndex: 1 },
+  8: { id: 8, name: 'Amberheat (August)', shortName: 'Amberheat', season: 'summer', seasonIndex: 1 },
+  9: { id: 9, name: 'Harvestide (September)', shortName: 'Harvestide', season: 'autumn', seasonIndex: 2 },
+  10: { id: 10, name: 'Leafveil (October)', shortName: 'Leafveil', season: 'autumn', seasonIndex: 2 },
+  11: { id: 11, name: 'Frostveil (November)', shortName: 'Frostveil', season: 'autumn', seasonIndex: 2 },
+  12: { id: 12, name: 'Winterdark (December)', shortName: 'Winterdark', season: 'winter', seasonIndex: 3 }
+};

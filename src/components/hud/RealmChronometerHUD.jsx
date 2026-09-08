@@ -2,12 +2,23 @@ import React from 'react';
 import { SEASONS, SEASON_ORDER, WEATHER_CONDITIONS } from '../../constants/index.js';
 import { haptics } from '../../utils/index.js';
 
+function formatOrdinal(n) {
+  const num = parseInt(n, 10) || 1;
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = num % 100;
+  return num + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
 export function RealmChronometerHUD({ timeState, onToggleSpeed }) {
-  const season = SEASONS[SEASON_ORDER[timeState.seasonIndex]] || SEASONS.spring;
-  const weather = WEATHER_CONDITIONS[timeState.weather] || WEATHER_CONDITIONS.clear;
+  const season = SEASONS[SEASON_ORDER[timeState.seasonIndex]] || SEASONS.autumn;
+  const weather = WEATHER_CONDITIONS[timeState.weather] || WEATHER_CONDITIONS.autumn_breeze || WEATHER_CONDITIONS.clear;
   const isNight = timeState.hour < 6 || timeState.hour >= 20;
 
   const formattedTime = `${timeState.hour.toString().padStart(2, '0')}:${timeState.minute.toString().padStart(2, '0')}`;
+  const dayOrdinal = formatOrdinal(timeState.day || 1);
+  const monthDisplay = timeState.monthName ? timeState.monthName.split(' ')[0] : 'Harvestide';
+  const yearDisplay = timeState.year || 26;
+  const eraDisplay = timeState.era || 'ADX';
 
   const handleSpeedClick = () => {
     haptics.light();
@@ -24,15 +35,18 @@ export function RealmChronometerHUD({ timeState, onToggleSpeed }) {
       <div className="text-left">
         {/* Mobile Condensed View */}
         <div className="sm:hidden flex items-center gap-1 font-mono text-xs">
-          <span className="font-black font-mono">D{timeState.day} • {formattedTime}</span>
+          <span className="font-black font-mono text-[11px] whitespace-nowrap">
+            {dayOrdinal} {monthDisplay} • {formattedTime}
+          </span>
           <span className="text-[10px]" title={weather.name}>{weather.icon}</span>
         </div>
 
         {/* Desktop Detailed View */}
         <div className="hidden sm:block">
           <div className="flex items-center gap-1.5">
-            <span className="text-xs font-black font-mono tracking-wider">{formattedTime}</span>
-            <span className="text-[10px] font-mono text-stone-400">Day {timeState.day}</span>
+            <span className="text-xs font-black font-mono tracking-wide">
+              {dayOrdinal} of {monthDisplay}, {yearDisplay} {eraDisplay} • {formattedTime}
+            </span>
           </div>
           <div className="flex items-center gap-1 text-[10px] font-mono">
             <span className={season.color}>{season.icon} {season.name}</span>
