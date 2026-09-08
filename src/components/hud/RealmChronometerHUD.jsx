@@ -10,7 +10,7 @@ function formatOrdinal(n) {
   return num + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
-export function RealmChronometerHUD({ timeState, onToggleSpeed }) {
+export function RealmChronometerHUD({ timeState }) {
   const [showForecast, setShowForecast] = useState(false);
   const season = SEASONS[SEASON_ORDER[timeState.seasonIndex]] || SEASONS.autumn;
   const weather = WEATHER_CONDITIONS[timeState.weather] || WEATHER_CONDITIONS.autumn_breeze || WEATHER_CONDITIONS.clear;
@@ -21,11 +21,6 @@ export function RealmChronometerHUD({ timeState, onToggleSpeed }) {
   const monthDisplay = timeState.monthName ? timeState.monthName.split(' ')[0] : 'Harvestide';
   const yearDisplay = timeState.year || 26;
   const eraDisplay = timeState.era || 'ADX';
-
-  const handleSpeedClick = () => {
-    haptics.light();
-    onToggleSpeed();
-  };
 
   return (
     <div className="relative flex items-center gap-1.5 sm:gap-2 bg-stone-900/90 border border-amber-600/50 rounded-2xl px-2 sm:px-3 py-1 sm:py-1.5 shadow-xl backdrop-blur text-amber-200">
@@ -72,15 +67,6 @@ export function RealmChronometerHUD({ timeState, onToggleSpeed }) {
           </div>
         </div>
       </div>
-
-      {/* Speed Accelerator Controls */}
-      <button
-        onClick={handleSpeedClick}
-        className="ml-0.5 sm:ml-1 px-1.5 py-0.5 rounded bg-amber-900/40 hover:bg-amber-900/70 border border-amber-600/40 text-[10px] font-mono font-bold text-amber-300 transition active:scale-95"
-        title="Cycle Simulation Speed (1x / 2x / 5x)"
-      >
-        {timeState.timeSpeed}x
-      </button>
     </div>
   );
 }

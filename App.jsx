@@ -38,7 +38,8 @@ import {
   MonarchHeader,
   MobileBottomNav,
   MobileFloatingHUD,
-  MobileFloraSheet
+  MobileFloraSheet,
+  ResourceBar
 } from './src/components/hud/index.js';
 
 import {
@@ -105,6 +106,7 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isTechCodexOpen, setIsTechCodexOpen] = useState(false);
   const [isFloraSheetOpen, setIsFloraSheetOpen] = useState(false);
+  const [isInspectorExpanded, setIsInspectorExpanded] = useState(false);
 
   // Modular Custom Hooks
   const {
@@ -116,7 +118,6 @@ export default function App() {
     isStarving,
     starvationDeaths,
     inkPulseTick,
-    handleToggleSpeed,
     handleHarvestBuilding,
     handleHarvestAll,
     handleIssueRoyalDecree,
@@ -186,6 +187,10 @@ export default function App() {
         setDeskView('citadel');
         setActiveLedgerTab('decrees');
       }
+    },
+    onOpenFlora: () => {
+      sounds.playCoin();
+      setIsFloraSheetOpen(prev => !prev);
     },
     onEscape: () => {
       if (isFloraSheetOpen) {
@@ -388,7 +393,7 @@ export default function App() {
         onToggleCandlelight={() => setCandlelitMode(v => !v)}
       />
 
-      {/* LAYER 2A: DESKTOP DIEGETIC STATUS HUD (Floating Gilded Crown Bar) */}
+      {/* LAYER 2A: DESKTOP DIEGETIC STATUS HUD (Floating Gilded Crown Bar with Persistent ResourceBar) */}
       <MonarchHeader
         currentFaction={currentFaction}
         stats={stats}
@@ -400,7 +405,6 @@ export default function App() {
         brambleShieldActive={brambleShieldActive}
         onToggleBrambleShield={toggleBrambleShield}
         onTriggerVerdantBloom={triggerVerdantBloom}
-        onToggleSpeed={handleToggleSpeed}
         onToggleMute={() => setIsMuted(!isMuted)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onRaidGrain={() => setDeskView('war')}
@@ -409,30 +413,28 @@ export default function App() {
         forageCooldownSec={forageCooldownSec}
       />
 
-      {/* LAYER 2B: MOBILE FLOATING HUD (< md Zero-Bar Architecture) */}
+      {/* LAYER 2B: MOBILE FLOATING HUD (< md Minimal Chronometer) */}
       <MobileFloatingHUD
         timeState={timeState}
-        resources={gameState.resources}
-        stats={stats}
-        isStarving={isStarving}
-        starvationDeaths={starvationDeaths}
-        hasUnavengedFeuds={hasUnavengedFeuds}
         deskView={deskView}
-        currentResearch={currentResearch || gameState.currentResearch}
-        hasTroopLogistics={hasTroopLogistics}
-        troops={gameState.troops}
-        currentFaction={currentFaction}
-        brambleShieldActive={brambleShieldActive}
-        onToggleBrambleShield={toggleBrambleShield}
-        onTriggerVerdantBloom={triggerVerdantBloom}
-        onOpenTech={() => setIsTechCodexOpen(true)}
-        onOpenFlora={() => setIsFloraSheetOpen(true)}
-        onToggleSpeed={handleToggleSpeed}
-        onRaidGrain={() => setDeskView('war')}
-        onForage={forageEmergencyRations}
-        canForage={canForage}
-        forageCooldownSec={forageCooldownSec}
       />
+
+      {/* LAYER 2C: MOBILE RESOURCE HUD DOCKED ABOVE BOTTOM BAR / DRAWER */}
+      <div
+        className={`md:hidden fixed left-0 right-0 z-30 px-2 pointer-events-none flex justify-center transition-all duration-300 ease-out ${
+          deskView === 'citadel'
+            ? (isInspectorExpanded ? 'bottom-[calc(85vh+6px)]' : 'bottom-[108px]')
+            : 'bottom-16'
+        }`}
+      >
+        <div className="pointer-events-auto max-w-full">
+          <ResourceBar
+            resources={gameState.resources}
+            stats={stats}
+            variant="mobile"
+          />
+        </div>
+      </div>
 
       {/* LAYER 3: THE OAK WAR TABLE & THE LIVING PARCHMENT */}
       <DeskSurface
@@ -481,6 +483,8 @@ export default function App() {
             activeLedgerTab={activeLedgerTab}
             setActiveLedgerTab={setActiveLedgerTab}
             battleLogs={gameState.battleLogs}
+            isInspectorExpanded={isInspectorExpanded}
+            setIsInspectorExpanded={setIsInspectorExpanded}
           />
         )}
 
@@ -535,6 +539,8 @@ export default function App() {
           setDeskView('citadel');
           setActiveLedgerTab('decrees');
         }}
+        onOpenFlora={() => setIsFloraSheetOpen(true)}
+        isFloraOpen={isFloraSheetOpen}
       />
 
       {/* LAYER 6: ERGONOMIC THUMB-ZONE BOTTOM NAVIGATION (Mobile only) */}

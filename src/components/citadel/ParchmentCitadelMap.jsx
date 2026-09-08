@@ -39,7 +39,9 @@ export function ParchmentCitadelMap({
   brambleShieldActive = false,
   onToggleBrambleShield,
   rotationAngle: propRotationAngle,
-  rotateKingdom: propRotateKingdom
+  rotateKingdom: propRotateKingdom,
+  isInspectorExpanded,
+  setIsInspectorExpanded
 }) {
   const [localRotationAngle, setLocalRotationAngle] = React.useState(0);
   const rotationAngle = propRotationAngle !== undefined ? propRotationAngle : localRotationAngle;
@@ -114,8 +116,8 @@ export function ParchmentCitadelMap({
         </div>
 
         {/* Floating Quick Action Controls (Desktop Canvas) */}
-        <div className="hidden md:flex absolute top-2 left-2 z-20 items-center gap-2 pointer-events-auto">
-          {readyCount > 0 && onHarvestAll && (
+        {readyCount > 0 && onHarvestAll && (
+          <div className="hidden md:flex absolute top-2 left-2 z-20 items-center gap-2 pointer-events-auto">
             <button
               onClick={() => onHarvestAll(stats.caps, faction)}
               className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-800 to-green-700 hover:brightness-110 active:scale-95 border-2 border-emerald-400 text-emerald-100 text-xs font-mono font-black shadow-2xl flex items-center gap-1.5 animate-bounce transition"
@@ -127,33 +129,8 @@ export function ParchmentCitadelMap({
                 SPACE
               </kbd>
             </button>
-          )}
-
-          {onTriggerVerdantBloom && (resources.flora || 0) >= 75 && (
-            <button
-              onClick={() => onTriggerVerdantBloom()}
-              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-teal-900 to-emerald-800 hover:brightness-110 active:scale-95 border-2 border-emerald-400/80 text-emerald-100 text-xs font-mono font-black shadow-2xl flex items-center gap-1.5 transition"
-              title="Verdant Bloom: Spend 75 Flora to instantly ripen all growing crops & timber plots"
-            >
-              <span className="text-base animate-pulse">🌱</span>
-              <span>Surge Growth (75 🌿)</span>
-            </button>
-          )}
-
-          {onToggleBrambleShield && (
-            <button
-              onClick={() => onToggleBrambleShield()}
-              className={`px-2.5 py-1.5 rounded-xl border text-xs font-mono font-bold shadow-lg flex items-center gap-1.5 transition ${
-                brambleShieldActive
-                  ? 'bg-emerald-950/80 border-emerald-500 text-emerald-200 shadow-emerald-900/30'
-                  : 'bg-stone-900/60 border-stone-600 text-stone-300 hover:border-emerald-700'
-              }`}
-              title={brambleShieldActive ? 'Living Bramble Shield active: -40% raid plunder losses, drains 2 Flora/hr (1 with Bastion)' : 'Activate Living Bramble Shield (-40% raid plunder losses)'}
-            >
-              <span>{brambleShieldActive ? '🛡️🌿 Bramble Shield (Active)' : '🛡️ Bramble Shield (Off)'}</span>
-            </button>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* The 2.5D Isometric SVG Living Ink Canvas */}
         <CitadelSvgGrid
@@ -182,6 +159,8 @@ export function ParchmentCitadelMap({
         {/* Mobile-Only Collapsible Bottom Sheet */}
         <div className="md:hidden">
           <BuildingInspector
+            isExpanded={isInspectorExpanded}
+            setIsExpanded={setIsInspectorExpanded}
             selectedDef={selectedDef}
             currentLvl={currentLvl}
             costGold={costGold}

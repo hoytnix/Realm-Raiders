@@ -49,11 +49,11 @@ export function MobileFloraSheet({
   return (
     <div
       onClick={handleClose}
-      className="fixed inset-0 z-50 bg-stone-950/85 backdrop-blur-sm flex flex-col justify-end md:hidden animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 bg-stone-950/85 backdrop-blur-sm flex flex-col justify-end md:justify-center md:items-center animate-in fade-in duration-200"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[90vh] overflow-y-auto bg-gradient-to-b from-[#f5ebd6] via-[#ebdcc1] to-[#dfcba6] border-t-2 border-[#8c6843] rounded-t-3xl p-4 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] text-[#442813] font-serif space-y-3 pb-[calc(1.5rem+env(safe-area-inset-bottom,1.5rem))]"
+        className="w-full md:max-w-lg max-h-[90vh] overflow-y-auto bg-gradient-to-b from-[#f5ebd6] via-[#ebdcc1] to-[#dfcba6] border-t-2 md:border-2 border-[#8c6843] rounded-t-3xl md:rounded-3xl p-4 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] text-[#442813] font-serif space-y-3 pb-[calc(1.5rem+env(safe-area-inset-bottom,1.5rem))] md:pb-6"
       >
         {/* Tactile drag pill */}
         <div className="w-12 h-1 bg-[#8c6843]/40 rounded-full mx-auto" />

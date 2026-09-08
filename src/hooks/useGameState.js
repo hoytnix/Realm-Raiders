@@ -194,9 +194,8 @@ export function useGameState() {
         if (!prev.faction) return prev;
         const factionData = FACTIONS[prev.faction] || FACTIONS.humans;
 
-        // 1. Advance Clock & Weather Dynamics
-        const speed = prev.timeState?.timeSpeed || 1;
-        let newMinute = (prev.timeState?.minute || 0) + (10 * speed);
+        // 1. Advance Clock & Weather Dynamics (Locked to constant 1x baseline tick rate)
+        let newMinute = (prev.timeState?.minute || 0) + 10;
         let newHour = prev.timeState?.hour ?? 8;
         let newDay = prev.timeState?.day ?? 1;
         let newMonth = prev.timeState?.month ?? 9;
@@ -476,7 +475,7 @@ export function useGameState() {
             minute: newMinute,
             seasonIndex: newSeasonIdx,
             weather: currentWeather,
-            timeSpeed: speed
+            timeSpeed: 1
           },
           lastTickTimestamp: Date.now()
         };
@@ -486,30 +485,8 @@ export function useGameState() {
     return () => clearInterval(timer);
   }, [gameState.faction, isStarving, starvationDeaths]);
 
-  const handleToggleSpeed = () => {
-    sounds.playCoin();
-    setGameState(prev => {
-      const curSpeed = prev.timeState?.timeSpeed || 1;
-      const nextSpeed = curSpeed === 1 ? 2 : curSpeed === 2 ? 5 : 1;
-      return {
-        ...prev,
-        timeState: {
-          ...(prev.timeState || {
-            day: 1,
-            month: 9,
-            monthName: 'Harvestide (September)',
-            year: 26,
-            era: 'ADX',
-            hour: 8,
-            minute: 0,
-            seasonIndex: 2,
-            weather: 'autumn_breeze'
-          }),
-          timeSpeed: nextSpeed
-        }
-      };
-    });
-  };
+  // Locked 1x baseline tick rate: time speed toggle is disabled
+  const handleToggleSpeed = () => {};
 
   // Helper to compute labor efficiency for harvests
   const getLaborEfficiency = (state) => {

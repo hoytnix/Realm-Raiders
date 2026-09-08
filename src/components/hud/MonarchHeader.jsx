@@ -15,7 +15,6 @@ export function MonarchHeader({
   brambleShieldActive = false,
   onToggleBrambleShield,
   onTriggerVerdantBloom,
-  onToggleSpeed,
   onToggleMute,
   onOpenSettings,
   onRaidGrain,
@@ -152,60 +151,22 @@ export function MonarchHeader({
               </div>
             )}
           </div>
-
-          <div className="hidden lg:flex items-center gap-1.5">
-            <ResourcePill
-              icon="🪙"
-              amount={resources.gold}
-              cap={stats.caps.gold}
-              color="text-yellow-300"
-            />
-            <ResourcePill
-              icon="🍞"
-              amount={resources.food}
-              cap={stats.caps.food}
-              color="text-amber-300"
-              subtext={`-${Math.round(stats.upkeep.total)}/tick`}
-            />
-            <ResourcePill
-              icon="💧"
-              amount={resources.water}
-              cap={stats.caps.water}
-              color="text-blue-300"
-            />
-          </div>
         </div>
 
-        {/* Center: Realm Chronometer & Weather Dial */}
-        <div className="flex-shrink-0">
-          <RealmChronometerHUD
-            timeState={timeState}
-            onToggleSpeed={onToggleSpeed}
+        {/* Center: Persistent Desktop Resource HUD (All 5 primary resources) */}
+        <div className="hidden md:flex items-center justify-center flex-1 mx-1 lg:mx-3 min-w-0">
+          <ResourceBar
+            resources={resources}
+            stats={stats}
+            variant="desktop"
           />
         </div>
 
-        {/* Right Flank: Raw Materials & Audio Control */}
-        <div className="flex items-center gap-2">
-          <div className="hidden lg:flex items-center gap-1.5">
-            <ResourcePill
-              icon="🪵"
-              amount={resources.wood}
-              cap={stats.caps.wood}
-              color="text-amber-600"
-            />
-            <ResourcePill
-              icon="🪨"
-              amount={resources.stone}
-              cap={stats.caps.stone}
-              color="text-stone-300"
-            />
-            <ResourcePill
-              icon="🌿"
-              amount={resources.flora}
-              cap={stats.caps.flora}
-              color="text-emerald-300"
-            />
-          </div>
+        {/* Right Flank: Realm Chronometer, Alerts & Audio Control */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <RealmChronometerHUD
+            timeState={timeState}
+          />
 
           {/* Famine Crisis Warning */}
           <FamineWarning

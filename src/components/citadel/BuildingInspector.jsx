@@ -30,9 +30,13 @@ export function BuildingInspector({
   onExpandTerritory,
   onTrainTroops,
   onResearchTechnology,
-  onTransmuteFlora
+  onTransmuteFlora,
+  isExpanded: propIsExpanded,
+  setIsExpanded: propSetIsExpanded
 }) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [localExpanded, setLocalExpanded] = useState(false);
+  const isExpanded = propIsExpanded !== undefined ? propIsExpanded : localExpanded;
+  const setIsExpanded = propSetIsExpanded || setLocalExpanded;
   const [selectedBlueprintKey, setSelectedBlueprintKey] = useState('farm');
   const [recruitCount, setRecruitCount] = useState(5);
   const touchStartY = useRef(0);

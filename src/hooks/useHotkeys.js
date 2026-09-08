@@ -5,6 +5,7 @@ export function useHotkeys({
   onPan,
   setDeskView,
   onToggleTech,
+  onOpenFlora,
   onEscape
 }) {
   useEffect(() => {
@@ -34,7 +35,7 @@ export function useHotkeys({
         return;
       }
 
-      // Number keys 1 - 5 for primary desk navigation
+      // Number keys 1 - 6 for primary desk navigation
       if (key === '1') {
         e.preventDefault();
         setDeskView('citadel');
@@ -52,10 +53,16 @@ export function useHotkeys({
       }
       if (key === '4') {
         e.preventDefault();
-        setDeskView('menu');
+        if (onOpenFlora) onOpenFlora();
+        else setDeskView('flora');
         return;
       }
       if (key === '5') {
+        e.preventDefault();
+        setDeskView('menu');
+        return;
+      }
+      if (key === '6') {
         e.preventDefault();
         setDeskView('chronicle');
         return;
@@ -94,5 +101,5 @@ export function useHotkeys({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClaimAll, onPan, setDeskView, onToggleTech, onEscape]);
+  }, [onClaimAll, onPan, setDeskView, onToggleTech, onOpenFlora, onEscape]);
 }

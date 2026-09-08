@@ -177,6 +177,30 @@
     - **Runtime Reference Fix (`ParchmentCitadelMap.jsx`)**:
       - Restored missing `onTriggerVerdantBloom` prop in parameter destructuring of `ParchmentCitadelMap.jsx`, resolving runtime `ReferenceError: onTriggerVerdantBloom is not defined` WSOD on render.
 
+  - **UI/UX Cleanups, Resource HUD Relocation, Persistent Desktop HUD & Dock Flora Button**:
+    - **Speed Control Lock & Minimal Mobile Chronometer (`useGameState.js`, `RealmChronometerHUD.jsx`, `MobileFloatingHUD.jsx`)**:
+      - Locked game clock in `useGameState.js` to a constant, unalterable 1x baseline tick rate (eliminated speed acceleration handlers).
+      - Removed time-speed toggle button (`1x/2x/5x`) from `RealmChronometerHUD.jsx` and `MobileFloatingHUD.jsx`.
+      - Removed floating Flora button and resource pills cluster from top-left in `MobileFloatingHUD.jsx`, leaving only the minimal, elegant astronomical date/time chronometer and weather badge.
+    - **Citadel Cartography Status Badges Strip (`ParchmentCitadelMap.jsx`, `MobileFloatingHUD.jsx`)**:
+      - Removed "Surge Growth" / Bloom badge from Citadel map controls and mobile floating HUD.
+      - Removed "Troop Harvest" status badge and "Bramble Shield" indicator badge from Citadel map canvas.
+      - Cartography viewport and isometric SVG canvas reclaimed vertical screen real estate without blank padding.
+    - **Mobile Resource HUD Relocation (`MobileFloatingHUD.jsx`, `ResourceBar.jsx`, `App.jsx`, `BuildingInspector.jsx`)**:
+      - Anchored mobile `ResourceBar` directly above the collapsible bottom drawer/navigation bar.
+      - Dynamically responds to drawer state: docked at `bottom-[108px]` above collapsed peek drawer, transitions to `bottom-[calc(85vh+6px)]` when drawer is expanded, and sits pinned at `bottom-16` on other tabs.
+      - Formatted pills (Gold, Sustenance, Timber, Stone, Flora) into a sleek horizontal translucent ticker with compact values and touch-friendly padding.
+    - **Desktop Cartography Title Bar & Menu Elimination (`ParchmentHeader.jsx`)**:
+      - Completely removed banner header titled "THE LIVING CARTOGRAPHY: ROYAL CITADEL" on Citadel view, enabling cartography parchment area to expand upwards to fill cleared vertical space.
+      - Completely eliminated the "MENU" button on desktop.
+    - **Desktop Sovereign Command Dock Flora Tab (`SovereignCommandDock.jsx`, `useHotkeys.js`, `MobileFloraSheet.jsx`, `App.jsx`)**:
+      - Added dedicated Flora button with botanical leaf icon (`🌿`) immediately next to Tech Codex with hotkey `[4]`.
+      - Adjusted Deep Vault to `[5]` and Chronicle to `[6]`, with hotkey routing in `useHotkeys.js`.
+      - Enabled desktop modal view for `MobileFloraSheet.jsx` centered on desktop viewports.
+    - **Persistent Desktop Resource HUD (`ResourceBar.jsx`, `ResourcePill.jsx`, `MonarchHeader.jsx`)**:
+      - Mounted prominent, persistent `ResourceBar` centered horizontally in the gilded crown bar on desktop (`hidden md:flex`).
+      - Displayed all 5 primary resources (**Gold**, **Sustenance**, **Timber/Wood**, **Stone**, and **Flora**) with high-contrast diegetic icons, readable numerical values, storage caps, and production trend tooltips on hover.
+
 ## Active Focus & Next Steps
 - Continue strategic balancing across Water, Flame, and Stone unique elemental active sinks and decree expansions.
 - Explore procedural ambient audio additions (rain drops, howling wind, crackling embers).

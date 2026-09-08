@@ -116,7 +116,16 @@
   - [x] Dynamic rotated aqueduct connections and floating map control cluster (compass rose button ↺ / ↻, zoom in/out, recenter, 'R' key).
   - [x] Stripped redundant mobile hamburger button from `MobileFloatingHUD` for unobstructed edge-to-edge cartography.
   - [x] Fixed Tech Codex "Seal Decree with Royal Wax" action with direct `onResearchTech` wiring, heavy haptics, wax stamp animation, and red wax deficit indicators.
-  - [x] Restored `onTriggerVerdantBloom` prop in `ParchmentCitadelMap.jsx`, fixing white screen of death (WSOD).
+- [x] **UI/UX Cleanups, Resource HUD Relocation, Persistent Desktop HUD & Dock Flora Button**:
+  - [x] Locked game clock to a constant, unalterable 1x baseline tick rate in `useGameState.js`.
+  - [x] Removed time-speed toggle buttons (`1x/2x/5x`) from `RealmChronometerHUD.jsx` and `MobileFloatingHUD.jsx`.
+  - [x] Removed top mobile Flora button and resource pills cluster from `MobileFloatingHUD.jsx`, keeping minimal chronometer.
+  - [x] Stripped "Surge Growth", "Troop Harvest", and "Bramble Shield" status badges from Citadel cartography.
+  - [x] Relocated mobile Resource HUD cleanly docked right above the collapsible bottom drawer/navigation bar (`ResourceBar.jsx`, `App.jsx`).
+  - [x] Formatted mobile resource pills into a sleek horizontal translucent ticker with compact values and touch-friendly padding.
+  - [x] Removed desktop "The Living Cartography: Royal Citadel" title banner and eliminated the desktop Menu button (`ParchmentHeader.jsx`).
+  - [x] Added dedicated Flora button (`🌿`) with hotkey `[4]` to desktop `SovereignCommandDock.jsx` and updated hotkeys in `useHotkeys.js`.
+  - [x] Mounted prominent persistent Desktop Resource HUD in `MonarchHeader.jsx` displaying all 5 primary resources with hover tooltips.
 
 ## Planned / In Progress
 - [ ] Additional weather sound synthesizers (rain, thunder, blizzard noise nodes).

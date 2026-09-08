@@ -7,7 +7,9 @@ export function SovereignCommandDock({
   setDeskView,
   hasUnavengedFeuds = false,
   readyHarvestsCount = 0,
-  onOpenTech
+  onOpenTech,
+  onOpenFlora,
+  isFloraOpen = false
 }) {
   const tabs = [
     {
@@ -31,19 +33,30 @@ export function SovereignCommandDock({
       label: 'Tech Codex',
       icon: '📜',
       hotkey: '3',
-      action: onOpenTech
+      action: onOpenTech,
+      tooltip: 'Royal Codex & Decrees'
+    },
+    {
+      id: 'flora',
+      label: 'Flora',
+      icon: '🌿',
+      hotkey: '4',
+      action: onOpenFlora,
+      tooltip: 'Flora Elemental Management & Verdant Bloom'
     },
     {
       id: 'menu',
       label: 'Deep Vault',
       icon: '🪙',
-      hotkey: '4'
+      hotkey: '5',
+      tooltip: 'Deep Vault & Treasury'
     },
     {
       id: 'chronicle',
       label: 'Chronicle',
       icon: '📖',
-      hotkey: '5'
+      hotkey: '6',
+      tooltip: 'Historical Annals & Battle Tome'
     }
   ];
 
@@ -62,11 +75,14 @@ export function SovereignCommandDock({
   return (
     <nav className="hidden md:flex absolute bottom-3 left-1/2 -translate-x-1/2 z-40 items-center gap-1.5 bg-gradient-to-t from-[#1e130c] via-[#2a1b12] to-[#3a2519] border-2 border-[#8c6843] rounded-2xl px-3 py-1.5 shadow-[0_10px_35px_rgba(0,0,0,0.85),inset_0_1px_8px_rgba(255,255,255,0.12)] backdrop-blur select-none">
       {tabs.map(tab => {
-        const isActive = deskView === tab.id;
+        const isActive = tab.id === 'flora'
+          ? (isFloraOpen || deskView === 'flora')
+          : (deskView === tab.id && !isFloraOpen);
         return (
           <button
             key={tab.id}
             onClick={() => handleTabClick(tab)}
+            title={tab.tooltip || tab.label}
             className={`relative px-3.5 py-1.5 rounded-xl transition flex items-center gap-2 group ${
               isActive
                 ? 'bg-gradient-to-b from-[#e4d4b3] to-[#cbb38b] text-[#3f2314] shadow-md font-black border border-[#8c6843] ring-2 ring-amber-600/60 scale-105'
