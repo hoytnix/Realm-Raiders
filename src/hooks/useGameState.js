@@ -756,6 +756,78 @@ export function useGameState() {
     return true;
   };
 
+  const handleBulkUpgradeBuildings = (buildingIds = [], currentFaction, onTriggerDecreeStamp) => {
+    if (!buildingIds || buildingIds.length === 0 || !currentFaction) return false;
+
+    const discount = currentFaction.id === 'humans' ? 0.5 : 1.0;
+    let totalGold = 0;
+    let totalWood = 0;
+    let totalStone = 0;
+
+    buildingIds.forEach(bId => {
+      const bDef = BUILDINGS[bId];
+      if (bDef) {
+        const currentLvl = gameState.buildings[bId] || 1;
+        totalGold += Math.round(bDef.baseCost.gold * Math.pow(bDef.costMult, currentLvl - 1) * discount);
+        totalWood += Math.round(bDef.baseCost.wood * Math.pow(bDef.costMult, currentLvl - 1) * discount);
+        totalStone += Math.round(bDef.baseCost.stone * Math.pow(bDef.costMult, currentLvl - 1) * discount);
+      }
+    });
+
+    if (
+      (gameState.resources.gold || 0) < totalGold ||
+      (gameState.resources.wood || 0) < totalWood ||
+      (gameState.resources.stone || 0) < totalStone
+    ) {
+      sounds.playFamineAlarm();
+      return false;
+    }
+
+    sounds.playWaxSealThud();
+    haptics.heavy();
+    if (onTriggerDecreeStamp) onTriggerDecreeStamp();
+
+    setTimeout(() => {
+      sounds.playUpgrade();
+    }, 350);
+
+    setGameState(prev => {
+      const nextBuildings = { ...prev.buildings };
+      let popGain = 0;
+      let garGain = 0;
+
+      buildingIds.forEach(bId => {
+        nextBuildings[bId] = (nextBuildings[bId] || 1) + 1;
+        popGain += (bId === 'granary' || bId === 'keep' || bId === 'farm' ? 3 : 1);
+        garGain += (bId === 'watchtower' || bId === 'keep' || bId === 'barracks' ? 2 : 0);
+      });
+
+      const bulkLog = {
+        id: `log-bulk-${Date.now()}`,
+        title: `Bulk Decree Sealed (${buildingIds.length} Structures)`,
+        text: `Monarch ratified bulk construction edict across ${buildingIds.length} citadel structures.`,
+        type: 'win',
+        timestamp: Date.now()
+      };
+
+      return {
+        ...prev,
+        resources: {
+          ...prev.resources,
+          gold: Math.max(0, prev.resources.gold - totalGold),
+          wood: Math.max(0, prev.resources.wood - totalWood),
+          stone: Math.max(0, prev.resources.stone - totalStone)
+        },
+        buildings: nextBuildings,
+        population: prev.population + popGain,
+        garrison: (prev.garrison || 0) + garGain,
+        battleLogs: [bulkLog, ...(prev.battleLogs || [])]
+      };
+    });
+
+    return true;
+  };
+
   const handleResetKingdom = () => {
     localStorage.removeItem(STORAGE_KEY);
     setGameState(DEFAULT_STATE);
@@ -780,6 +852,7 @@ export function useGameState() {
     handleHarvestBuilding,
     handleHarvestAll,
     handleIssueRoyalDecree,
+    handleBulkUpgradeBuildings,
     handleResearchTechnology,
     constructBuilding,
     expandTerritory,

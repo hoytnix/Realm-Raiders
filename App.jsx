@@ -18,7 +18,8 @@ import {
   useGameState,
   usePlayerStats,
   useDeskTilt,
-  useRaidBattle
+  useRaidBattle,
+  useHotkeys
 } from './src/hooks/index.js';
 
 import {
@@ -34,7 +35,8 @@ import {
 import {
   ThroneRoomBackground,
   DeskSurface,
-  ThroneArmrests
+  ThroneArmrests,
+  SovereignCommandDock
 } from './src/components/desk/index.js';
 
 import {
@@ -83,6 +85,12 @@ export default function App() {
   const [deskView, setDeskView] = useState('citadel');
   const [selectedBuildingId, setSelectedBuildingId] = useState('keep');
 
+  // Desktop UX & Diegetic Paraphernalia state
+  const [candlelitMode, setCandlelitMode] = useState(false);
+  const [isStampCursorEquipped, setIsStampCursorEquipped] = useState(false);
+  const [multiSelectedIds, setMultiSelectedIds] = useState([]);
+  const [activeLedgerTab, setActiveLedgerTab] = useState('structure');
+
   // Modular Custom Hooks
   const {
     gameState,
@@ -95,6 +103,7 @@ export default function App() {
     handleHarvestBuilding,
     handleHarvestAll,
     handleIssueRoyalDecree,
+    handleBulkUpgradeBuildings,
     handleResearchTechnology,
     constructBuilding,
     expandTerritory,
@@ -131,6 +140,28 @@ export default function App() {
     closeRaid
   } = useRaidBattle();
 
+  // Full Ergonomic Desktop Hotkeys Binding
+  useHotkeys({
+    onClaimAll: () => handleHarvestAll(stats.caps, currentFaction),
+    setDeskView: (view) => {
+      if (view === 'war') sounds.playDaggerThrust();
+      else sounds.playCoin();
+      setDeskView(view);
+    },
+    onToggleTech: () => {
+      sounds.playCoin();
+      setDeskView('citadel');
+      setActiveLedgerTab('decrees');
+    },
+    onEscape: () => {
+      if (multiSelectedIds.length > 0) {
+        setMultiSelectedIds([]);
+      } else if (activeRaid) {
+        closeRaid();
+      }
+    }
+  });
+
   // Building Upgrade with Diegetic Wax Stamp Trigger
   const onUpgradeBuilding = useCallback((bId, e) => {
     handleIssueRoyalDecree(bId, currentFaction, () => {
@@ -139,6 +170,16 @@ export default function App() {
       }
     });
   }, [handleIssueRoyalDecree, currentFaction, triggerWaxSplat]);
+
+  // Multi-Building Marquee Bulk Upgrade Decree
+  const onBulkUpgrade = useCallback((ids) => {
+    handleBulkUpgradeBuildings(ids, currentFaction, () => {
+      triggerWaxSplat(
+        typeof window !== 'undefined' ? window.innerWidth * 0.72 : 400,
+        typeof window !== 'undefined' ? window.innerHeight * 0.5 : 300
+      );
+    });
+  }, [handleBulkUpgradeBuildings, currentFaction, triggerWaxSplat]);
 
   // Technology Research Decree with Diegetic Wax Stamp Trigger
   const onResearchTechnology = useCallback((techId, e) => {
@@ -247,7 +288,7 @@ export default function App() {
     >
       {/* DIEGETIC WAX STAMP CURSOR */}
       <WaxStampCursor
-        isVisible={isHoveringUpgradeable}
+        isVisible={isHoveringUpgradeable || isStampCursorEquipped}
         cursorPos={cursorPos}
         stampingDecree={stampingDecree}
       />
@@ -260,6 +301,8 @@ export default function App() {
         tilt={tilt}
         isStarving={isStarving}
         currentFaction={currentFaction}
+        candlelitMode={candlelitMode}
+        onToggleCandlelight={() => setCandlelitMode(v => !v)}
       />
 
       {/* LAYER 2: DIEGETIC STATUS HUD (Floating Gilded Banner) */}
@@ -285,6 +328,8 @@ export default function App() {
         currentFaction={currentFaction}
         deskView={deskView}
         setDeskView={setDeskView}
+        onToggleStampCursor={() => setIsStampCursorEquipped(v => !v)}
+        isStampCursorEquipped={isStampCursorEquipped}
       >
         {deskView === 'citadel' && (
           <ParchmentCitadelMap
@@ -310,6 +355,13 @@ export default function App() {
             inkPulseTick={inkPulseTick}
             stampingDecree={stampingDecree}
             onHoverUpgrade={setIsHoveringUpgradeable}
+            multiSelectedIds={multiSelectedIds}
+            onMultiSelectBuildings={setMultiSelectedIds}
+            onClearMultiSelect={() => setMultiSelectedIds([])}
+            onBulkUpgrade={onBulkUpgrade}
+            activeLedgerTab={activeLedgerTab}
+            setActiveLedgerTab={setActiveLedgerTab}
+            battleLogs={gameState.battleLogs}
           />
         )}
 
@@ -351,7 +403,19 @@ export default function App() {
         setDeskView={setDeskView}
       />
 
-      {/* LAYER 5: ERGONOMIC THUMB-ZONE BOTTOM NAVIGATION (Mobile only) */}
+      {/* LAYER 5: SOVEREIGN COMMAND DOCK (Desktop Centered Floating Navigation) */}
+      <SovereignCommandDock
+        deskView={deskView}
+        setDeskView={setDeskView}
+        hasUnavengedFeuds={hasUnavengedFeuds}
+        readyHarvestsCount={readyHarvestsCount}
+        onOpenTech={() => {
+          setDeskView('citadel');
+          setActiveLedgerTab('decrees');
+        }}
+      />
+
+      {/* LAYER 6: ERGONOMIC THUMB-ZONE BOTTOM NAVIGATION (Mobile only) */}
       <MobileBottomNav
         deskView={deskView}
         setDeskView={setDeskView}

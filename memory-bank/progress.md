@@ -63,8 +63,21 @@
   - [x] Instant manual clicking and Claim All fallbacks retained.
   - [x] Inspector and War Council "Seal Logistics Decree" action buttons.
   - [x] "Automated by Garrison" diegetic status badges on harvesting structures.
+- [x] **Desktop-Centric Sovereign War Table & Ergonomics Overhaul**:
+  - [x] Dual-Pane Sovereign War Table layout (70% expansive CitadelSvgGrid, 30% full-height SovereignLedger folio).
+  - [x] Consolidated Gilded Crown HUD centered on desktop with weather forecast tooltip flyout and flanking resources.
+  - [x] Smooth mouse-wheel continuous zoom (0.6x to 2.5x) and middle/right-click drag panning.
+  - [x] Gold-leaf compass rose with "Snap to Royal Keep" recentering.
+  - [x] Sovereign Command Dock with ivory-and-brass tabs (Citadel [1], War Council [2], Tech Codex [3], Deep Vault [4], Chronicle [5]) with hotkey badges.
+  - [x] Rich desktop hover previews (`BuildingHoverTooltip`, `WeatherForecastTooltip`).
+  - [x] Full ergonomic hotkey system (Spacebar Claim All, W/A/S/D or Arrow keys pan, 1-5 navigation, T Tech, Esc dismiss).
+  - [x] Decoupled desktop building inspector into `SovereignLedger`.
+  - [x] Interactive diegetic desk paraphernalia (clickable wall sconces for candlelit night mode, clickable wax seal stamp cursor, clickable armrest ledger tome).
+  - [x] Multi-building marquee drag selection and bulk upgrade decrees (`handleBulkUpgradeBuildings`).
+  - [x] Panoramic 2-page illuminated war room modal spread (`ParchmentWarCouncil`).
 
 ## Planned / In Progress
 - [ ] Additional sound synthesizers (ambient wind, rain, blizzard noise nodes).
 - [ ] Expanded battle animations (projectile arcs and particle debris on the SVG canvas).
+
 

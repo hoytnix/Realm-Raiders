@@ -55,9 +55,20 @@
     - Implemented tick loop automation: when unlocked and troops >= 1, completed yields (`isReady === true`) from Farms, Mills, Quarries, Granaries, and Mints are automatically reaped into player storage caps, resetting timers and triggering diegetic coin chimes.
     - Manual clicking on buildings and "Claim All" retained as instant fallback.
     - Added "Seal Logistics Decree" controls in Royal Keep and War Council, plus "Automated by Garrison" status badges on harvesting structures in inspector and isometric grid.
+  - **Desktop-Centric Sovereign War Table & Ergonomics Overhaul**:
+    - **Dual-Pane Sovereign War Table Layout (`ParchmentCitadelMap.jsx`, `SovereignLedger.jsx`, `DeskSurface.jsx`)**: Transformed desktop viewports (16:9 and 21:9) into a 70/30 split war table. Left 70% features the expansive Living Parchment SVG grid, while the right 30% locks the illuminated `SovereignLedger` folio handling structure inspections, commissions, recruitment, annexation, and bulk decrees simultaneously.
+    - **Consolidated Gilded Crown HUD (`MonarchHeader.jsx`, `RealmChronometerHUD.jsx`, `WeatherForecastTooltip.jsx`)**: Unified top bar into a centered crown console on desktop. Left flank houses Gold/Food/Water and the Monarch Crest; center displays Astrological Chronometer with interactive meteorological hover flyout (`WeatherForecastTooltip`); right flank houses Wood/Stone/Flora, Crisis Alert, and procedural audio controls.
+    - **Smooth Mouse-Wheel Zoom & Canvas Drag-Panning (`CitadelSvgGrid.jsx`)**: Added cursor-centered continuous mouse wheel zoom (0.6x to 2.5x) and drag-panning via middle-click, right-click, or space-drag. Added gold-leaf compass rose with "Snap to Royal Keep" recentering.
+    - **Sovereign Command Dock (`SovereignCommandDock.jsx`, `App.jsx`)**: Floating lower desktop command dock with ivory-and-brass tabs (Citadel [1], War Council [2], Tech Codex [3], Deep Vault [4], Chronicle [5]) with hotkey badges and notification counters.
+    - **Rich Desktop Hover Previews (`BuildingHoverTooltip.jsx`, `CitadelSvgGrid.jsx`)**: Dynamic flyout previews hovering over structures showing hourly production rates, garrison auto-harvest status, and upgrade affordability.
+    - **Full Ergonomic Hotkey System (`useHotkeys.js`, `App.jsx`)**: Spacebar (Claim All harvests), W/A/S/D or Arrow keys (Map panning), 1-5 keys (Primary navigation), T (Tech Codex / Decrees), Esc (Deselect / dismiss).
+    - **Decoupled Building Inspector**: Seamlessly replaced mobile bottom sheet with the full-height `SovereignLedger` on desktop viewports.
+    - **Interactive Diegetic Desk Paraphernalia (`ThroneRoomBackground.jsx`, `DeskSurface.jsx`, `ThroneArmrests.jsx`)**: Clicking wall sconces toggles Day/Candlelit Night ambient lighting; clicking royal wax seal stamp equips the custom seal cursor; clicking the ledger tome on the throne armrest opens the chronicle tome.
+    - **Multi-Building Marquee Selection & Bulk Decrees (`CitadelSvgGrid.jsx`, `SovereignLedger.jsx`, `useGameState.js`)**: Left-click drag on ground draws dashed parchment marquee box selecting all enclosed buildings; `SovereignLedger` presents combined upgrade costs with a single "Upgrade All Highlighted" royal decree action.
+    - **Panoramic 2-Page War Room Spread (`ParchmentWarCouncil.jsx`)**: Two-page illuminated folio on desktop with target reconnaissance and blood feuds on the left page, and vanguard staging, tactical power comparisons, and raid launching on the right page.
 
 ## Active Focus & Next Steps
-- Push or link repository to Netlify for continuous static deployment.
-- Continue verifying balance tuning across the 4 asymmetric factions and seasonal shifts.
-- Explore procedural ambient audio additions (rain, wind, blizzard synthesizer nodes) within `SoundController`.
+- Validate Netlify deployment build pipeline.
+- Continue fine-tuning asymmetric balance across factions under multi-building bulk decree progressions.
+- Explore ambient weather synthesizer soundscapes (rain, wind howling, blizzard hums).
 

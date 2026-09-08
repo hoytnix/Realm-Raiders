@@ -1,6 +1,20 @@
 import React from 'react';
+import { sounds } from '../../constants/index.js';
+import { haptics } from '../../utils/index.js';
 
-export function ThroneRoomBackground({ tilt, isStarving, currentFaction }) {
+export function ThroneRoomBackground({
+  tilt,
+  isStarving,
+  currentFaction,
+  candlelitMode = false,
+  onToggleCandlelight
+}) {
+  const handleSconceClick = () => {
+    sounds.playCoin();
+    haptics.light();
+    onToggleCandlelight?.();
+  };
+
   return (
     <div
       className="absolute inset-0 pointer-events-none z-0 transition-transform duration-300 ease-out"
@@ -8,6 +22,11 @@ export function ThroneRoomBackground({ tilt, isStarving, currentFaction }) {
         transform: `translate(${tilt.x * -16}px, ${tilt.y * -10}px)`
       }}
     >
+      {/* Candlelit Night Mode Deep Ambient Tint */}
+      {candlelitMode && (
+        <div className="absolute inset-0 bg-gradient-to-b from-amber-950/70 via-stone-950/80 to-stone-950/90 pointer-events-none z-10 transition-opacity duration-700" />
+      )}
+
       {/* Stone Arch Silhouette */}
       <div className="absolute top-0 inset-x-0 h-48 bg-gradient-to-b from-stone-900 via-stone-950/80 to-transparent flex justify-center">
         <div className="w-[85%] h-28 border-b-4 border-stone-800/90 rounded-b-[140px] shadow-[inset_0_-20px_40px_rgba(0,0,0,0.8)] flex items-center justify-center relative">
@@ -23,22 +42,39 @@ export function ThroneRoomBackground({ tilt, isStarving, currentFaction }) {
         className={`absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[900px] pointer-events-none transition-colors duration-1000 ${
           isStarving
             ? 'bg-gradient-to-b from-red-600/25 via-rose-950/15 to-transparent'
+            : candlelitMode
+            ? 'bg-gradient-to-b from-amber-500/35 via-orange-950/20 to-transparent'
             : 'bg-gradient-to-b from-amber-400/20 via-yellow-600/10 to-transparent'
         }`}
         style={{ clipPath: 'polygon(35% 0%, 65% 0%, 100% 100%, 0% 100%)' }}
       />
 
-      {/* Flickering Sconces */}
-      <div className="absolute top-16 left-4 sm:left-12 flex flex-col items-center">
-        <div className="w-3.5 h-3.5 rounded-full bg-amber-400 animate-ping opacity-60 blur-xs" />
-        <div className="w-3 h-5 rounded-t-full bg-gradient-to-t from-amber-600 to-yellow-300 shadow-[0_0_25px_#f59e0b]" />
-        <div className="w-1.5 h-6 bg-stone-700 rounded-b" />
-      </div>
-      <div className="absolute top-16 right-4 sm:right-12 flex flex-col items-center">
-        <div className="w-3.5 h-3.5 rounded-full bg-amber-400 animate-ping opacity-60 blur-xs" />
-        <div className="w-3 h-5 rounded-t-full bg-gradient-to-t from-amber-600 to-yellow-300 shadow-[0_0_25px_#f59e0b]" />
-        <div className="w-1.5 h-6 bg-stone-700 rounded-b" />
-      </div>
+      {/* Flickering Interactive Wall Sconces */}
+      <button
+        onClick={handleSconceClick}
+        className="absolute top-16 left-4 sm:left-12 flex flex-col items-center pointer-events-auto cursor-pointer group p-1 transition hover:scale-110 active:scale-95"
+        title="Click Wall Sconce to Toggle Candlelit Night Mode"
+      >
+        <div className={`w-4 h-4 rounded-full bg-amber-400 animate-ping opacity-75 blur-xs ${candlelitMode ? 'scale-125' : ''}`} />
+        <div className="w-3.5 h-6 rounded-t-full bg-gradient-to-t from-amber-600 via-orange-500 to-yellow-200 shadow-[0_0_30px_#f59e0b] group-hover:brightness-125" />
+        <div className="w-1.5 h-6 bg-stone-700 rounded-b shadow" />
+        <span className="text-[8px] font-mono text-amber-400/70 opacity-0 group-hover:opacity-100 transition whitespace-nowrap -bottom-3 absolute">
+          {candlelitMode ? '🕯️ Candlelit' : '☀️ Day'}
+        </span>
+      </button>
+
+      <button
+        onClick={handleSconceClick}
+        className="absolute top-16 right-4 sm:right-12 flex flex-col items-center pointer-events-auto cursor-pointer group p-1 transition hover:scale-110 active:scale-95"
+        title="Click Wall Sconce to Toggle Candlelit Night Mode"
+      >
+        <div className={`w-4 h-4 rounded-full bg-amber-400 animate-ping opacity-75 blur-xs ${candlelitMode ? 'scale-125' : ''}`} />
+        <div className="w-3.5 h-6 rounded-t-full bg-gradient-to-t from-amber-600 via-orange-500 to-yellow-200 shadow-[0_0_30px_#f59e0b] group-hover:brightness-125" />
+        <div className="w-1.5 h-6 bg-stone-700 rounded-b shadow" />
+        <span className="text-[8px] font-mono text-amber-400/70 opacity-0 group-hover:opacity-100 transition whitespace-nowrap -bottom-3 absolute">
+          {candlelitMode ? '🕯️ Candlelit' : '☀️ Day'}
+        </span>
+      </button>
 
       {/* Heraldic Faction Banner */}
       {currentFaction && (
