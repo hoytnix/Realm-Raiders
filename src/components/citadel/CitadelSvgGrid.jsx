@@ -67,13 +67,6 @@ export function CitadelSvgGrid({
     harvestedThisGesture: new Set()
   });
 
-  const handleSnapToKeep = useCallback(() => {
-    haptics.light();
-    sounds.playCoin();
-    setScale(1);
-    setPan({ x: 0, y: 0 });
-  }, []);
-
   // Desktop Mouse Wheel Zoom Handler
   const handleWheel = useCallback((e) => {
     e.preventDefault();
@@ -324,22 +317,6 @@ export function CitadelSvgGrid({
           }}
         />
       )}
-
-      {/* Gilded Compass Rose & Snap to Royal Keep */}
-      <div className="absolute top-3 right-3 z-20 flex flex-col items-center gap-0.5">
-        <button
-          onClick={handleSnapToKeep}
-          className="group relative w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-tr from-[#3a2213] via-[#5c3a21] to-[#2b170c] border-2 border-amber-500/80 shadow-2xl flex items-center justify-center text-amber-200 hover:scale-105 active:scale-95 transition backdrop-blur"
-          title="Snap to Royal Keep (Recenter Citadel Map)"
-        >
-          <div className="absolute inset-0 rounded-full border border-amber-300/40 group-hover:animate-ping pointer-events-none opacity-30" />
-          <span className="text-base sm:text-xl group-hover:rotate-45 transition-transform duration-300">🧭</span>
-          <span className="absolute -top-1 font-mono text-[8px] font-black text-amber-400">N</span>
-        </button>
-        <span className="text-[8px] sm:text-[9px] font-mono font-bold text-[#442813] bg-[#ebdcc1]/90 px-1 py-0.2 rounded shadow border border-[#8c6843]/60 select-none">
-          Snap Keep
-        </span>
-      </div>
 
       {/* SVG Canvas with Pinch / Pan Transform */}
       <svg

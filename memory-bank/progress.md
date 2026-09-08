@@ -66,8 +66,7 @@
 - [x] **Desktop-Centric Sovereign War Table & Ergonomics Overhaul**:
   - [x] Dual-Pane Sovereign War Table layout (70% expansive CitadelSvgGrid, 30% full-height SovereignLedger folio).
   - [x] Consolidated Gilded Crown HUD centered on desktop with weather forecast tooltip flyout and flanking resources.
-  - [x] Smooth mouse-wheel continuous zoom (0.6x to 2.5x) and middle/right-click drag panning.
-  - [x] Gold-leaf compass rose with "Snap to Royal Keep" recentering.
+  - [x] Smooth mouse-wheel continuous zoom (0.6x to 2.5x) and middle/right-click drag panning with clean unobstructed viewport.
   - [x] Sovereign Command Dock with ivory-and-brass tabs (Citadel [1], War Council [2], Tech Codex [3], Deep Vault [4], Chronicle [5]) with hotkey badges.
   - [x] Rich desktop hover previews (`BuildingHoverTooltip`, `WeatherForecastTooltip`).
   - [x] Full ergonomic hotkey system (Spacebar Claim All, W/A/S/D or Arrow keys pan, 1-5 navigation, T Tech, Esc dismiss).
