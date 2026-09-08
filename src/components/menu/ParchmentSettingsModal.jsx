@@ -80,7 +80,7 @@ export function ParchmentSettingsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/75 backdrop-blur-sm animate-in fade-in select-none">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 bg-black/75 backdrop-blur-sm animate-in fade-in select-none">
       <div className="relative w-full max-w-lg bg-[#f4ecd8] border-4 border-[#8c6843] rounded-3xl shadow-2xl p-4 sm:p-6 text-stone-900 font-serif max-h-[90vh] overflow-y-auto">
         {/* Ornate Header */}
         <div className="flex items-center justify-between border-b-2 border-[#bfa379]/80 pb-3 mb-4">

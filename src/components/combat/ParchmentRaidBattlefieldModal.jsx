@@ -30,7 +30,7 @@ export function ParchmentRaidBattlefieldModal({ raid, onStrike, onDoubleLoot, on
   };
 
   return (
-    <div className="fixed inset-0 bg-stone-950/95 backdrop-blur-md z-50 flex items-center justify-center p-0 sm:p-3">
+    <div className="fixed inset-0 bg-stone-950/95 backdrop-blur-md z-[60] flex items-center justify-center p-0 sm:p-3">
       <div className="bg-[#ebdcc1] border-0 sm:border-4 border-[#8c6843] rounded-none sm:rounded-3xl max-w-2xl w-full h-full sm:h-auto p-4 sm:p-5 shadow-2xl flex flex-col justify-between space-y-3 text-stone-900 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] overflow-y-auto">
         {/* Sticky Header with Ammo & Return */}
         <div className="flex items-center justify-between border-b-2 border-[#bfa379] pb-2">

@@ -145,6 +145,9 @@
   - [x] Expanded Chronicle Tome (`ParchmentChronicleTome.jsx`) to 100% full height of the war table container (`h-full min-h-0 flex-1 flex flex-col w-full`, removed `max-h-72/80`).
   - [x] Stripped topnav header bars across all War Map tabs (`ParchmentHeader.jsx`, `DeskSurface.jsx`, `ParchmentChronicleTome.jsx`, `ParchmentMenuView.jsx`) for edge-to-edge layout.
   - [x] Removed redundant "Tech Codex" tab from desktop command dock (`SovereignCommandDock.jsx`), rebalancing tabs 1-5 (Citadel, War, Flora, Chronicle, Deep Vault) with hotkeys and routing T/C directly to Citadel Sovereign Ledger decrees tab.
+  - [x] **Mobile Persistent Bottom Navbar Across Full-Height Flora & Codex Folios**:
+  - [x] Elevated `MobileBottomNav` to `z-50` and reordered it after full-height folios in `App.jsx`, keeping the bottom navbar permanently visible and accessible.
+  - [x] Wired seamless mutual tab switching (`onCloseCodex`, `onCloseFlora`) across all 6 tabs and elevated takeover modals to `z-[60]`.
   - [x] Validated via `pnpm run lint` and `pnpm run build` with zero errors.
 
 ## Planned / In Progress

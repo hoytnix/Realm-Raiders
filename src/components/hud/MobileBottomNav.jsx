@@ -11,8 +11,10 @@ export function MobileBottomNav({
   selectedBuildingName = '',
   isCodexOpen = false,
   onOpenCodex,
+  onCloseCodex,
   isFloraOpen = false,
   onOpenFlora,
+  onCloseFlora,
   isResearching = false,
   canResearchAny = false,
   resources = {},
@@ -24,6 +26,8 @@ export function MobileBottomNav({
   const handleNav = (view) => {
     triggerHaptic('selection');
     haptics.light();
+    onCloseCodex?.();
+    onCloseFlora?.();
     if (view === 'war' || view === 'combat') {
       sounds.playDaggerThrust();
       setDeskView('war');
@@ -40,6 +44,7 @@ export function MobileBottomNav({
     triggerHaptic('selection');
     haptics.light();
     sounds.playCoin();
+    onCloseCodex?.();
     if (onOpenFlora) {
       onOpenFlora();
     } else {
@@ -51,6 +56,7 @@ export function MobileBottomNav({
     triggerHaptic('selection');
     haptics.light();
     sounds.playCoin();
+    onCloseFlora?.();
     onOpenCodex?.();
   };
 
@@ -59,14 +65,15 @@ export function MobileBottomNav({
   const maxFlora = stats?.caps?.flora || 1000;
   const isFloraNearCapacity = (currentFlora / maxFlora >= 0.75) || currentFlora >= 75;
 
-  const isCitadelActive = deskView === 'citadel' && !isCodexOpen && !isFloraOpen;
-  const isWarActive = (deskView === 'war' || deskView === 'combat') && !isCodexOpen && !isFloraOpen;
-  const isFloraActive = isFloraOpen || deskView === 'flora';
-  const isChronicleActive = deskView === 'chronicle' && !isCodexOpen && !isFloraOpen;
-  const isVaultActive = (deskView === 'menu' || deskView === 'vault') && !isCodexOpen && !isFloraOpen;
+  const isCodexActive = isCodexOpen;
+  const isFloraActive = !isCodexOpen && (isFloraOpen || deskView === 'flora');
+  const isCitadelActive = !isCodexOpen && !isFloraActive && deskView === 'citadel';
+  const isWarActive = !isCodexOpen && !isFloraActive && (deskView === 'war' || deskView === 'combat');
+  const isChronicleActive = !isCodexOpen && !isFloraActive && deskView === 'chronicle';
+  const isVaultActive = !isCodexOpen && !isFloraActive && (deskView === 'menu' || deskView === 'vault');
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#1c120c]/95 border-t-2 border-amber-700/80 backdrop-blur-md px-1 pt-1 pb-[calc(0.4rem+env(safe-area-inset-bottom,0px))] flex items-center justify-between shadow-[0_-8px_30px_rgba(0,0,0,0.9)] select-none">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#1c120c]/95 border-t-2 border-amber-700/80 backdrop-blur-md px-1 pt-1 pb-[calc(0.4rem+env(safe-area-inset-bottom,0px))] flex items-center justify-between shadow-[0_-8px_30px_rgba(0,0,0,0.9)] select-none">
       {/* Tab 1: Citadel Map */}
       <button
         onClick={() => handleNav('citadel')}
@@ -142,7 +149,7 @@ export function MobileBottomNav({
       <button
         onClick={handleOpenCodex}
         className={`flex-1 py-1 flex flex-col items-center justify-center min-h-[44px] min-w-0 rounded-xl transition relative ${
-          isCodexOpen
+          isCodexActive
             ? 'text-amber-300 font-bold bg-amber-950/40 border border-amber-700/40 shadow-inner'
             : 'text-amber-200/60 hover:text-amber-200'
         }`}

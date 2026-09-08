@@ -13,7 +13,7 @@ export function RewardedAdGateModal({ countdown, targetRival, onComplete, onDevS
   };
 
   return (
-    <div className="fixed inset-0 bg-stone-950/95 backdrop-blur-md z-50 flex items-center justify-center p-0 sm:p-4">
+    <div className="fixed inset-0 bg-stone-950/95 backdrop-blur-md z-[60] flex items-center justify-center p-0 sm:p-4">
       {/* Full-screen sliding parchment folio on mobile, rounded card on desktop */}
       <div className="bg-[#241812] border-0 sm:border-4 border-amber-700/80 rounded-none sm:rounded-3xl max-w-md w-full h-full sm:h-auto p-5 sm:p-6 shadow-2xl text-center flex flex-col justify-between text-amber-100 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] overflow-y-auto">
         {/* Top Header Bar with Oversized Close/Skip */}

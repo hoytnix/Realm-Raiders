@@ -239,6 +239,19 @@
     - **Verification**:
       - `pnpm run lint` and `pnpm run build` passing with zero errors.
 
+  - **Mobile Persistent Bottom Navbar Across Full-Height Flora & Codex Folios**:
+    - **Permanent Bottom Docking & Stacking Context (`MobileBottomNav.jsx`, `App.jsx`)**:
+      - Elevated `MobileBottomNav` to `z-50` (above the full-height `z-40` sheets `MobileFloraSheet` and `MobileTechCodexModal`), ensuring the thumb-zone bottom navigation bar is permanently docked and visible at the bottom of the viewport at all times on mobile.
+      - In `App.jsx`, rendered `MobileBottomNav` after `MobileFloraSheet` and `MobileTechCodexModal` in DOM order to guarantee stacking hierarchy.
+      - Increased full-screen takeover modals (`RewardedAdGateModal`, `ParchmentRaidBattlefieldModal`, `ParchmentSettingsModal`) to `z-[60]` so ads, raids, and settings cover the screen completely when triggered.
+    - **Seamless Mutual Tab Switching (`MobileBottomNav.jsx`, `App.jsx`)**:
+      - Wired `onCloseCodex` and `onCloseFlora` handlers into `MobileBottomNav`.
+      - Tapping any destination tab (Citadel, War, Chronicle, Vault) automatically closes open Codex or Flora folios and routes to the selected tab.
+      - Tapping Flora while in Codex closes Codex and opens Flora; tapping Codex while in Flora closes Flora and opens Codex.
+      - Established mutually exclusive active tab highlights so the active tab glows distinctly without overlap.
+    - **Verification**:
+      - `pnpm run lint` and `pnpm run build` passing with zero errors.
+
 ## Active Focus & Next Steps
 - Continue strategic balancing across Water, Flame, and Stone unique elemental active sinks and decree expansions.
 - Explore procedural ambient audio additions (rain drops, howling wind, crackling embers).

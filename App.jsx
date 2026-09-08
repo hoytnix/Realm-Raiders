@@ -559,27 +559,6 @@ export default function App() {
         isFloraOpen={deskView === 'flora'}
       />
 
-      {/* LAYER 6: ERGONOMIC THUMB-ZONE BOTTOM NAVIGATION (Mobile only) */}
-      <MobileBottomNav
-        deskView={deskView}
-        setDeskView={setDeskView}
-        hasUnavengedFeuds={hasUnavengedFeuds}
-        readyHarvestsCount={readyHarvestsCount}
-        canUpgradeSelected={canUpgradeSelected}
-        selectedBuildingName={selectedDef.name}
-        isCodexOpen={isTechCodexOpen}
-        onOpenCodex={() => setIsTechCodexOpen(true)}
-        isFloraOpen={isFloraSheetOpen || deskView === 'flora'}
-        onOpenFlora={() => setIsFloraSheetOpen(true)}
-        isResearching={isResearching}
-        canResearchAny={canResearchAny}
-        resources={gameState.resources}
-        stats={stats}
-        onHarvestAll={() => handleHarvestAll(stats.caps, currentFaction)}
-        onUpgradeSelected={(e) => onUpgradeBuilding(selectedBuildingId, e)}
-        onTriggerStamp={(e) => triggerWaxSplat(e?.clientX || window.innerWidth / 2, e?.clientY || window.innerHeight / 2)}
-      />
-
       {/* REALM SETTINGS & AUDIO MODAL */}
       <ParchmentSettingsModal
         isOpen={isSettingsOpen}
@@ -627,6 +606,38 @@ export default function App() {
           }}
         />
       </div>
+
+      {/* LAYER 6: ERGONOMIC THUMB-ZONE BOTTOM NAVIGATION (Mobile only - Docked permanently at z-50) */}
+      <MobileBottomNav
+        deskView={deskView}
+        setDeskView={setDeskView}
+        hasUnavengedFeuds={hasUnavengedFeuds}
+        readyHarvestsCount={readyHarvestsCount}
+        canUpgradeSelected={canUpgradeSelected}
+        selectedBuildingName={selectedDef.name}
+        isCodexOpen={isTechCodexOpen}
+        onOpenCodex={() => {
+          setIsFloraSheetOpen(false);
+          setIsTechCodexOpen(true);
+        }}
+        onCloseCodex={() => setIsTechCodexOpen(false)}
+        isFloraOpen={isFloraSheetOpen || deskView === 'flora'}
+        onOpenFlora={() => {
+          setIsTechCodexOpen(false);
+          setIsFloraSheetOpen(true);
+        }}
+        onCloseFlora={() => {
+          setIsFloraSheetOpen(false);
+          if (deskView === 'flora') setDeskView('citadel');
+        }}
+        isResearching={isResearching}
+        canResearchAny={canResearchAny}
+        resources={gameState.resources}
+        stats={stats}
+        onHarvestAll={() => handleHarvestAll(stats.caps, currentFaction)}
+        onUpgradeSelected={(e) => onUpgradeBuilding(selectedBuildingId, e)}
+        onTriggerStamp={(e) => triggerWaxSplat(e?.clientX || window.innerWidth / 2, e?.clientY || window.innerHeight / 2)}
+      />
 
       {/* REWARDED VIDEO AD GATE SIMULATOR */}
       {adModalOpen && (
