@@ -4,6 +4,7 @@
 - `App.jsx` contains the full monolithic implementation of the Realm Raiders frontend application, including Web Audio synthesis, isometric cartography, time/weather engines, building upgrades, war council, and catapult siege minigame.
 - Project architectural mandate defined in `GEMINI.md`.
 - Memory Bank initialized with all 6 core files.
+- Epic `README.md` authored, fully documenting game vision, asymmetric factions, astrological simulation, 2.5D isometric math, audio synthesis, citadel structures, catapult sieges, and persistence.
 
 ## Active Focus & Next Steps
 - Verify application readiness for modular refactoring or feature enhancements.

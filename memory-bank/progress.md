@@ -12,6 +12,7 @@
 - [x] Kingdom Chronicles Tome archiving siege breaches and defenses.
 - [x] LocalStorage persistence (`realmraid_parchment_v1`) with deterministic offline catchup calculation.
 - [x] Architectural Mandate (`GEMINI.md`) and 6-file Memory Bank initialized.
+- [x] Epic `README.md` authored with exhaustive diegetic documentation, architecture diagrams, and system specs.
 
 ## Planned / In Progress
 - [ ] Potential modularization of sub-views and audio controllers into separate clean modules while preserving single-file build compatibility.
