@@ -85,6 +85,27 @@
         "src/components/combat/ParchmentWarCouncil.jsx",
         "src/hooks/useHotkeys.js"
       ]
+    },
+    {
+      "id": "011_fix_yield_claiming_and_spacebar",
+      "file": "011_fix_yield_claiming_and_spacebar.mjs",
+      "description": "Implements robust yield claiming actions, claim all batch handlers, and global spacebar event listeners for resource collection[cite: 4].",
+      "appliedAt": "2026-09-08T17:19:40.261Z",
+      "sha256": "508f3cb9702456106e6fc0c36ddee6b5cc181028dfd51a0fadbfaa6fe2ad859e",
+      "modifiedFiles": [
+        "src/hooks/useGameState.js",
+        "src/hooks/useHotkeys.js"
+      ]
+    },
+    {
+      "id": "012_fix_yield_claiming_actions",
+      "file": "012_wire_yield_claiming_ui_and_hotkeys.mjs",
+      "description": "Defines claimYield and claimAll actions at the top of useGameState scope, exposing them safely to prevent undefined reference errors.",
+      "appliedAt": "2026-09-08T17:23:34.078Z",
+      "sha256": "f1c31260528e81e73d61b6938a6332b08132ebab09ebdf11b93245d0c0a52bf0",
+      "modifiedFiles": [
+        "src/hooks/useGameState.js"
+      ]
     }
   ]
 }
