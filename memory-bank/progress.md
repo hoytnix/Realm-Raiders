@@ -107,6 +107,15 @@
   - [x] Deep Vault Alchemical Press & Crucible Transmutation (100 Flora + 50 Food -> 50 Stone; 100 Flora + 25 Food -> 40 Gold).
   - [x] Flora-Exclusive Tech Codex Decrees (Bramble Bastion, Rapid Sprout, Canopy Granary) with Keep tier and Flora cost requirements.
   - [x] Diegetic UI/UX Surfacing (Interactive Monarch Crest flyout, Mobile Floating HUD affinity sheet, Citadel floating controls).
+- [x] **Mobile Navigation Reordering, 4-Way Grid Rotation & Tech Codex Royal Seal Fix**:
+  - [x] Mobile bottom nav reordering with dedicated Flora tab immediately following War: Citadel -> War -> Flora -> Codex -> Chronicle -> Vault.
+  - [x] Dedicated Flora tab with botanical leaf SVG glyph, illuminated green pulse dot at >= 75% capacity, and `triggerHaptic('selection')`.
+  - [x] Dedicated `MobileFloraSheet` bottom sheet modal for mobile elemental management.
+  - [x] 4-Way Kingdom Grid Rotation (0°, 90°, 180°, 270°) with mathematical coordinate transformation matrix `rotateGridCoords(r, c, angle, N)`.
+  - [x] Dynamic Painter's Algorithm depth sorting (`r' + c'`, tie-break `r'`) for ground tiles and buildings at all 4 angles.
+  - [x] Dynamic rotated aqueduct connections and floating map control cluster (compass rose button ↺ / ↻, zoom in/out, recenter, 'R' key).
+  - [x] Stripped redundant mobile hamburger button from `MobileFloatingHUD` for unobstructed edge-to-edge cartography.
+  - [x] Fixed Tech Codex "Seal Decree with Royal Wax" action with direct `onResearchTech` wiring, heavy haptics, wax stamp animation, and red wax deficit indicators.
 
 ## Planned / In Progress
 - [ ] Additional weather sound synthesizers (rain, thunder, blizzard noise nodes).

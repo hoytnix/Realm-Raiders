@@ -10,7 +10,7 @@ import {
   getBuildingUpgradeCost,
   sounds
 } from '../../constants/index.js';
-import { haptics } from '../../utils/index.js';
+import { haptics, triggerHaptic } from '../../utils/index.js';
 
 export function SovereignLedger({
   selectedBuildingId = 'keep',
@@ -644,7 +644,14 @@ export function SovereignLedger({
                         </div>
                       </div>
                       <button
-                        onClick={() => onResearchTechnology && onResearchTechnology(tech.id)}
+                        onClick={() => {
+                          if (canAfford && onResearchTechnology) {
+                            triggerHaptic('heavy');
+                            haptics.heavy();
+                            sounds.playWaxSealThud();
+                            onResearchTechnology(tech.id);
+                          }
+                        }}
                         disabled={!canAfford}
                         className={`w-full py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 shadow ${
                           canAfford

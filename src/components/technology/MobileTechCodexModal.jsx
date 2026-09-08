@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { TECHNOLOGIES, TECH_CATEGORIES, sounds } from '../../constants/index.js';
-import { haptics } from '../../utils/index.js';
+import { haptics, triggerHaptic } from '../../utils/index.js';
 
 export function MobileTechCodexModal({
   isOpen,
@@ -9,6 +9,7 @@ export function MobileTechCodexModal({
   unlockedTech = [],
   currentResearch = null,
   researchProgress = 0,
+  onResearchTech,
   onResearchTechnology,
   researchTech,
   resources = {},
@@ -17,11 +18,12 @@ export function MobileTechCodexModal({
   currentFaction = null
 }) {
   const [activeCategory, setActiveCategory] = useState('all');
+  const [stampingTechId, setStampingTechId] = useState(null);
 
   if (!isOpen) return null;
 
   const activeTechs = unlockedTech.length > 0 ? unlockedTech : technologies;
-  const triggerResearch = researchTech || onResearchTechnology;
+  const executeResearch = onResearchTech || researchTech || onResearchTechnology;
 
   // Resolve current Keep level from grid or buildings
   const keepPlot = grid && Array.isArray(grid)
@@ -42,6 +44,21 @@ export function MobileTechCodexModal({
     haptics.light();
     sounds.playCoin();
     onClose();
+  };
+
+  const handleSealDecree = (techId, e) => {
+    triggerHaptic('heavy');
+    haptics.heavy();
+    sounds.playWaxSealThud();
+    setStampingTechId(techId);
+    setTimeout(() => {
+      setStampingTechId(null);
+    }, 750);
+    if (onResearchTech) {
+      onResearchTech(techId);
+    } else if (executeResearch) {
+      executeResearch(techId, e);
+    }
   };
 
   const allTechList = Object.values(TECHNOLOGIES);
@@ -118,6 +135,7 @@ export function MobileTechCodexModal({
             const isResearched = activeTechs.includes(tech.id);
             const isResearchingThis = currentResearch?.techId === tech.id;
             const isResearchingOther = currentResearch && currentResearch.techId !== tech.id;
+            const isStamping = stampingTechId === tech.id;
 
             const reqKeep = tech.requirements?.keepTier || 1;
             const meetsKeep = currentKeepTier >= reqKeep;
@@ -135,16 +153,35 @@ export function MobileTechCodexModal({
             const hasFlora = (resources.flora || 0) >= costFlora;
             const canAfford = hasGold && hasFood && hasWood && hasStone && hasFlora;
 
+            // Deficits string for clear red wax seal badge if unaffordable
+            const deficits = [];
+            if (!hasGold && costGold > 0) deficits.push(`🪙 -${costGold - (resources.gold || 0)}`);
+            if (!hasFood && costFood > 0) deficits.push(`🌾 -${costFood - (resources.food || 0)}`);
+            if (!hasWood && costWood > 0) deficits.push(`🪵 -${costWood - (resources.wood || 0)}`);
+            if (!hasStone && costStone > 0) deficits.push(`🪨 -${costStone - (resources.stone || 0)}`);
+            if (!hasFlora && costFlora > 0) deficits.push(`🌿 -${costFlora - (resources.flora || 0)}`);
+            const deficitStr = deficits.join(', ');
+
             const remainingSec = isResearchingThis ? Math.ceil(currentResearch.remaining || 0) : 0;
             const progressPct = isResearchingThis
-              ? Math.min(100, Math.max(5, Math.round((1 - (remainingSec / (currentResearch.duration || 1))) * 100)))
+              ? Math.min(100, Math.max(8, Math.round((1 - (remainingSec / (currentResearch.duration || 1))) * 100)))
               : 0;
 
             return (
               <div
                 key={tech.id}
-                className="bg-gradient-to-br from-[#ebdcc1] via-[#e8d7b8] to-[#dfcba6] border-2 border-[#8c6843] rounded-2xl p-3.5 shadow-[inset_0_1px_2px_rgba(255,255,255,0.4),0_4px_12px_rgba(0,0,0,0.12)] space-y-2.5 relative"
+                className="bg-gradient-to-br from-[#ebdcc1] via-[#e8d7b8] to-[#dfcba6] border-2 border-[#8c6843] rounded-2xl p-3.5 shadow-[inset_0_1px_2px_rgba(255,255,255,0.4),0_4px_12px_rgba(0,0,0,0.12)] space-y-2.5 relative overflow-hidden"
               >
+                {/* Ephemeral Wax Stamp Impression Overlay */}
+                {isStamping && (
+                  <div className="absolute inset-0 z-20 bg-red-950/20 backdrop-blur-[1px] rounded-2xl flex items-center justify-center pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+                    <div className="px-4 py-2 rounded-2xl bg-gradient-to-tr from-red-900 via-rose-700 to-red-600 border-2 border-amber-300 text-amber-100 font-black shadow-2xl flex items-center gap-2 transform scale-105 animate-bounce">
+                      <span className="text-2xl">🩸</span>
+                      <span className="text-xs uppercase tracking-wider font-mono">SEALING DECREE...</span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Card Title & Icon Header */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2.5">
@@ -223,21 +260,21 @@ export function MobileTechCodexModal({
                 {/* Status States */}
                 <div>
                   {isResearched ? (
-                    // Status 1: Researched (Green Wax Seal Stamp)
-                    <div className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-900/15 via-green-800/20 to-emerald-900/15 border-2 border-emerald-700/60 flex items-center justify-center gap-2 text-xs font-mono font-black text-emerald-900 shadow-inner">
+                    // Status 1: Researched / Enacted (Green Wax Seal Stamp)
+                    <div className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-900/20 via-green-800/25 to-emerald-900/20 border-2 border-emerald-600 flex items-center justify-center gap-2 text-xs font-mono font-black text-emerald-900 shadow-inner">
                       <span className="text-base">🛡️</span>
-                      <span>DECREE RATIFIED & ACTIVE</span>
-                      <span className="text-emerald-700 text-sm">✓</span>
+                      <span>ENACTED & ACTIVE</span>
+                      <span className="text-emerald-700 text-sm font-black">✓</span>
                     </div>
-                  ) : isResearchingThis ? (
+                  ) : isResearchingThis || isStamping ? (
                     // Status 2: Researching... (Active progress bar with remaining seconds)
                     <div className="space-y-1.5 pt-1">
                       <div className="flex items-center justify-between text-[11px] font-mono font-bold text-amber-950">
                         <span className="flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full bg-amber-600 animate-ping" />
-                          Scholars Inscribing Codex...
+                          Inscribing Decree...
                         </span>
-                        <span>{remainingSec}s remaining</span>
+                        <span>{remainingSec > 0 ? `${remainingSec}s remaining` : 'Ratifying...'}</span>
                       </div>
                       <div className="w-full bg-stone-900/20 rounded-full h-3.5 overflow-hidden border border-[#8c6843]/60 p-0.5 shadow-inner">
                         <div
@@ -247,33 +284,45 @@ export function MobileTechCodexModal({
                       </div>
                     </div>
                   ) : (
-                    // Status 3: Seal Decree CTA Button
-                    <button
-                      onClick={(e) => {
-                        if (canAfford && meetsKeep && !isResearchingOther) {
-                          triggerResearch?.(tech.id, e);
-                        }
-                      }}
-                      disabled={!canAfford || !meetsKeep || isResearchingOther}
-                      className={`w-full min-h-[44px] py-2.5 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 shadow ${
-                        isResearchingOther
-                          ? 'bg-stone-300/80 text-stone-600 border border-stone-400/60 cursor-not-allowed'
-                          : canAfford && meetsKeep
-                          ? 'bg-gradient-to-r from-red-800 via-rose-800 to-red-700 text-amber-100 hover:brightness-110 active:scale-95 border-2 border-red-600 shadow-md cursor-pointer'
-                          : 'bg-stone-300/80 text-stone-600 border border-stone-400/60 cursor-not-allowed'
-                      }`}
-                    >
-                      <span className="text-base">🩸</span>
-                      <span>
-                        {isResearchingOther
-                          ? 'Scholars Busy Inscribing...'
-                          : !meetsKeep
-                          ? `Requires Keep Level ${reqKeep}`
-                          : !canAfford
-                          ? 'Insufficient Royal Resources'
-                          : 'Seal Decree with Royal Wax'}
-                      </span>
-                    </button>
+                    // Status 3: Decree Action Button or Deficit Warning
+                    <div>
+                      {isResearchingOther ? (
+                        <button
+                          disabled
+                          className="w-full min-h-[44px] py-2.5 rounded-xl text-xs font-black bg-stone-300/80 text-stone-600 border border-stone-400/60 cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                          <span>⏳ Scholars Busy Inscribing Another Decree...</span>
+                        </button>
+                      ) : !meetsKeep ? (
+                        <button
+                          disabled
+                          className="w-full min-h-[44px] py-2.5 rounded-xl text-xs font-black bg-stone-300/80 text-stone-600 border border-stone-400/60 cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                          <span>🏰 Requires Keep Level {reqKeep}</span>
+                        </button>
+                      ) : !canAfford ? (
+                        // Clear Red Wax Seal indicating deficit
+                        <button
+                          disabled
+                          className="w-full min-h-[44px] py-2.5 px-3 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-red-950/20 via-rose-950/30 to-red-950/20 border-2 border-red-700/80 text-red-900 flex items-center justify-center gap-2 cursor-not-allowed shadow-inner"
+                          title="Insufficient royal resources to enact decree"
+                        >
+                          <span className="text-base">🩸</span>
+                          <span className="font-sans font-black uppercase text-[11px] tracking-tight">
+                            Insufficient Resources: {deficitStr}
+                          </span>
+                        </button>
+                      ) : (
+                        // Affordable: Seal Decree with Royal Wax CTA
+                        <button
+                          onClick={(e) => handleSealDecree(tech.id, e)}
+                          className="w-full min-h-[44px] py-2.5 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 shadow bg-gradient-to-r from-red-800 via-rose-800 to-red-700 text-amber-100 hover:brightness-110 active:scale-95 border-2 border-red-600 shadow-md cursor-pointer"
+                        >
+                          <span className="text-base">🩸</span>
+                          <span>Seal Decree with Royal Wax</span>
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

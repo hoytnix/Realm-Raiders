@@ -43,5 +43,26 @@ export const haptics = {
         navigator.vibrate(50);
       } catch (_) {}
     }
+  },
+
+  /**
+   * Selection pulse (alias for light pulse)
+   */
+  selection: function() {
+    this.light();
   }
 };
+
+/**
+ * Universal haptic trigger helper
+ * @param {'selection' | 'light' | 'harvest' | 'heavy' | 'decree'} type
+ */
+export function triggerHaptic(type = 'selection') {
+  if (type === 'heavy' || type === 'decree') {
+    haptics.heavy();
+  } else if (type === 'harvest') {
+    haptics.harvest();
+  } else {
+    haptics.light();
+  }
+}

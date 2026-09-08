@@ -152,6 +152,29 @@
     - **Early-Game Access to Troop Auto-Collection (`technology.js`, `BuildingInspector.jsx`, `ParchmentWarCouncil.jsx`)**:
       - Reduced `tech_troop_logistics` requirements from Keep Tier 2 (150 Gold, 100 Sustenance) to Keep Tier 1, 40 Gold, 30 Sustenance, and 10s duration.
 
+  - **Mobile Navigation Reordering, 4-Way Grid Rotation & Tech Codex Royal Seal Fix**:
+    - **Mobile Bottom Navigation Reordering & Dedicated Flora Tab (`MobileBottomNav.jsx`, `App.jsx`, `MobileFloraSheet.jsx`)**:
+      - Placed the dedicated **Flora** tab immediately to the right of the **War** tab: `Citadel (citadel) -> War (combat) -> Flora (flora) -> Codex (tech) -> Chronicle (chronicle) -> Vault (vault)`.
+      - Styled the Flora tab with a botanical leaf / blooming vine SVG glyph and an illuminated green pulsing dot when Flora capacity >= 75% (signaling Verdant Bloom readiness).
+      - Wired tap interactions with `triggerHaptic('selection')`, coin audio, and opened the dedicated `MobileFloraSheet` bottom sheet modal for elemental controls, Verdant Bloom, and Bramble Shield.
+    - **4-Way Kingdom Grid Rotation & Dynamic Depth Sorting (`isometric.js`, `ParchmentCitadelMap.jsx`, `CitadelSvgGrid.jsx`)**:
+      - Added `rotationAngle` state (0°, 90°, 180°, 270°) and cycler `rotateKingdom()`.
+      - Implemented 4-way coordinate transformation matrix `rotateGridCoords(r, c, rotationAngle, N)`:
+        - 0°: `(r', c') = (r, c)`
+        - 90°: `(r', c') = (c, N - 1 - r)`
+        - 180°: `(r', c') = (N - 1 - r, N - 1 - c)`
+        - 270°: `(r', c') = (N - 1 - c, r)`
+      - Applied Painter's algorithm dynamic depth sorting: sort key `r' + c'` (tie-break `r'`) for ground tiles and annexed plots/buildings to guarantee background elements always render beneath foreground structures without visual clipping.
+      - Connected dynamic rotated coordinates to aqueduct lines (Keep, Well, Granary).
+      - Added floating map control cluster with circular compass rose button (↺ / ↻) with smooth needle animation, Zoom In (+), Zoom Out (−), and Recenter (🎯), plus 'R' keyboard shortcut.
+    - **Redundant Mobile Hamburger Removal (`MobileFloatingHUD.jsx`)**:
+      - Stripped the top-right hamburger menu button (`☰`) and its container, giving unobstructed edge-to-edge cartography real estate.
+    - **Tech Codex "Seal Decree with Royal Wax" Action Fix (`MobileTechCodexModal.jsx`, `SovereignLedger.jsx`, `App.jsx`)**:
+      - Wired `onResearchTech={researchTech}` directly from `App.jsx` to `MobileTechCodexModal`.
+      - Connected "Seal Decree with Royal Wax" `onClick` directly to `onResearchTech(tech.id)` with zero dependence on `selectedBuildingId`.
+      - Checked affordability directly against `gameState.resources` with a clear red wax seal badge showing specific resource deficits when unaffordable.
+      - Integrated `triggerHaptic('heavy')`, wax stamp impression card animation, and state transition to "Inscribing Decree..." (progress bar) and "Enacted" (green wax seal).
+
 ## Active Focus & Next Steps
 - Continue strategic balancing across Water, Flame, and Stone unique elemental active sinks and decree expansions.
 - Explore procedural ambient audio additions (rain drops, howling wind, crackling embers).

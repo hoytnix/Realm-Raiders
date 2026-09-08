@@ -47,7 +47,6 @@ export function MobileFloatingHUD({
   const shortMonth = rawMonthName.split(' ')[0].substring(0, 4); // "Harv"
   const yearDisplay = timeState?.year || 26;
   const eraDisplay = timeState?.era || 'ADX';
-  const isMenuOpen = deskView === 'menu';
   const isAutoCollecting = hasTroopLogistics && (troops?.total || 0) >= 1;
 
   const handleSpeedTap = (e) => {
@@ -56,19 +55,13 @@ export function MobileFloatingHUD({
     onToggleSpeed?.();
   };
 
-  const handleMenuTap = (e) => {
-    e.stopPropagation();
-    haptics.light();
-    onToggleMenu?.();
-  };
-
   return (
     <>
       {/* =========================================================================
           FLOATING TOP-LEFT CHRONOMETER & RESOURCE CLUSTER (< md only, Citadel page only)
           ========================================================================= */}
       {deskView === 'citadel' && (
-        <div className="fixed top-2.5 left-2.5 z-30 pointer-events-none md:hidden flex flex-col gap-1 max-w-[calc(100vw-68px)] animate-in fade-in duration-200">
+        <div className="fixed top-2.5 left-2.5 z-30 pointer-events-none md:hidden flex flex-col gap-1 max-w-[calc(100vw-20px)] animate-in fade-in duration-200">
           {/* Upper Row: Condensed Chronometer Badge */}
           <div className="pointer-events-auto flex items-center gap-1.5 bg-stone-950/85 backdrop-blur-md border border-amber-600/50 rounded-2xl px-2.5 py-1 text-amber-200 shadow-[0_4px_14px_rgba(0,0,0,0.7)] self-start">
             <span className="text-xs">{isNight ? '🌙' : '☀️'}</span>
@@ -344,42 +337,6 @@ export function MobileFloatingHUD({
           </div>
         </div>
       )}
-
-      {/* =========================================================================
-          FLOATING TOP-RIGHT HAMBURGER BUTTON (Icon-only diegetic seal trigger)
-          ========================================================================= */}
-      <button
-        onClick={handleMenuTap}
-        className={`fixed top-2.5 right-2.5 z-40 md:hidden w-11 h-11 rounded-2xl flex items-center justify-center border-2 shadow-[0_4px_14px_rgba(0,0,0,0.7)] transition-all active:scale-95 cursor-pointer ${
-          isMenuOpen
-            ? 'bg-gradient-to-br from-[#5c3e23] via-[#442813] to-[#2b180a] border-amber-500 ring-2 ring-amber-500/40 text-amber-200'
-            : 'bg-gradient-to-br from-[#ecdcb9] via-[#dfcba6] to-[#bfa379] border-[#6b4724] text-[#442813] hover:brightness-105'
-        }`}
-        title="Toggle Grand Realm Directory"
-        aria-label="Toggle Realm Menu"
-      >
-        <div className="flex flex-col justify-center items-center w-5 h-4 gap-1">
-          <span
-            className={`w-5 h-0.5 rounded-full transition-all duration-200 ${
-              isMenuOpen ? 'bg-amber-200 rotate-45 translate-y-1.5' : 'bg-[#442813]'
-            }`}
-          />
-          <span
-            className={`w-5 h-0.5 rounded-full transition-all duration-200 ${
-              isMenuOpen ? 'opacity-0' : 'bg-[#442813]'
-            }`}
-          />
-          <span
-            className={`w-5 h-0.5 rounded-full transition-all duration-200 ${
-              isMenuOpen ? 'bg-amber-200 -rotate-45 -translate-y-1.5' : 'bg-[#442813]'
-            }`}
-          />
-        </div>
-
-        {hasUnavengedFeuds && (
-          <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping absolute -top-0.5 -right-0.5 border border-[#ebdcc1]" />
-        )}
-      </button>
     </>
   );
 }

@@ -5,11 +5,13 @@ import {
   ISO_H,
   MAX_GRID_SIZE,
   gridToParchmentIso,
+  gridToIso,
+  rotateGridCoords,
   isPlotAnnexed,
   createDefaultGrid,
   sounds
 } from '../../constants/index.js';
-import { haptics } from '../../utils/index.js';
+import { haptics, triggerHaptic } from '../../utils/index.js';
 import { BuildingHoverTooltip } from './BuildingHoverTooltip.jsx';
 
 export function CitadelSvgGrid({
@@ -30,7 +32,9 @@ export function CitadelSvgGrid({
   onClearMultiSelect,
   resources = {},
   faction = null,
-  stats = {}
+  stats = {},
+  rotationAngle = 0,
+  rotateKingdom
 }) {
   const containerRef = useRef(null);
   // Pinch-to-zoom and pan state
@@ -81,6 +85,22 @@ export function CitadelSvgGrid({
     el.addEventListener('wheel', handleWheel, { passive: false });
     return () => el.removeEventListener('wheel', handleWheel);
   }, [handleWheel]);
+
+  // Keyboard shortcut 'R' to rotate kingdom 90 degrees
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        triggerHaptic('selection');
+        haptics.light();
+        sounds.playCoin();
+        rotateKingdom?.();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [rotateKingdom]);
 
   // Desktop Mouse Down: Pan (middle/right click or space+left) or Marquee Selection (left click on ground)
   const handleMouseDown = (e) => {
@@ -270,27 +290,55 @@ export function CitadelSvgGrid({
     setIsInteracting(false);
   };
 
-  // Find coordinates for aqueducts dynamically
+  // Find coordinates for aqueducts dynamically using 4-way rotated coordinates
   const keepPlot = activeGrid.find(p => p.buildingId === 'keep');
   const wellPlot = activeGrid.find(p => p.buildingId === 'well');
   const granaryPlot = activeGrid.find(p => p.buildingId === 'granary');
 
-  const keepIso = keepPlot ? gridToParchmentIso(keepPlot.gx, keepPlot.gy, 270, 48) : gridToParchmentIso(1, 1, 270, 48);
-  const wellIso = wellPlot ? gridToParchmentIso(wellPlot.gx, wellPlot.gy, 270, 48) : gridToParchmentIso(2, 1, 270, 48);
-  const granaryIso = granaryPlot ? gridToParchmentIso(granaryPlot.gx, granaryPlot.gy, 270, 48) : gridToParchmentIso(0, 1, 270, 48);
+  const keepRot = keepPlot
+    ? rotateGridCoords(keepPlot.gx, keepPlot.gy, rotationAngle, MAX_GRID_SIZE)
+    : rotateGridCoords(1, 1, rotationAngle, MAX_GRID_SIZE);
+  const wellRot = wellPlot
+    ? rotateGridCoords(wellPlot.gx, wellPlot.gy, rotationAngle, MAX_GRID_SIZE)
+    : rotateGridCoords(2, 1, rotationAngle, MAX_GRID_SIZE);
+  const granaryRot = granaryPlot
+    ? rotateGridCoords(granaryPlot.gx, granaryPlot.gy, rotationAngle, MAX_GRID_SIZE)
+    : rotateGridCoords(0, 1, rotationAngle, MAX_GRID_SIZE);
 
-  // Coordinate arrays for all 6x6 grid positions
+  const keepIso = gridToIso(keepRot.gxPrime, keepRot.gyPrime, 270, 48);
+  const wellIso = gridToIso(wellRot.gxPrime, wellRot.gyPrime, 270, 48);
+  const granaryIso = gridToIso(granaryRot.gxPrime, granaryRot.gyPrime, 270, 48);
+
+  // Dynamic 4-Way Rotated Coordinates for all 6x6 grid positions
   const coords = [];
   for (let gx = 0; gx < MAX_GRID_SIZE; gx++) {
     for (let gy = 0; gy < MAX_GRID_SIZE; gy++) {
-      coords.push({ gx, gy });
+      const { gxPrime, gyPrime } = rotateGridCoords(gx, gy, rotationAngle, MAX_GRID_SIZE);
+      const { x, y } = gridToIso(gxPrime, gyPrime, 270, 48);
+      const isAnnexed = isPlotAnnexed(gx, gy, territoryTier);
+      const isRoad = isAnnexed && ((gx === 1 && gy <= 3) || (gy === 1 && gx <= 3));
+      coords.push({ gx, gy, gxPrime, gyPrime, x, y, isAnnexed, isRoad });
     }
   }
+  // Depth sort ground tiles (Painter's Algorithm): Sort key: r' + c' (tie-break with r')
+  coords.sort((a, b) => ((a.gxPrime + a.gyPrime) - (b.gxPrime + b.gyPrime)) || (a.gxPrime - b.gxPrime));
 
   // Sorted items within annexed territory (empty plots + constructed buildings)
+  // Dynamic 4-Way Rotation & Painter's Algorithm depth sorting: Sort key: r' + c' (tie-break with r')
   const annexedPlots = activeGrid
     .filter(p => isPlotAnnexed(p.gx, p.gy, territoryTier))
-    .sort((a, b) => (a.gx + a.gy) - (b.gx + b.gy));
+    .map(plot => {
+      const { gxPrime, gyPrime } = rotateGridCoords(plot.gx, plot.gy, rotationAngle, MAX_GRID_SIZE);
+      const { x, y } = gridToIso(gxPrime, gyPrime, 270, 48);
+      return {
+        ...plot,
+        gxPrime,
+        gyPrime,
+        x,
+        y
+      };
+    })
+    .sort((a, b) => ((a.gxPrime + a.gyPrime) - (b.gxPrime + b.gyPrime)) || (a.gxPrime - b.gxPrime));
 
   return (
     <div
@@ -343,11 +391,8 @@ export function CitadelSvgGrid({
         </defs>
 
         {/* Isometric Ground Grid Lines (Annexed Plots & Unpurchased Fog Borders) */}
-        {coords.map(({ gx, gy }) => {
-          const { x, y } = gridToParchmentIso(gx, gy, 270, 48);
-          const isAnnexed = isPlotAnnexed(gx, gy, territoryTier);
-          const isRoad = isAnnexed && ((gx === 1 && gy <= 3) || (gy === 1 && gx <= 3));
-
+        {coords.map(tile => {
+          const { x, y, gx, gy, isAnnexed, isRoad } = tile;
           return (
             <g key={`tile-${gx}-${gy}`}>
               <polygon
@@ -425,7 +470,7 @@ export function CitadelSvgGrid({
 
         {/* Render Annexed Citadel Plots: Empty Foundations and Constructed Structures */}
         {annexedPlots.map(plot => {
-          const { x, y } = gridToParchmentIso(plot.gx, plot.gy, 270, 48);
+          const { x, y } = plot;
 
           // CASE 1: EMPTY FOUNDATION PLOT
           if (!plot.buildingId) {
@@ -689,6 +734,76 @@ export function CitadelSvgGrid({
           mousePos={{ x: hoveredBuilding.x, y: hoveredBuilding.y }}
         />
       )}
+
+      {/* Floating Map Control Cluster: Circular Compass Rose 4-Way Rotation, Zoom In, Zoom Out, Recenter */}
+      <div className="absolute top-2.5 right-2.5 z-30 flex flex-col items-center gap-1.5 pointer-events-auto select-none">
+        {/* Circular Compass Rose Button (↺ / ↻) with Smooth Needle Animation */}
+        <button
+          onClick={() => {
+            triggerHaptic('selection');
+            haptics.light();
+            sounds.playCoin();
+            rotateKingdom?.();
+          }}
+          className="w-10 h-10 rounded-full bg-gradient-to-br from-[#f6ebd6] via-[#ebdcc1] to-[#dfcba6] border-2 border-[#8c6843] shadow-[0_4px_14px_rgba(0,0,0,0.55)] flex flex-col items-center justify-center text-[#442813] hover:brightness-110 active:scale-90 transition group cursor-pointer"
+          title={`Rotate Kingdom Grid 90° (${rotationAngle}°) [R]`}
+          aria-label="Rotate Citadel Grid"
+        >
+          <div
+            className="w-5 h-5 flex items-center justify-center transition-transform duration-500 ease-out"
+            style={{ transform: `rotate(${rotationAngle}deg)` }}
+          >
+            <span className="text-sm leading-none select-none">🧭</span>
+          </div>
+          <span className="text-[7.5px] font-mono font-black text-[#5c3e23] -mt-0.5 leading-none">
+            {rotationAngle === 0 ? '0°' : `${rotationAngle}°`}
+          </span>
+        </button>
+
+        {/* Zoom In Button */}
+        <button
+          onClick={() => {
+            triggerHaptic('selection');
+            haptics.light();
+            setScale(s => Math.min(2.5, +(s + 0.2).toFixed(2)));
+          }}
+          className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#ebdcc1] to-[#dfcba6] border border-[#8c6843] shadow-md flex items-center justify-center text-sm font-black text-[#442813] hover:brightness-105 active:scale-90 transition cursor-pointer"
+          title="Zoom In (+)"
+          aria-label="Zoom In"
+        >
+          +
+        </button>
+
+        {/* Zoom Out Button */}
+        <button
+          onClick={() => {
+            triggerHaptic('selection');
+            haptics.light();
+            setScale(s => Math.max(0.6, +(s - 0.2).toFixed(2)));
+          }}
+          className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#ebdcc1] to-[#dfcba6] border border-[#8c6843] shadow-md flex items-center justify-center text-sm font-black text-[#442813] hover:brightness-105 active:scale-90 transition cursor-pointer"
+          title="Zoom Out (−)"
+          aria-label="Zoom Out"
+        >
+          −
+        </button>
+
+        {/* Recenter Button */}
+        <button
+          onClick={() => {
+            triggerHaptic('selection');
+            haptics.light();
+            sounds.playCoin();
+            setScale(1);
+            setPan({ x: 0, y: 0 });
+          }}
+          className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#ebdcc1] to-[#dfcba6] border border-[#8c6843] shadow-md flex items-center justify-center text-xs text-[#442813] hover:brightness-105 active:scale-90 transition cursor-pointer"
+          title="Recenter Citadel View"
+          aria-label="Recenter"
+        >
+          🎯
+        </button>
+      </div>
     </div>
   );
 }

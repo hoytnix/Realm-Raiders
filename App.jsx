@@ -37,7 +37,8 @@ import {
 import {
   MonarchHeader,
   MobileBottomNav,
-  MobileFloatingHUD
+  MobileFloatingHUD,
+  MobileFloraSheet
 } from './src/components/hud/index.js';
 
 import {
@@ -103,6 +104,7 @@ export default function App() {
   const [activeLedgerTab, setActiveLedgerTab] = useState('structure');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isTechCodexOpen, setIsTechCodexOpen] = useState(false);
+  const [isFloraSheetOpen, setIsFloraSheetOpen] = useState(false);
 
   // Modular Custom Hooks
   const {
@@ -186,7 +188,9 @@ export default function App() {
       }
     },
     onEscape: () => {
-      if (isTechCodexOpen) {
+      if (isFloraSheetOpen) {
+        setIsFloraSheetOpen(false);
+      } else if (isTechCodexOpen) {
         setIsTechCodexOpen(false);
       } else if (multiSelectedIds.length > 0) {
         setMultiSelectedIds([]);
@@ -422,11 +426,8 @@ export default function App() {
         onToggleBrambleShield={toggleBrambleShield}
         onTriggerVerdantBloom={triggerVerdantBloom}
         onOpenTech={() => setIsTechCodexOpen(true)}
+        onOpenFlora={() => setIsFloraSheetOpen(true)}
         onToggleSpeed={handleToggleSpeed}
-        onToggleMenu={() => {
-          sounds.playWaxSealThud();
-          setDeskView(prev => (prev === 'menu' ? 'citadel' : 'menu'));
-        }}
         onRaidGrain={() => setDeskView('war')}
         onForage={forageEmergencyRations}
         canForage={canForage}
@@ -546,8 +547,12 @@ export default function App() {
         selectedBuildingName={selectedDef.name}
         isCodexOpen={isTechCodexOpen}
         onOpenCodex={() => setIsTechCodexOpen(true)}
+        isFloraOpen={isFloraSheetOpen || deskView === 'flora'}
+        onOpenFlora={() => setIsFloraSheetOpen(true)}
         isResearching={isResearching}
         canResearchAny={canResearchAny}
+        resources={gameState.resources}
+        stats={stats}
         onHarvestAll={() => handleHarvestAll(stats.caps, currentFaction)}
         onUpgradeSelected={(e) => onUpgradeBuilding(selectedBuildingId, e)}
         onTriggerStamp={(e) => triggerWaxSplat(e?.clientX || window.innerWidth / 2, e?.clientY || window.innerHeight / 2)}
@@ -570,12 +575,33 @@ export default function App() {
         unlockedTech={unlockedTech || gameState.technologies || []}
         currentResearch={currentResearch || gameState.currentResearch || null}
         researchProgress={researchProgress || 0}
+        onResearchTech={researchTech}
         onResearchTechnology={onResearchTechnology}
-        researchTech={researchTech || onResearchTechnology}
+        researchTech={researchTech}
         resources={gameState.resources}
         buildings={gameState.buildings}
         grid={gameState.grid}
         currentFaction={currentFaction}
+      />
+
+      {/* MOBILE FLORA ELEMENTAL MANAGEMENT SHEET */}
+      <MobileFloraSheet
+        isOpen={isFloraSheetOpen || deskView === 'flora'}
+        onClose={() => {
+          setIsFloraSheetOpen(false);
+          if (deskView === 'flora') setDeskView('citadel');
+        }}
+        stats={stats}
+        resources={gameState.resources}
+        timeState={timeState}
+        brambleShieldActive={brambleShieldActive}
+        onToggleBrambleShield={toggleBrambleShield}
+        onTriggerVerdantBloom={triggerVerdantBloom}
+        onTransmuteFlora={transmuteFlora}
+        onNavigate={(view) => {
+          setIsFloraSheetOpen(false);
+          setDeskView(view);
+        }}
       />
 
       {/* REWARDED VIDEO AD GATE SIMULATOR */}

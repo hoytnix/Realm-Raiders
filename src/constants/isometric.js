@@ -44,6 +44,38 @@ export function gridToParchmentIso(gx, gy, originX = 270, originY = 48) {
   };
 }
 
+export const gridToIso = gridToParchmentIso;
+
+/**
+ * 4-Way Kingdom Grid Coordinate Transformation
+ * Rotates grid coordinates (r, c) or (gx, gy) by 0°, 90°, 180°, or 270°.
+ *
+ * @param {number} r Row or gx coordinate
+ * @param {number} c Column or gy coordinate
+ * @param {number} rotationAngle 0, 90, 180, or 270 degrees
+ * @param {number} N Grid dimension size (defaults to MAX_GRID_SIZE = 6)
+ * @returns {{ rPrime: number, cPrime: number, gxPrime: number, gyPrime: number }}
+ */
+export function rotateGridCoords(r, c, rotationAngle = 0, N = MAX_GRID_SIZE) {
+  const normAngle = ((rotationAngle % 360) + 360) % 360;
+  if (normAngle === 90) {
+    const rPrime = c;
+    const cPrime = N - 1 - r;
+    return { rPrime, cPrime, gxPrime: rPrime, gyPrime: cPrime };
+  }
+  if (normAngle === 180) {
+    const rPrime = N - 1 - r;
+    const cPrime = N - 1 - c;
+    return { rPrime, cPrime, gxPrime: rPrime, gyPrime: cPrime };
+  }
+  if (normAngle === 270) {
+    const rPrime = N - 1 - c;
+    const cPrime = r;
+    return { rPrime, cPrime, gxPrime: rPrime, gyPrime: cPrime };
+  }
+  return { rPrime: r, cPrime: c, gxPrime: r, gyPrime: c };
+}
+
 export function isPlotAnnexed(gx, gy, tier = 1) {
   const tierConfig = TERRITORY_TIERS[tier] || TERRITORY_TIERS[1];
   return gx < tierConfig.size && gy < tierConfig.size;

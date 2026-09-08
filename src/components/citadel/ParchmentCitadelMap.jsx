@@ -35,10 +35,15 @@ export function ParchmentCitadelMap({
   setActiveLedgerTab,
   battleLogs = [],
   onTransmuteFlora,
-  onTriggerVerdantBloom,
   brambleShieldActive = false,
-  onToggleBrambleShield
+  onToggleBrambleShield,
+  rotationAngle: propRotationAngle,
+  rotateKingdom: propRotateKingdom
 }) {
+  const [localRotationAngle, setLocalRotationAngle] = React.useState(0);
+  const rotationAngle = propRotationAngle !== undefined ? propRotationAngle : localRotationAngle;
+  const rotateKingdom = propRotateKingdom || React.useCallback(() => setLocalRotationAngle(prev => (prev + 90) % 360), []);
+
   const selectedPlot = (grid || []).find(p => p.id === selectedBuildingId || p.buildingId === selectedBuildingId);
   const isEmptyPlot = selectedPlot ? !selectedPlot.buildingId : (selectedBuildingId?.startsWith('plot-') || false);
   const selectedDef = selectedPlot?.buildingId ? (BUILDINGS[selectedPlot.buildingId] || BUILDINGS.keep) : (isEmptyPlot ? EMPTY_PLOT : (BUILDINGS[selectedBuildingId] || BUILDINGS.keep));
@@ -169,6 +174,8 @@ export function ParchmentCitadelMap({
           resources={resources}
           faction={faction}
           stats={stats}
+          rotationAngle={rotationAngle}
+          rotateKingdom={rotateKingdom}
         />
 
         {/* Mobile-Only Collapsible Bottom Sheet */}
