@@ -140,6 +140,11 @@
   - [x] Implemented deterministic offline catchup for active construction projects.
   - [x] Enforced Deep Vault storage capacity gating before allowing construction/decree execution with diegetic alert.
   - [x] UI surfacing across `BuildingInspector`, `SovereignLedger`, and `CitadelSvgGrid`: Roman numerals (I to XX), epoch badges, animated masonry progress bars, yield multiplier jump comparisons, and floating construction banners.
+  - [x] **Legacy Button Removal, Full-Height Chronicle, Topnav Stripping & Dock Simplification**:
+  - [x] Removed "War Dagger" and "Ledger Tome" corner buttons from `ThroneArmrests.jsx` and `App.jsx`, removing corner pointer-event capture zones.
+  - [x] Expanded Chronicle Tome (`ParchmentChronicleTome.jsx`) to 100% full height of the war table container (`h-full min-h-0 flex-1 flex flex-col w-full`, removed `max-h-72/80`).
+  - [x] Stripped topnav header bars across all War Map tabs (`ParchmentHeader.jsx`, `DeskSurface.jsx`, `ParchmentChronicleTome.jsx`, `ParchmentMenuView.jsx`) for edge-to-edge layout.
+  - [x] Removed redundant "Tech Codex" tab from desktop command dock (`SovereignCommandDock.jsx`), rebalancing tabs 1-5 (Citadel, War, Flora, Chronicle, Deep Vault) with hotkeys and routing T/C directly to Citadel Sovereign Ledger decrees tab.
   - [x] Validated via `pnpm run lint` and `pnpm run build` with zero errors.
 
 ## Planned / In Progress

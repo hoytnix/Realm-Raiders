@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { ParchmentHeader } from './ParchmentHeader.jsx';
 import { sounds } from '../../constants/index.js';
 import { haptics } from '../../utils/index.js';
 
@@ -119,13 +118,6 @@ export function DeskSurface({
           <div className="hidden md:block absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-gradient-to-br from-yellow-300 to-amber-700 border border-amber-900 shadow-md z-30" />
           <div className="hidden md:block absolute bottom-1.5 left-1.5 w-5 h-5 rounded-full bg-gradient-to-br from-yellow-300 to-amber-700 border border-amber-900 shadow-md z-30" />
           <div className="hidden md:block absolute bottom-1.5 right-1.5 w-5 h-5 rounded-full bg-gradient-to-br from-yellow-300 to-amber-700 border border-amber-900 shadow-md z-30" />
-
-          {/* Parchment Header */}
-          <ParchmentHeader
-            deskView={deskView}
-            setDeskView={setDeskView}
-            hasUnavengedFeuds={hasUnavengedFeuds}
-          />
 
           {/* Parchment Body Canvas */}
           <div className="relative flex-1 w-full overflow-hidden flex flex-col">

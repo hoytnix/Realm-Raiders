@@ -221,6 +221,24 @@
     - **Verification**:
       - `pnpm run lint` and `pnpm run build` passing with zero errors.
 
+  - **Legacy Button Removal, Full-Height Chronicle, Topnav Stripping & Dock Simplification**:
+    - **Removed Legacy Armrest Buttons (`ThroneArmrests.jsx`, `App.jsx`)**:
+      - Completely removed the legacy "War Dagger" bottom-right button and "Ledger Tome" bottom-left button from `ThroneArmrests.jsx`.
+      - Removed `setDeskView` prop and unused imports, eliminating all lingering pointer-event capture zones from the bottom desktop screen corners while preserving the atmospheric armrest trim and monarch signet ring.
+    - **Full-Height Chronicle Tome (`ParchmentChronicleTome.jsx`, `App.jsx`)**:
+      - Removed restrictive `max-h-72 sm:max-h-80` classes and fixed heights.
+      - Applied `h-full min-h-0 flex-1 flex flex-col w-full` to outer container and mounting wrapper in `App.jsx`.
+      - Set scrollable reading log container to `flex-1 min-h-0 overflow-y-auto pr-1 space-y-2`, letting the parchment tome fill 100% of the desktop war table height.
+    - **Stripped Topnav Header Bars Across All War Map Tabs (`DeskSurface.jsx`, `ParchmentHeader.jsx`, `ParchmentChronicleTome.jsx`, `ParchmentMenuView.jsx`)**:
+      - Replicated Citadel's clean edge-to-edge layout across all tabs by having `ParchmentHeader.jsx` return `null` and removing `<ParchmentHeader />` from `DeskSurface.jsx`.
+      - Removed redundant top title banner bars from `ParchmentChronicleTome.jsx` and `ParchmentMenuView.jsx`, allowing logs, cards, and ledgers to start directly at the top margin of the inner desk canvas.
+    - **Removed Redundant Tech Codex Tab from Desktop Command Dock (`SovereignCommandDock.jsx`, `useHotkeys.js`)**:
+      - Stripped the "Tech Codex" (`tech`) tab from `SovereignCommandDock.jsx`, since decrees and tech research are permanently accessible in the Citadel's `SovereignLedger.jsx`.
+      - Rebalanced and centered the 5 remaining tabs: Citadel [1], War Council [2], Flora [3], Chronicle [4], Deep Vault [5].
+      - Updated `useHotkeys.js` keys 1-5 to map to Citadel, War, Flora, Chronicle, Deep Vault, while 'T' and 'C' hotkeys route directly to the Citadel Sovereign Ledger decrees tab.
+    - **Verification**:
+      - `pnpm run lint` and `pnpm run build` passing with zero errors.
+
 ## Active Focus & Next Steps
 - Continue strategic balancing across Water, Flame, and Stone unique elemental active sinks and decree expansions.
 - Explore procedural ambient audio additions (rain drops, howling wind, crackling embers).

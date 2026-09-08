@@ -7,7 +7,6 @@ export function SovereignCommandDock({
   setDeskView,
   hasUnavengedFeuds = false,
   readyHarvestsCount = 0,
-  onOpenTech,
   onOpenFlora,
   isFloraOpen = false
 }) {
@@ -29,20 +28,19 @@ export function SovereignCommandDock({
       badgeColor: 'bg-red-800 text-rose-100 animate-pulse'
     },
     {
-      id: 'tech',
-      label: 'Tech Codex',
-      icon: '📜',
-      hotkey: '3',
-      action: onOpenTech,
-      tooltip: 'Royal Codex & Decrees'
-    },
-    {
       id: 'flora',
       label: 'Flora',
       icon: '🌿',
-      hotkey: '4',
+      hotkey: '3',
       action: onOpenFlora,
       tooltip: 'Flora Elemental Management & Verdant Bloom'
+    },
+    {
+      id: 'chronicle',
+      label: 'Chronicle',
+      icon: '📖',
+      hotkey: '4',
+      tooltip: 'Historical Annals & Battle Tome'
     },
     {
       id: 'menu',
@@ -50,13 +48,6 @@ export function SovereignCommandDock({
       icon: '🪙',
       hotkey: '5',
       tooltip: 'Deep Vault & Treasury'
-    },
-    {
-      id: 'chronicle',
-      label: 'Chronicle',
-      icon: '📖',
-      hotkey: '6',
-      tooltip: 'Historical Annals & Battle Tome'
     }
   ];
 

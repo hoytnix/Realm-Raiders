@@ -82,29 +82,7 @@ export function ParchmentMenuView({
   ];
 
   return (
-    <div className="flex-1 p-3 sm:p-5 overflow-y-auto space-y-4 text-stone-900 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-5">
-      {/* Menu Header */}
-      <div className="border-b-2 border-[#bfa379]/80 pb-2.5 flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h2 className="text-sm sm:text-base font-black text-[#442813] flex items-center gap-2">
-            <span>📜 Grand Realm Directory</span>
-          </h2>
-          <p className="text-[11px] text-[#6b4a2e]">
-            Choose a royal ledger, dispatch council emissaries, or inspect treasury vaults.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleNavClick('citadel')}
-            className="min-h-[44px] px-3 py-1.5 rounded-xl bg-[#ddcca8] hover:bg-[#d0bc93] active:scale-95 text-[#442813] text-xs font-bold border border-[#8c6843] flex items-center gap-1.5 transition"
-          >
-            <span>🏰</span>
-            <span>Return to Map</span>
-          </button>
-        </div>
-      </div>
-
+    <div className="h-full min-h-0 flex-1 flex flex-col w-full p-3 sm:p-5 overflow-y-auto space-y-4 text-stone-900 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-5">
       {/* Primary Destination Links */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {menuSections.map(sec => (

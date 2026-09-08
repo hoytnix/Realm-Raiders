@@ -1,7 +1,6 @@
 import React from 'react';
-import { sounds } from '../../constants/index.js';
 
-export function ThroneArmrests({ tilt, currentFaction, setDeskView }) {
+export function ThroneArmrests({ tilt, currentFaction }) {
   return (
     <footer
       className="hidden md:flex relative z-30 pointer-events-none w-full items-end justify-between px-2 sm:px-8 pb-1 transition-transform duration-200 ease-out"
@@ -16,19 +15,6 @@ export function ThroneArmrests({ tilt, currentFaction, setDeskView }) {
           <div className="w-2 h-2 rounded-full bg-amber-400 shadow" />
           <div className="w-2 h-2 rounded-full bg-amber-400 shadow" />
         </div>
-
-        {/* Parchment Ledger Stack (Diegetic shortcut to Chronicle) */}
-        <button
-          onClick={() => {
-            sounds.playCoin();
-            setDeskView('chronicle');
-          }}
-          className="absolute -top-4 left-3 px-2.5 py-1 rounded-lg bg-stone-900 border border-amber-700/80 text-amber-200 text-xs font-mono font-bold shadow-xl pointer-events-auto hover:bg-stone-800 active:scale-95 transition flex items-center gap-1.5"
-          title="Inspect Kingdom Chronicle Tome [5]"
-        >
-          <span>📜</span>
-          <span className="hidden sm:inline">Ledger Tome</span>
-        </button>
 
         {/* Monarch Signet Ring */}
         <div className="absolute -top-3 right-3 w-8 h-8 rounded-full bg-gradient-to-br from-amber-200 to-amber-400 border-2 border-amber-700 shadow-md flex items-center justify-center text-xs pointer-events-auto cursor-pointer hover:scale-110 transition" title="Monarch Signet Ring">
@@ -48,16 +34,6 @@ export function ThroneArmrests({ tilt, currentFaction, setDeskView }) {
           <div className="w-2 h-2 rounded-full bg-amber-400 shadow" />
           <div className="w-2 h-2 rounded-full bg-amber-400 shadow" />
         </div>
-        <button
-          onClick={() => {
-            sounds.playDaggerThrust();
-            setDeskView(v => (v === 'war' ? 'citadel' : 'war'));
-          }}
-          className="absolute -top-4 left-3 px-2 py-1 rounded-lg bg-stone-900 border border-red-700/80 text-rose-300 text-xs font-mono font-bold shadow-xl pointer-events-auto hover:bg-stone-800 active:scale-95 transition"
-          title="Draw War Dagger"
-        >
-          🗡️ War Dagger
-        </button>
       </div>
     </footer>
   );

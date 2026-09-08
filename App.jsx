@@ -518,11 +518,13 @@ export default function App() {
         )}
 
         {deskView === 'chronicle' && (
-          <ParchmentChronicleTome
-            logs={gameState.battleLogs}
-            state={gameState}
-            onResetSave={onResetSave}
-          />
+          <div className="h-full min-h-0 flex-1 flex flex-col w-full">
+            <ParchmentChronicleTome
+              logs={gameState.battleLogs}
+              state={gameState}
+              onResetSave={onResetSave}
+            />
+          </div>
         )}
 
         {deskView === 'menu' && (
@@ -545,7 +547,6 @@ export default function App() {
       <ThroneArmrests
         tilt={tilt}
         currentFaction={currentFaction}
-        setDeskView={setDeskView}
       />
 
       {/* LAYER 5: SOVEREIGN COMMAND DOCK (Desktop Centered Floating Navigation) */}
@@ -554,10 +555,6 @@ export default function App() {
         setDeskView={setDeskView}
         hasUnavengedFeuds={hasUnavengedFeuds}
         readyHarvestsCount={readyHarvestsCount}
-        onOpenTech={() => {
-          setDeskView('citadel');
-          setActiveLedgerTab('decrees');
-        }}
         onOpenFlora={() => setDeskView('flora')}
         isFloraOpen={deskView === 'flora'}
       />

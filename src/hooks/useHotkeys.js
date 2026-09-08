@@ -35,7 +35,7 @@ export function useHotkeys({
         return;
       }
 
-      // Number keys 1 - 6 for primary desk navigation
+      // Number keys 1 - 5 for primary desk navigation
       if (key === '1') {
         e.preventDefault();
         setDeskView('citadel');
@@ -48,13 +48,13 @@ export function useHotkeys({
       }
       if (key === '3') {
         e.preventDefault();
-        if (onToggleTech) onToggleTech();
+        if (onOpenFlora) onOpenFlora();
+        else setDeskView('flora');
         return;
       }
       if (key === '4') {
         e.preventDefault();
-        if (onOpenFlora) onOpenFlora();
-        else setDeskView('flora');
+        setDeskView('chronicle');
         return;
       }
       if (key === '5') {
@@ -62,14 +62,9 @@ export function useHotkeys({
         setDeskView('menu');
         return;
       }
-      if (key === '6') {
-        e.preventDefault();
-        setDeskView('chronicle');
-        return;
-      }
 
-      // T: Toggle technology codex / decrees
-      if (key === 't' || key === 'T') {
+      // T / C: Hotkey for Royal Codex & Decrees switches focus directly to Sovereign Ledger
+      if (key === 't' || key === 'T' || key === 'c' || key === 'C') {
         e.preventDefault();
         if (onToggleTech) onToggleTech();
         return;

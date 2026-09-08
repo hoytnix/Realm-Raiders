@@ -10,19 +10,11 @@ export function ParchmentChronicleTome({ logs, onResetSave }) {
   };
 
   return (
-    <div className="flex-1 p-3 sm:p-6 overflow-y-auto space-y-4 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-6">
-      <div className="border-b-2 border-[#bfa379] pb-2">
-        <h2 className="text-sm sm:text-base font-black text-[#442813] flex items-center gap-2">
-          <span>📖 Kingdom Chronicles & Battle Archives</span>
-        </h2>
-        <p className="text-[11px] text-[#6b4a2e]">
-          Scribe records detailing all perimeter breaches, defended sieges, and royal decisions.
-        </p>
-      </div>
-
-      <div className="space-y-2 max-h-72 sm:max-h-80 overflow-y-auto pr-1">
+    <div className="h-full min-h-0 flex-1 flex flex-col w-full p-3 sm:p-6 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-6">
+      {/* Scrollable Reading Area filling 100% of the parchment workspace */}
+      <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2">
         {logs.length === 0 ? (
-          <div className="text-center py-8 text-xs font-mono text-[#6b4a2e]">
+          <div className="text-center py-16 text-xs font-mono text-[#6b4a2e]">
             No military incursions or sieges logged yet. March on rival realms from the War Council!
           </div>
         ) : (
@@ -48,14 +40,15 @@ export function ParchmentChronicleTome({ logs, onResetSave }) {
         )}
       </div>
 
-      <div className="pt-4 border-t-2 border-[#bfa379]/60 flex items-center justify-between gap-3">
+      {/* Citadel Rebirth Footer */}
+      <div className="pt-3 mt-3 border-t-2 border-[#bfa379]/60 flex items-center justify-between gap-3 shrink-0">
         <div>
           <h4 className="text-xs font-black text-[#442813]">Citadel Rebirth</h4>
           <p className="text-[10px] text-[#6b4a2e]">Reset all archives to choose a different faction allegiance.</p>
         </div>
         <button
           onClick={handleReset}
-          className="min-h-[48px] px-3.5 py-2 rounded-xl bg-stone-800 hover:bg-stone-900 active:scale-95 text-rose-300 text-xs font-bold shadow-lg transition flex-shrink-0"
+          className="min-h-[44px] px-3.5 py-2 rounded-xl bg-stone-800 hover:bg-stone-900 active:scale-95 text-rose-300 text-xs font-bold shadow-lg transition flex-shrink-0"
         >
           Reset Kingdom ⚠️
         </button>
