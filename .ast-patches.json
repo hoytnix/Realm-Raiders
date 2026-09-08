@@ -7,6 +7,13 @@
       "description": "Overhaul NPC raids, add FoW espionage, embed War roster, and fix laborer limits",
       "appliedAt": "2026-09-08T14:49:27.638Z",
       "sha256": "c6b8aee7a29be55fef457e12bb963d288f48ad57150920de8323307a438d95ee"
+    },
+    {
+      "id": "002_sync_war_tab_with_map_npcs",
+      "file": "002_sync_war_tab_with_map_npcs.mjs",
+      "description": "Binds War Council target list directly to live map NPC settlements",
+      "appliedAt": "2026-09-08T15:10:53.776Z",
+      "sha256": "ec3a78bfd70e5cee282e44ed4ab31ada4600fc47c40c8599b4a769861dc11312"
     }
   ]
 }

@@ -13,9 +13,19 @@ export function ParchmentWarCouncil({
   onRecruitLaborer
 }) {
   const [warCouncilTab, setWarCouncilTab] = React.useState('campaigns');
-  const [rivals, setRivals] = useState(() => generateRivals(stats.overallRating));
+  const [rivals, setRivals] = useState(() => {
+    if (gameState && Array.isArray(gameState.rivalSettlements) && gameState.rivalSettlements.length > 0) {
+      return gameState.rivalSettlements;
+    }
+    return generateRivals(stats?.overallRating || 100);
+  });
   const [selectedRivalId, setSelectedRivalId] = useState(() => rivals[0]?.id || null);
   const [isInfused, setIsInfused] = useState(false);
+  React.useEffect(() => {
+    if (gameState && Array.isArray(gameState.rivalSettlements) && gameState.rivalSettlements.length > 0) {
+      setRivals(gameState.rivalSettlements);
+    }
+  }, [gameState?.rivalSettlements]);
   const [recruitCount, setRecruitCount] = useState(1);
   const activeSelectedRival = rivals.find(r => r.id === selectedRivalId) || rivals[0] || null;
   const playerFactionData = FACTIONS[state.faction] || FACTIONS.humans;
