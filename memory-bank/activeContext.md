@@ -36,10 +36,11 @@
     - Added `trainTroops(count)` at the Barracks and `expandTerritory()` at the Royal Keep.
   - **Interactive Citadel & Inspector (`CitadelSvgGrid.jsx`, `BuildingInspector.jsx`)**:
     - Foundation tiles render with dashed parchment diamonds and `+` markers.
-    - Selecting empty foundation opens "Architectural Commission" carousel to erect structures.
+    - Selecting empty foundation opens "Architectural Commission" carousel to erect structures (available on both mobile sheet and desktop drawer).
     - Barracks inspector includes levy recruitment controls.
     - Royal Keep inspector includes territory annexation decree card.
     - Famine warning HUD reports dynamic troop casualties and active labor saturation percentage.
+  - Production build successfully validated via `pnpm run build` (clean Vite 5 bundle generated in ~1.8s).
 
 ## Active Focus & Next Steps
 - Push or link repository to Netlify for continuous static deployment.
