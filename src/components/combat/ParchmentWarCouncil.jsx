@@ -1,30 +1,35 @@
 import React, { useState } from 'react';
 import { FACTIONS, getElementalMatchup, sounds } from '../../constants/index.js';
 import { generateRivals, haptics } from '../../utils/index.js';
-
-export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBloodFeud, onResearchTechnology, onTrainTroops }) {
+export function ParchmentWarCouncil({
+  stats,
+  state,
+  onLaunchRaid,
+  onDeclareBloodFeud,
+  onResearchTechnology,
+  onTrainTroops
+}) {
+  const [warCouncilTab, setWarCouncilTab] = React.useState('campaigns');
   const [rivals, setRivals] = useState(() => generateRivals(stats.overallRating));
   const [selectedRivalId, setSelectedRivalId] = useState(() => rivals[0]?.id || null);
   const [isInfused, setIsInfused] = useState(false);
   const [recruitCount, setRecruitCount] = useState(1);
-
   const activeSelectedRival = rivals.find(r => r.id === selectedRivalId) || rivals[0] || null;
-
   const playerFactionData = FACTIONS[state.faction] || FACTIONS.humans;
   const playerElement = playerFactionData.element || 'Flora';
-
   const dispatchedSoldiers = Math.max(1, state.troops?.total || 10);
   const infusionFloraCost = dispatchedSoldiers * 3;
   const canAffordInfusion = (state.resources?.flora || 0) >= infusionFloraCost;
-
-  const troops = state.troops || { total: 20, maxCapacity: 30 };
+  const troops = state.troops || {
+    total: 20,
+    maxCapacity: 30
+  };
   const maxTroopCap = stats?.maxTroopCapacity || troops.maxCapacity || 30;
   const recruitCostGold = recruitCount * 25;
   const spaceAvailable = Math.max(0, maxTroopCap - (troops.total || 0));
   const canRecruit = (state.resources?.gold || 0) >= recruitCostGold && spaceAvailable >= recruitCount;
   const maxAffordable = Math.floor((state.resources?.gold || 0) / 25);
   const maxCanRecruit = Math.max(1, Math.min(spaceAvailable, maxAffordable));
-
   const handleRefresh = () => {
     sounds.playCoin();
     haptics.light();
@@ -34,22 +39,20 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
       setSelectedRivalId(newRivals[0].id);
     }
   };
-
-  const handleRaidClick = (rival) => {
+  const handleRaidClick = rival => {
     haptics.heavy();
     const useInfusion = isInfused && canAffordInfusion;
-    onLaunchRaid(rival, { isInfused: useInfusion, floraCost: useInfusion ? infusionFloraCost : 0 });
+    onLaunchRaid(rival, {
+      isInfused: useInfusion,
+      floraCost: useInfusion ? infusionFloraCost : 0
+    });
   };
-
-  const handleFeudClick = (record) => {
+  const handleFeudClick = record => {
     haptics.heavy();
     onDeclareBloodFeud(record);
   };
-
-  const selectedFaction = activeSelectedRival ? (FACTIONS[activeSelectedRival.faction] || FACTIONS.humans) : FACTIONS.humans;
-
-  return (
-    <div className="flex-1 h-full w-full overflow-hidden flex flex-col">
+  const selectedFaction = activeSelectedRival ? FACTIONS[activeSelectedRival.faction] || FACTIONS.humans : FACTIONS.humans;
+  return <div className="flex-1 h-full w-full overflow-hidden flex flex-col">
       {/* =========================================================================
           DESKTOP PANORAMIC 2-PAGE WAR ROOM SPREAD (md:grid-cols-2)
           ========================================================================= */}
@@ -65,11 +68,7 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
               </h2>
               <span className="text-[10px] text-[#6b4a2e]">Select a rival settlement to stage deployment</span>
             </div>
-            <button
-              onClick={handleRefresh}
-              className="px-2.5 py-1 rounded-xl bg-[#ddcca8] hover:bg-[#d0bc93] active:scale-95 text-[#442813] text-xs font-bold border border-[#8c6843] flex items-center gap-1 transition shadow-sm"
-              title="Scout New Targets"
-            >
+            <button onClick={handleRefresh} className="px-2.5 py-1 rounded-xl bg-[#ddcca8] hover:bg-[#d0bc93] active:scale-95 text-[#442813] text-xs font-bold border border-[#8c6843] flex items-center gap-1 transition shadow-sm" title="Scout New Targets">
               <span>🔄</span>
               <span>Scout</span>
             </button>
@@ -78,22 +77,13 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
           {/* Roster of Rivals (Selectable Cards) */}
           <div className="space-y-2 mb-4 overflow-y-auto max-h-48 pr-1">
             {rivals.map(rival => {
-              const rFaction = FACTIONS[rival.faction] || FACTIONS.humans;
-              const isSelected = rival.id === selectedRivalId;
-              const rMatchup = getElementalMatchup(playerElement, rival.element || rFaction.element || 'Stone');
-              return (
-                <div
-                  key={rival.id}
-                  onClick={() => {
-                    sounds.playCoin();
-                    setSelectedRivalId(rival.id);
-                  }}
-                  className={`p-2.5 rounded-xl border-2 cursor-pointer transition flex flex-col gap-1.5 ${
-                    isSelected
-                      ? 'bg-[#e2ceaa] border-[#78350f] shadow-md scale-[1.01]'
-                      : 'bg-[#ebdcc1]/80 border-[#8c6843]/60 hover:bg-[#dfcba6]'
-                  }`}
-                >
+            const rFaction = FACTIONS[rival.faction] || FACTIONS.humans;
+            const isSelected = rival.id === selectedRivalId;
+            const rMatchup = getElementalMatchup(playerElement, rival.element || rFaction.element || 'Stone');
+            return <div key={rival.id} onClick={() => {
+              sounds.playCoin();
+              setSelectedRivalId(rival.id);
+            }} className={`p-2.5 rounded-xl border-2 cursor-pointer transition flex flex-col gap-1.5 ${isSelected ? 'bg-[#e2ceaa] border-[#78350f] shadow-md scale-[1.01]' : 'bg-[#ebdcc1]/80 border-[#8c6843]/60 hover:bg-[#dfcba6]'}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{rFaction.sigil || '🏰'}</span>
@@ -115,9 +105,8 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
                   <div className={`px-2 py-0.5 rounded-md border text-[9px] font-mono font-bold flex items-center justify-between ${rMatchup.sealColor}`}>
                     <span>{rMatchup.badge}</span>
                   </div>
-                </div>
-              );
-            })}
+                </div>;
+          })}
           </div>
 
           {/* Retaliation Missives / Blood Feud Ledger */}
@@ -126,20 +115,9 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
               <span>🩸 Intercepted Retaliation Missives</span>
             </h3>
             <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-              {state.revengeLedger.length === 0 ? (
-                <div className="text-[11px] text-[#6b4a2e] italic text-center py-4">
+              {state.revengeLedger.length === 0 ? <div className="text-[11px] text-[#6b4a2e] italic text-center py-4">
                   No pending blood feuds. Your borders remain secure.
-                </div>
-              ) : (
-                state.revengeLedger.map(record => (
-                  <div
-                    key={record.id}
-                    className={`p-2 rounded-xl border flex items-center justify-between gap-2 ${
-                      record.revenged
-                        ? 'bg-[#e4d4b3]/60 border-stone-400 opacity-60'
-                        : 'bg-[#ebdcc1] border-red-800/80 shadow-sm'
-                    }`}
-                  >
+                </div> : state.revengeLedger.map(record => <div key={record.id} className={`p-2 rounded-xl border flex items-center justify-between gap-2 ${record.revenged ? 'bg-[#e4d4b3]/60 border-stone-400 opacity-60' : 'bg-[#ebdcc1] border-red-800/80 shadow-sm'}`}>
                     <div className="flex items-center gap-2">
                       <span className="text-sm">{record.revenged ? '⚖️' : '🔥'}</span>
                       <div>
@@ -150,19 +128,10 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
                       </div>
                     </div>
 
-                    {record.revenged ? (
-                      <span className="text-[10px] font-mono text-[#6b4a2e] font-bold">Avenged ✓</span>
-                    ) : (
-                      <button
-                        onClick={() => handleFeudClick(record)}
-                        className="px-2 py-1 rounded-lg bg-red-800 hover:bg-red-700 active:scale-95 text-rose-100 text-[10px] font-bold shadow transition"
-                      >
+                    {record.revenged ? <span className="text-[10px] font-mono text-[#6b4a2e] font-bold">Avenged ✓</span> : <button onClick={() => handleFeudClick(record)} className="px-2 py-1 rounded-lg bg-red-800 hover:bg-red-700 active:scale-95 text-rose-100 text-[10px] font-bold shadow transition">
                         Declare Feud 🗡️
-                      </button>
-                    )}
-                  </div>
-                ))
-              )}
+                      </button>}
+                  </div>)}
             </div>
           </div>
         </div>
@@ -172,13 +141,8 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
             ------------------------------------------------------------- */}
         <div className="flex flex-col h-full bg-[#f2e7ce] border-2 border-[#8c6843] rounded-2xl p-4 shadow-inner overflow-hidden justify-between">
           {activeSelectedRival ? (() => {
-            const selectedMatchup = getElementalMatchup(
-              playerElement,
-              activeSelectedRival.element || selectedFaction.element || 'Stone'
-            );
-
-            return (
-              <div className="space-y-2.5">
+          const selectedMatchup = getElementalMatchup(playerElement, activeSelectedRival.element || selectedFaction.element || 'Stone');
+          return <div className="space-y-2.5">
                 {/* Selected Rival Dossier Header */}
                 <div className="flex items-center justify-between border-b-2 border-[#bfa379]/70 pb-2">
                   <div className="flex items-center gap-2.5">
@@ -215,11 +179,7 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
                 </div>
 
                 {/* Briar / Verdant Infusion Toggle Card */}
-                <div className={`p-2.5 rounded-xl border-2 transition flex items-center justify-between gap-2 ${
-                  isInfused
-                    ? 'bg-emerald-900/20 border-emerald-700/80 shadow-md'
-                    : 'bg-[#dfcba6]/70 border-[#bfa379]/50'
-                }`}>
+                <div className={`p-2.5 rounded-xl border-2 transition flex items-center justify-between gap-2 ${isInfused ? 'bg-emerald-900/20 border-emerald-700/80 shadow-md' : 'bg-[#dfcba6]/70 border-[#bfa379]/50'}`}>
                   <div className="flex items-center gap-2">
                     <span className="text-xl">🌿</span>
                     <div>
@@ -234,25 +194,15 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
                       </p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => {
-                      if (!isInfused && !canAffordInfusion) {
-                        sounds.playFamineAlarm();
-                        return;
-                      }
-                      sounds.playCoin();
-                      haptics.light();
-                      setIsInfused(v => !v);
-                    }}
-                    disabled={!isInfused && !canAffordInfusion}
-                    className={`px-2.5 py-1.5 rounded-xl text-xs font-mono font-bold border transition ${
-                      isInfused
-                        ? 'bg-emerald-800 text-emerald-100 border-emerald-600 shadow-inner'
-                        : canAffordInfusion
-                        ? 'bg-[#ebdcc1] text-[#442813] border-[#8c6843] hover:bg-[#dfcba6]'
-                        : 'bg-stone-300 text-stone-500 border-stone-400 cursor-not-allowed'
-                    }`}
-                  >
+                  <button onClick={() => {
+                if (!isInfused && !canAffordInfusion) {
+                  sounds.playFamineAlarm();
+                  return;
+                }
+                sounds.playCoin();
+                haptics.light();
+                setIsInfused(v => !v);
+              }} disabled={!isInfused && !canAffordInfusion} className={`px-2.5 py-1.5 rounded-xl text-xs font-mono font-bold border transition ${isInfused ? 'bg-emerald-800 text-emerald-100 border-emerald-600 shadow-inner' : canAffordInfusion ? 'bg-[#ebdcc1] text-[#442813] border-[#8c6843] hover:bg-[#dfcba6]' : 'bg-stone-300 text-stone-500 border-stone-400 cursor-not-allowed'}`}>
                     {isInfused ? 'Infused ✓' : 'Infuse'}
                   </button>
                 </div>
@@ -276,16 +226,12 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
                 </div>
 
                 {/* Prominent March Vanguard CTA */}
-                <button
-                  onClick={() => handleRaidClick(activeSelectedRival)}
-                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-red-800 via-rose-900 to-red-950 hover:brightness-110 active:scale-95 text-amber-100 font-black text-sm shadow-xl transition flex items-center justify-center gap-2 border-2 border-amber-600/60"
-                >
+                <button onClick={() => handleRaidClick(activeSelectedRival)} className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-red-800 via-rose-900 to-red-950 hover:brightness-110 active:scale-95 text-amber-100 font-black text-sm shadow-xl transition flex items-center justify-center gap-2 border-2 border-amber-600/60">
                   <span className="text-base">📺</span>
                   <span>March Vanguard {isInfused ? '(Briar Infused)' : ''}</span>
                 </button>
-              </div>
-            );
-          })() : null}
+              </div>;
+        })() : null}
 
           {/* RECRUITMENT ACTION: LEVY RECRUITS / ENLIST LABORERS */}
           <div className="bg-[#ebdcc1] border-2 border-[#8c6843] rounded-xl p-3 shadow-md flex items-center justify-between gap-3 mt-3">
@@ -301,48 +247,27 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
 
             <div className="flex items-center gap-2">
               <div className="flex gap-1">
-                {[1, 5].map(cnt => (
-                  <button
-                    key={cnt}
-                    onClick={() => {
-                      sounds.playCoin();
-                      haptics.light();
-                      setRecruitCount(cnt);
-                    }}
-                    className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition ${
-                      recruitCount === cnt
-                        ? 'bg-amber-900 text-amber-100 border border-amber-950'
-                        : 'bg-[#ddcca8] text-[#442813] border border-[#8c6843]'
-                    }`}
-                  >
+                {[1, 5].map(cnt => <button key={cnt} onClick={() => {
+                sounds.playCoin();
+                haptics.light();
+                setRecruitCount(cnt);
+              }} className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition ${recruitCount === cnt ? 'bg-amber-900 text-amber-100 border border-amber-950' : 'bg-[#ddcca8] text-[#442813] border border-[#8c6843]'}`}>
                     +{cnt}
-                  </button>
-                ))}
-                <button
-                  onClick={() => {
-                    sounds.playCoin();
-                    haptics.light();
-                    setRecruitCount(maxCanRecruit);
-                  }}
-                  className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#ddcca8] text-[#442813] border border-[#8c6843] hover:bg-[#cbb38b]"
-                >
+                  </button>)}
+                <button onClick={() => {
+                sounds.playCoin();
+                haptics.light();
+                setRecruitCount(maxCanRecruit);
+              }} className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#ddcca8] text-[#442813] border border-[#8c6843] hover:bg-[#cbb38b]">
                   Max
                 </button>
               </div>
 
-              <button
-                onClick={() => {
-                  haptics.heavy();
-                  sounds.playCoin();
-                  if (onTrainTroops) onTrainTroops(recruitCount);
-                }}
-                disabled={!canRecruit}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black shadow transition flex items-center gap-1 ${
-                  canRecruit
-                    ? 'bg-gradient-to-r from-red-800 to-rose-900 text-amber-100 hover:brightness-110 active:scale-95 border border-red-700'
-                    : 'bg-stone-400 text-stone-600 cursor-not-allowed'
-                }`}
-              >
+              <button onClick={() => {
+              haptics.heavy();
+              sounds.playCoin();
+              if (onTrainTroops) onTrainTroops(recruitCount);
+            }} disabled={!canRecruit} className={`px-3 py-1.5 rounded-lg text-xs font-black shadow transition flex items-center gap-1 ${canRecruit ? 'bg-gradient-to-r from-red-800 to-rose-900 text-amber-100 hover:brightness-110 active:scale-95 border border-red-700' : 'bg-stone-400 text-stone-600 cursor-not-allowed'}`}>
                 <span>⚔️</span>
                 <span>Enlist ({recruitCostGold}🪙)</span>
               </button>
@@ -364,21 +289,14 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
               Intercepted cartography pins targets holding exposed unbanked stores.
             </p>
           </div>
-          <button
-            onClick={handleRefresh}
-            className="min-h-[44px] px-3 py-1.5 rounded-xl bg-[#ddcca8] hover:bg-[#d0bc93] active:scale-95 text-[#442813] text-xs font-bold border border-[#8c6843] flex items-center gap-1.5 transition flex-shrink-0"
-          >
+          <button onClick={handleRefresh} className="min-h-[44px] px-3 py-1.5 rounded-xl bg-[#ddcca8] hover:bg-[#d0bc93] active:scale-95 text-[#442813] text-xs font-bold border border-[#8c6843] flex items-center gap-1.5 transition flex-shrink-0">
             <span>🔄</span>
             <span>Scout</span>
           </button>
         </div>
 
         {/* Mobile Briar Infusion Toggle Bar */}
-        <div className={`p-2.5 rounded-2xl border-2 transition flex items-center justify-between gap-2 shadow-sm ${
-          isInfused
-            ? 'bg-emerald-900/20 border-emerald-700/80'
-            : 'bg-[#ebdcc1] border-[#8c6843]'
-        }`}>
+        <div className={`p-2.5 rounded-2xl border-2 transition flex items-center justify-between gap-2 shadow-sm ${isInfused ? 'bg-emerald-900/20 border-emerald-700/80' : 'bg-[#ebdcc1] border-[#8c6843]'}`}>
           <div className="flex items-center gap-2">
             <span className="text-xl">🌿</span>
             <div>
@@ -393,38 +311,24 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
               </p>
             </div>
           </div>
-          <button
-            onClick={() => {
-              if (!isInfused && !canAffordInfusion) {
-                sounds.playFamineAlarm();
-                return;
-              }
-              sounds.playCoin();
-              haptics.light();
-              setIsInfused(v => !v);
-            }}
-            disabled={!isInfused && !canAffordInfusion}
-            className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold border transition ${
-              isInfused
-                ? 'bg-emerald-800 text-emerald-100 border-emerald-600'
-                : canAffordInfusion
-                ? 'bg-[#dfcba6] text-[#442813] border-[#8c6843]'
-                : 'bg-stone-300 text-stone-500 border-stone-400 cursor-not-allowed'
-            }`}
-          >
+          <button onClick={() => {
+          if (!isInfused && !canAffordInfusion) {
+            sounds.playFamineAlarm();
+            return;
+          }
+          sounds.playCoin();
+          haptics.light();
+          setIsInfused(v => !v);
+        }} disabled={!isInfused && !canAffordInfusion} className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold border transition ${isInfused ? 'bg-emerald-800 text-emerald-100 border-emerald-600' : canAffordInfusion ? 'bg-[#dfcba6] text-[#442813] border-[#8c6843]' : 'bg-stone-300 text-stone-500 border-stone-400 cursor-not-allowed'}`}>
             {isInfused ? 'Infused ✓' : 'Infuse'}
           </button>
         </div>
 
         <div className="grid grid-cols-1 gap-3">
           {rivals.map(rival => {
-            const rivalFaction = FACTIONS[rival.faction] || FACTIONS.humans;
-            const rMatchup = getElementalMatchup(playerElement, rival.element || rivalFaction.element || 'Stone');
-            return (
-              <div
-                key={rival.id}
-                className="bg-[#ebdcc1] border-2 border-[#8c6843] rounded-2xl p-3 shadow-md flex flex-col justify-between gap-2"
-              >
+          const rivalFaction = FACTIONS[rival.faction] || FACTIONS.humans;
+          const rMatchup = getElementalMatchup(playerElement, rival.element || rivalFaction.element || 'Stone');
+          return <div key={rival.id} className="bg-[#ebdcc1] border-2 border-[#8c6843] rounded-2xl p-3 shadow-md flex flex-col justify-between gap-2">
                 <div>
                   <div className="flex items-start justify-between">
                     <h3 className="text-xs font-black text-[#442813]">{rival.name}</h3>
@@ -459,16 +363,12 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
                   </div>
                 </div>
 
-                <button
-                  onClick={() => handleRaidClick(rival)}
-                  className="mt-2 w-full min-h-[48px] py-2.5 px-3 rounded-xl bg-gradient-to-r from-red-800 to-rose-900 hover:brightness-110 active:scale-95 text-amber-100 font-black text-xs shadow transition flex items-center justify-center gap-1.5"
-                >
+                <button onClick={() => handleRaidClick(rival)} className="mt-2 w-full min-h-[48px] py-2.5 px-3 rounded-xl bg-gradient-to-r from-red-800 to-rose-900 hover:brightness-110 active:scale-95 text-amber-100 font-black text-xs shadow transition flex items-center justify-center gap-1.5">
                   <span>📺</span>
                   <span>March Vanguard {isInfused ? '(Briar Infused)' : '(Watch Ad)'}</span>
                 </button>
-              </div>
-            );
-          })}
+              </div>;
+        })}
         </div>
 
         {/* RECRUITMENT ACTION: LEVY RECRUITS / ENLIST LABORERS (Mobile) */}
@@ -494,48 +394,27 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
 
           <div className="flex items-center justify-between gap-2 pt-1 border-t border-[#bfa379]/50">
             <div className="flex items-center gap-1.5">
-              {[1, 5].map(cnt => (
-                <button
-                  key={cnt}
-                  onClick={() => {
-                    sounds.playCoin();
-                    haptics.light();
-                    setRecruitCount(cnt);
-                  }}
-                  className={`min-h-[38px] px-2.5 py-1 rounded-xl text-xs font-mono font-bold border transition ${
-                    recruitCount === cnt
-                      ? 'bg-amber-900 text-amber-100 border-amber-950'
-                      : 'bg-[#dfcba6] text-[#442813] border-[#8c6843]'
-                  }`}
-                >
+              {[1, 5].map(cnt => <button key={cnt} onClick={() => {
+              sounds.playCoin();
+              haptics.light();
+              setRecruitCount(cnt);
+            }} className={`min-h-[38px] px-2.5 py-1 rounded-xl text-xs font-mono font-bold border transition ${recruitCount === cnt ? 'bg-amber-900 text-amber-100 border-amber-950' : 'bg-[#dfcba6] text-[#442813] border-[#8c6843]'}`}>
                   +{cnt}
-                </button>
-              ))}
-              <button
-                onClick={() => {
-                  sounds.playCoin();
-                  haptics.light();
-                  setRecruitCount(maxCanRecruit);
-                }}
-                className="min-h-[38px] px-2.5 py-1 rounded-xl text-xs font-mono font-bold bg-[#dfcba6] text-[#442813] border border-[#8c6843] hover:bg-[#cbb38b]"
-              >
+                </button>)}
+              <button onClick={() => {
+              sounds.playCoin();
+              haptics.light();
+              setRecruitCount(maxCanRecruit);
+            }} className="min-h-[38px] px-2.5 py-1 rounded-xl text-xs font-mono font-bold bg-[#dfcba6] text-[#442813] border border-[#8c6843] hover:bg-[#cbb38b]">
                 Max
               </button>
             </div>
 
-            <button
-              onClick={() => {
-                haptics.heavy();
-                sounds.playCoin();
-                if (onTrainTroops) onTrainTroops(recruitCount);
-              }}
-              disabled={!canRecruit}
-              className={`min-h-[44px] flex-1 py-2 px-3 rounded-xl font-black text-xs transition flex items-center justify-center gap-1.5 shadow ${
-                canRecruit
-                  ? 'bg-gradient-to-r from-red-800 to-rose-900 text-amber-100 hover:brightness-110 active:scale-95 shadow border border-red-700'
-                  : 'bg-stone-400 text-stone-600 cursor-not-allowed'
-              }`}
-            >
+            <button onClick={() => {
+            haptics.heavy();
+            sounds.playCoin();
+            if (onTrainTroops) onTrainTroops(recruitCount);
+          }} disabled={!canRecruit} className={`min-h-[44px] flex-1 py-2 px-3 rounded-xl font-black text-xs transition flex items-center justify-center gap-1.5 shadow ${canRecruit ? 'bg-gradient-to-r from-red-800 to-rose-900 text-amber-100 hover:brightness-110 active:scale-95 shadow border border-red-700' : 'bg-stone-400 text-stone-600 cursor-not-allowed'}`}>
               <span>⚔️</span>
               <span>Enlist ({recruitCostGold}🪙)</span>
             </button>
@@ -548,15 +427,7 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
             <span>🩸 Intercepted Retaliation Missives</span>
           </h3>
           <div className="space-y-2">
-            {state.revengeLedger.map(record => (
-              <div
-                key={record.id}
-                className={`p-3 rounded-xl border flex items-center justify-between gap-2 ${
-                  record.revenged
-                    ? 'bg-[#e4d4b3]/60 border-stone-400 opacity-60'
-                    : 'bg-[#ebdcc1] border-red-800/80 shadow-sm'
-                }`}
-              >
+            {state.revengeLedger.map(record => <div key={record.id} className={`p-3 rounded-xl border flex items-center justify-between gap-2 ${record.revenged ? 'bg-[#e4d4b3]/60 border-stone-400 opacity-60' : 'bg-[#ebdcc1] border-red-800/80 shadow-sm'}`}>
                 <div className="flex items-center gap-2">
                   <span className="text-base">{record.revenged ? '⚖️' : '🔥'}</span>
                   <div>
@@ -567,21 +438,12 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
                   </div>
                 </div>
 
-                {record.revenged ? (
-                  <span className="text-[10px] font-mono text-[#6b4a2e] font-bold">Avenged ✓</span>
-                ) : (
-                  <button
-                    onClick={() => handleFeudClick(record)}
-                    className="min-h-[44px] px-3 py-1.5 rounded-xl bg-red-800 hover:bg-red-700 active:scale-95 text-rose-100 text-xs font-bold shadow transition"
-                  >
+                {record.revenged ? <span className="text-[10px] font-mono text-[#6b4a2e] font-bold">Avenged ✓</span> : <button onClick={() => handleFeudClick(record)} className="min-h-[44px] px-3 py-1.5 rounded-xl bg-red-800 hover:bg-red-700 active:scale-95 text-rose-100 text-xs font-bold shadow transition">
                     Declare Blood Feud 🗡️
-                  </button>
-                )}
-              </div>
-            ))}
+                  </button>}
+              </div>)}
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }
