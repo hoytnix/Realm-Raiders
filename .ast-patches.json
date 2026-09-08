@@ -72,6 +72,19 @@
         "src/constants/initialState.js",
         "src/hooks/useGameState.js"
       ]
+    },
+    {
+      "id": "010_fix_war_missives_troop_assignment_and_yield_claiming",
+      "file": "010_fix_war_missives_troop_assignment_and_yield_claiming.mjs",
+      "description": "Fixes desktop mock missives in War Council via robust text node targeting, synchronizes starting living troops with roster count, and restores yield claiming via click, Claim All, and spacebar shortcut.",
+      "appliedAt": "2026-09-08T17:10:09.357Z",
+      "sha256": "7c0d17e531cc99541062641eb4de5f15c54b5c0aad97fed6970020c8c1b46d8d",
+      "modifiedFiles": [
+        "src/constants/initialState.js",
+        "src/hooks/useGameState.js",
+        "src/components/combat/ParchmentWarCouncil.jsx",
+        "src/hooks/useHotkeys.js"
+      ]
     }
   ]
 }

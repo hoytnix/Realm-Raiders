@@ -140,7 +140,7 @@ export function ParchmentWarCouncil({
           {/* Retaliation Missives / Blood Feud Ledger */}
           <div className="flex-1 border-t-2 border-[#bfa379]/70 pt-2 flex flex-col overflow-hidden">
             <h3 className="text-xs font-black text-[#442813] mb-1.5 flex items-center gap-1.5">
-              <span>🩸 Intercepted Retaliation Missives</span>
+              <span><h3 className="text-lg font-bold text-amber-950 mb-3 font-serif">Intercepted Retaliation Missives</h3><div className="space-y-3">{gameState.rivals && gameState.rivals.length > 0 ? gameState.rivals.map(rival => <div key={rival.id} className="p-3 bg-amber-50/70 border border-amber-900/30 rounded font-serif text-sm text-amber-950"><div className="font-bold flex justify-between items-center">{rival.name}<span className="text-xs px-1.5 py-0.5 rounded bg-amber-900/10 text-amber-900 uppercase">{rival.status}</span></div><p className="text-xs text-amber-900/80 mt-1 italic">{"Garrison Strength: " + rival.strength}</p></div>) : <p className="text-amber-900/60 italic text-sm">No active missives intercepted from surrounding realms.</p>}</div></span>
             </h3>
             <div className="flex-1 overflow-y-auto space-y-2 pr-1">
               {state.revengeLedger.length === 0 ? <div className="text-[11px] text-[#6b4a2e] italic text-center py-4">

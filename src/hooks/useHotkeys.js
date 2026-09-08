@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-
 export function useHotkeys({
   onClaimAll,
   onPan,
@@ -9,16 +8,11 @@ export function useHotkeys({
   onEscape
 }) {
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = e => {
       // Ignore keystrokes when typing inside inputs or textareas
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement ||
-        e.target.isContentEditable
-      ) {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target.isContentEditable) {
         return;
       }
-
       const key = e.key;
 
       // Space: Claim All harvests
@@ -48,8 +42,7 @@ export function useHotkeys({
       }
       if (key === '3') {
         e.preventDefault();
-        if (onOpenFlora) onOpenFlora();
-        else setDeskView('flora');
+        if (onOpenFlora) onOpenFlora();else setDeskView('flora');
         return;
       }
       if (key === '4') {
@@ -93,7 +86,6 @@ export function useHotkeys({
         return;
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClaimAll, onPan, setDeskView, onToggleTech, onOpenFlora, onEscape]);

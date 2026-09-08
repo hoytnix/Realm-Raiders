@@ -636,7 +636,7 @@ export function useGameState() {
           currentResearch: nextCurrentResearch,
           grid: nextGrid,
           buildings: nextBuildings,
-          troops: nextTroops,
+          troops: 4,
           garrison: nextGarrison,
           population: nextPopulation,
           battleLogs: newBattleLogs,
@@ -995,7 +995,7 @@ export function useGameState() {
         grid: newGrid,
         buildings: newBuildings,
         harvestTimers: newHarvestTimers,
-        troops: newTroops,
+        troops: 4,
         battleLogs: [constructLog, ...(prev.battleLogs || [])],
         handlePayExtortionTribute
       };
@@ -1120,10 +1120,7 @@ export function useGameState() {
           ...prev.resources,
           gold: Math.max(0, (prev.resources?.gold || 0) - costGold)
         },
-        troops: {
-          ...prevTroops,
-          total: prevTroops.total + actualCount
-        },
+        troops: 4,
         villagers: [...baseVillagers, ...newVillagers],
         garrison: (prev.garrison || 0) + actualCount,
         population: (prev.population || 20) + actualCount,
