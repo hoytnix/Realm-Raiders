@@ -66,10 +66,14 @@ export function usePlayerStats(gameState) {
       : (bLevels.barracks || 0);
     const maxTroopCapacity = 30 + (totalBarracksLvl * (BUILDINGS.barracks?.troopCapacity || 20));
 
+    const hasDeepVaultLocks = (gameState.technologies || []).includes('tech_deep_vault_locks');
+    const hasPhalanxDrills = (gameState.technologies || []).includes('tech_phalanx_drills');
+    const hasSiegeMunitions = (gameState.technologies || []).includes('tech_siege_munitions');
+
     const highestVaultLvl = grid && Array.isArray(grid)
       ? Math.max(1, ...grid.filter(p => p.buildingId === 'vault').map(p => p.level || 1))
       : (bLevels.vault || 1);
-    const vaultProtectionRatio = currentFaction.vaultProtectionBase + (highestVaultLvl * 0.03);
+    const vaultProtectionRatio = currentFaction.vaultProtectionBase + (highestVaultLvl * 0.03) + (hasDeepVaultLocks ? 0.15 : 0);
     const vaultProtected = {
       food: Math.round(caps.food * vaultProtectionRatio),
       water: Math.round(caps.water * vaultProtectionRatio),
@@ -86,8 +90,8 @@ export function usePlayerStats(gameState) {
       ? grid.filter(p => p.buildingId === 'watchtower').reduce((sum, p) => sum + (p.level || 1), 0)
       : (bLevels.watchtower || 0);
 
-    const baseAtk = (troopCount * 12 + (keepLvl * 15)) * (1 + currentFaction.raidAttackBonus) * (weather.multipliers.raidAtk || 1.0);
-    const baseDef = ((totalWatchtowerLvl * 42) + (keepLvl * 26) + (totalBarracksLvl * 25)) * (starving ? 0.5 : 1.0) * (currentFaction.id === 'elves' ? 0.75 : 1.0);
+    const baseAtk = (troopCount * 12 + (keepLvl * 15)) * (1 + currentFaction.raidAttackBonus) * (weather.multipliers.raidAtk || 1.0) * (hasSiegeMunitions ? 1.2 : 1.0);
+    const baseDef = ((totalWatchtowerLvl * 42) + (keepLvl * 26) + (totalBarracksLvl * 25)) * (starving ? 0.5 : 1.0) * (currentFaction.id === 'elves' ? 0.75 : 1.0) * (hasPhalanxDrills ? 1.15 : 1.0);
     const totalGridLevels = grid && Array.isArray(grid)
       ? grid.filter(p => p.buildingId).reduce((sum, p) => sum + (p.level || 1), 0)
       : Object.values(bLevels).reduce((a, b) => a + (b || 0), 0);

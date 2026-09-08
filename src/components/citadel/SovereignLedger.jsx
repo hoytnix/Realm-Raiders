@@ -502,49 +502,80 @@ export function SovereignLedger({
             ========================================================================= */}
         {activeLedgerTab === 'decrees' && (
           <div className="space-y-3 animate-in fade-in">
-            <div className="bg-[#ebdcc1] p-3 rounded-2xl border border-[#8c6843]">
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="text-base">🛡️</span>
-                <div>
-                  <h3 className="text-xs font-black text-[#442813]">Vassal Foraging Lines</h3>
-                  <span className="text-[9px] font-mono text-[#6b4a2e]">Troop Quartermaster Decree</span>
-                </div>
-              </div>
-              <p className="text-[10px] text-[#6b4a2e] mb-2">
-                Orders idle standing garrison footmen to continuously harvest ripe yields from Farms, Granaries, Mills, Quarries, and Mints without monarch clicking.
-              </p>
+            {Object.values(TECHNOLOGIES).map(tech => {
+              const isResearched = (technologies || []).includes(tech.id);
+              const reqKeep = tech.requirements?.keepTier || 1;
+              const keepPlotLvl = (grid && Array.isArray(grid) ? grid.find(p => p.buildingId === 'keep')?.level : null) || buildings.keep || 1;
+              const meetsKeep = keepPlotLvl >= reqKeep;
+              const discount = stats.currentFaction?.id === 'humans' ? 0.5 : 1.0;
+              const costGold = Math.round((tech.requirements?.cost?.gold || 0) * discount);
+              const costFood = Math.round((tech.requirements?.cost?.food || 0) * discount);
+              const costWood = Math.round((tech.requirements?.cost?.wood || 0) * discount);
+              const costStone = Math.round((tech.requirements?.cost?.stone || 0) * discount);
 
-              {hasTroopLogistics ? (
-                <div className="bg-emerald-900/10 border border-emerald-700/40 rounded-xl p-2 flex items-center justify-between text-xs font-mono font-bold text-emerald-900">
-                  <span>Decree Ratified & Active</span>
-                  <span className="text-base">🛡️</span>
-                </div>
-              ) : (
-                <div className="space-y-2 pt-1 border-t border-[#bfa379]/60">
-                  <div className="flex items-center justify-between text-[10px] font-mono">
-                    <span className={(buildings.keep || 1) >= 2 ? 'text-green-800 font-bold' : 'text-red-800 font-bold'}>
-                      Requires Keep T2
-                    </span>
-                    <div className="flex gap-1.5">
-                      <span className={(resources.gold || 0) >= 150 ? 'text-amber-900 font-bold' : 'text-red-900 font-bold'}>🪙 150</span>
-                      <span className={(resources.food || 0) >= 100 ? 'text-amber-900 font-bold' : 'text-red-900 font-bold'}>🌾 100</span>
+              const canAfford =
+                (resources.gold || 0) >= costGold &&
+                (resources.food || 0) >= costFood &&
+                (resources.wood || 0) >= costWood &&
+                (resources.stone || 0) >= costStone &&
+                meetsKeep;
+
+              return (
+                <div key={tech.id} className="bg-[#ebdcc1] p-3 rounded-2xl border border-[#8c6843] space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">{tech.inkSymbol || '📜'}</span>
+                      <div>
+                        <h3 className="text-xs font-black text-[#442813]">{tech.name}</h3>
+                        <span className="text-[9px] font-mono text-[#6b4a2e]">{tech.subtitle}</span>
+                      </div>
                     </div>
+                    <span className="text-[9px] font-mono text-[#5c3e23] bg-[#dfcba6] px-1.5 py-0.5 rounded border border-[#8c6843]/40">
+                      ⏳ {tech.duration || 15}s
+                    </span>
                   </div>
-                  <button
-                    onClick={() => onResearchTechnology && onResearchTechnology('tech_troop_logistics')}
-                    disabled={!canAffordLogistics}
-                    className={`w-full py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 shadow ${
-                      canAffordLogistics
-                        ? 'bg-gradient-to-r from-red-800 to-rose-900 text-amber-100 hover:brightness-110 active:scale-95 shadow border border-red-700'
-                        : 'bg-stone-400 text-stone-600 cursor-not-allowed'
-                    }`}
-                  >
-                    <span>🩸</span>
-                    <span>Seal Logistics Decree</span>
-                  </button>
+                  <p className="text-[10px] text-[#6b4a2e]">
+                    {tech.description}
+                  </p>
+                  <div className="bg-[#f0e3cc] p-1.5 rounded-lg text-[9.5px] font-mono font-bold text-[#442813]">
+                    ⭐ {tech.benefit || 'Sovereign decree benefit'}
+                  </div>
+
+                  {isResearched ? (
+                    <div className="bg-emerald-900/10 border border-emerald-700/40 rounded-xl p-2 flex items-center justify-between text-xs font-mono font-bold text-emerald-900">
+                      <span>Decree Ratified & Active</span>
+                      <span className="text-base">🛡️</span>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5 pt-1 border-t border-[#bfa379]/60">
+                      <div className="flex items-center justify-between text-[10px] font-mono">
+                        <span className={meetsKeep ? 'text-green-800 font-bold' : 'text-red-800 font-bold'}>
+                          Requires Keep T{reqKeep}
+                        </span>
+                        <div className="flex gap-1.5">
+                          {costGold > 0 && <span className={(resources.gold || 0) >= costGold ? 'text-amber-900 font-bold' : 'text-red-900 font-bold'}>🪙 {costGold}</span>}
+                          {costFood > 0 && <span className={(resources.food || 0) >= costFood ? 'text-amber-900 font-bold' : 'text-red-900 font-bold'}>🌾 {costFood}</span>}
+                          {costWood > 0 && <span className={(resources.wood || 0) >= costWood ? 'text-amber-900 font-bold' : 'text-red-900 font-bold'}>🪵 {costWood}</span>}
+                          {costStone > 0 && <span className={(resources.stone || 0) >= costStone ? 'text-amber-900 font-bold' : 'text-red-900 font-bold'}>🪨 {costStone}</span>}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => onResearchTechnology && onResearchTechnology(tech.id)}
+                        disabled={!canAfford}
+                        className={`w-full py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 shadow ${
+                          canAfford
+                            ? 'bg-gradient-to-r from-red-800 to-rose-900 text-amber-100 hover:brightness-110 active:scale-95 shadow border border-red-700 cursor-pointer'
+                            : 'bg-stone-400 text-stone-600 cursor-not-allowed'
+                        }`}
+                      >
+                        <span>🩸</span>
+                        <span>Seal Decree</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              );
+            })}
           </div>
         )}
 

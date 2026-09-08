@@ -28,6 +28,34 @@ export function useGameState() {
         const parsed = JSON.parse(saved);
         const now = Date.now();
         // Deterministic offline calculation
+        if (parsed.currentResearch && parsed.lastTickTimestamp) {
+          const elapsedSecs = Math.max(0, Math.floor((now - parsed.lastTickTimestamp) / 1000));
+          const remaining = Math.max(0, (parsed.currentResearch.remaining ?? parsed.currentResearch.duration) - elapsedSecs);
+          if (remaining <= 0) {
+            const techDef = TECHNOLOGIES[parsed.currentResearch.techId];
+            if (!parsed.technologies) parsed.technologies = [];
+            if (techDef && !parsed.technologies.includes(parsed.currentResearch.techId)) {
+              parsed.technologies.push(parsed.currentResearch.techId);
+              parsed.battleLogs = [
+                {
+                  id: `log-tech-offline-${now}`,
+                  title: `Decree Enacted: ${techDef.name}`,
+                  text: `Royal scholars finalized ${techDef.name} while the throne stood vacant.`,
+                  type: 'win',
+                  timestamp: now
+                },
+                ...(parsed.battleLogs || [])
+              ];
+            }
+            parsed.currentResearch = null;
+          } else {
+            parsed.currentResearch.remaining = remaining;
+            parsed.currentResearch.progress = Math.min(1, Math.max(0, 1 - (remaining / (parsed.currentResearch.duration || 1))));
+          }
+        }
+        if (!parsed.currentResearch) {
+          parsed.currentResearch = null;
+        }
         parsed.lastTickTimestamp = now;
         if (!parsed.harvestTimers) {
           parsed.harvestTimers = { granary: 0, well: 0, lumber: 0, quarry: 0, greenhouse: 0, vault: 0, farm: 0 };
@@ -310,10 +338,38 @@ export function useGameState() {
           sounds.playCoin();
         }
 
+        // Advance ongoing research decree
+        let nextCurrentResearch = prev.currentResearch ? { ...prev.currentResearch } : null;
+        let nextTechnologies = prev.technologies ? [...prev.technologies] : [];
+        if (nextCurrentResearch) {
+          const remaining = Math.max(0, (nextCurrentResearch.remaining ?? nextCurrentResearch.duration) - (1 * speed));
+          if (remaining <= 0) {
+            const techDef = TECHNOLOGIES[nextCurrentResearch.techId];
+            if (techDef && !nextTechnologies.includes(nextCurrentResearch.techId)) {
+              nextTechnologies.push(nextCurrentResearch.techId);
+              const completionLog = {
+                id: `log-tech-${Date.now()}`,
+                title: `Decree Enacted: ${techDef.name}`,
+                text: `The royal codex scholars have codified ${techDef.name} (${techDef.subtitle}). Its benefits are now active across the realm!`,
+                type: 'win',
+                timestamp: Date.now()
+              };
+              newBattleLogs = [completionLog, ...newBattleLogs];
+              sounds.playUpgrade();
+            }
+            nextCurrentResearch = null;
+          } else {
+            nextCurrentResearch.remaining = remaining;
+            nextCurrentResearch.progress = Math.min(1, Math.max(0, 1 - (remaining / (nextCurrentResearch.duration || 1))));
+          }
+        }
+
         return {
           ...prev,
           resources: nextRes,
           harvestTimers: updatedTimers,
+          technologies: nextTechnologies,
+          currentResearch: nextCurrentResearch,
           troops: nextTroops,
           garrison: nextGarrison,
           battleLogs: newBattleLogs,
@@ -785,18 +841,31 @@ export function useGameState() {
     const tech = TECHNOLOGIES[techId];
     if (!tech) return false;
 
-    const keepLvl = gameState.buildings?.keep || 1;
+    // Check if already researched or currently researching
+    if ((gameState.technologies || []).includes(techId) || gameState.currentResearch) {
+      return false;
+    }
+
+    const keepPlot = gameState.grid && Array.isArray(gameState.grid)
+      ? gameState.grid.find(p => p.buildingId === 'keep')
+      : null;
+    const keepLvl = keepPlot?.level || gameState.buildings?.keep || 1;
     if (tech.requirements?.keepTier && keepLvl < tech.requirements.keepTier) {
       sounds.playFamineAlarm();
       return false;
     }
 
-    const costGold = tech.requirements?.cost?.gold || 0;
-    const costFood = tech.requirements?.cost?.food || 0;
+    const discount = gameState.faction === 'humans' ? 0.5 : 1.0;
+    const costGold = Math.round((tech.requirements?.cost?.gold || 0) * discount);
+    const costFood = Math.round((tech.requirements?.cost?.food || 0) * discount);
+    const costWood = Math.round((tech.requirements?.cost?.wood || 0) * discount);
+    const costStone = Math.round((tech.requirements?.cost?.stone || 0) * discount);
 
     if (
       (gameState.resources?.gold || 0) < costGold ||
-      (gameState.resources?.food || 0) < costFood
+      (gameState.resources?.food || 0) < costFood ||
+      (gameState.resources?.wood || 0) < costWood ||
+      (gameState.resources?.stone || 0) < costStone
     ) {
       sounds.playFamineAlarm();
       return false;
@@ -806,18 +875,15 @@ export function useGameState() {
     haptics.heavy();
     if (onTriggerDecreeStamp) onTriggerDecreeStamp();
 
-    setTimeout(() => {
-      sounds.playUpgrade();
-    }, 350);
-
     setGameState(prev => {
       const currentTechs = prev.technologies || [];
-      if (currentTechs.includes(techId)) return prev;
+      if (currentTechs.includes(techId) || prev.currentResearch) return prev;
 
+      const duration = tech.duration || 15;
       const researchLog = {
         id: `log-tech-${Date.now()}`,
-        title: `Decree Sealed: ${tech.name}`,
-        text: `Ratified the royal decree for ${tech.name} (${tech.subtitle}). Standing garrison levies will now automatically reap completed harvests from realm silos into stockpiles.`,
+        title: `Decree Commissioned: ${tech.name}`,
+        text: `Scholars unrolled parchment scrolls to codify ${tech.name} (${tech.subtitle}). Duration: ${duration}s.`,
         type: 'win',
         timestamp: Date.now()
       };
@@ -827,9 +893,17 @@ export function useGameState() {
         resources: {
           ...prev.resources,
           gold: Math.max(0, (prev.resources?.gold || 0) - costGold),
-          food: Math.max(0, (prev.resources?.food || 0) - costFood)
+          food: Math.max(0, (prev.resources?.food || 0) - costFood),
+          wood: Math.max(0, (prev.resources?.wood || 0) - costWood),
+          stone: Math.max(0, (prev.resources?.stone || 0) - costStone)
         },
-        technologies: [...currentTechs, techId],
+        currentResearch: {
+          techId,
+          startTime: Date.now(),
+          duration,
+          remaining: duration,
+          progress: 0
+        },
         battleLogs: [researchLog, ...(prev.battleLogs || [])]
       };
     });
@@ -967,6 +1041,12 @@ export function useGameState() {
     handleIssueRoyalDecree,
     handleBulkUpgradeBuildings,
     handleResearchTechnology,
+    researchTech: handleResearchTechnology,
+    unlockedTech: gameState.technologies || [],
+    currentResearch: gameState.currentResearch || null,
+    researchProgress: gameState.currentResearch
+      ? Math.min(1, Math.max(0, 1 - ((gameState.currentResearch.remaining || 0) / (gameState.currentResearch.duration || 1))))
+      : 0,
     constructBuilding,
     expandTerritory,
     trainTroops,

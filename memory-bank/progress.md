@@ -86,6 +86,15 @@
   - [x] Newly erected structures strictly initialize at Tier 1 (`level: 1`), keeping OG structures at their existing tiers.
   - [x] Storage caps, labor demand, troop capacities, and vault protections dynamically calculated across grid structures.
   - [x] Per-plot upgrade decrees, harvests, and hover tooltip inspections.
+- [x] **Full Mobile Access for Tech Codex & Royal Decrees**:
+  - [x] Dedicated bottom-nav `Codex` tab in `MobileBottomNav.jsx` with ancient grimoire icon, haptics, and dual amber/green badge indicators.
+  - [x] Mobile-first slide-up parchment sheet modal (`MobileTechCodexModal.jsx`) with 44x44px ink-stamp close button.
+  - [x] Horizontal scroll category chips (`All`, `Economy`, `Military`, `Fortification`).
+  - [x] Embossed wax-bordered technology cards with lore, keep tier prerequisites, active realm benefits, and color-coded resource affordability checks.
+  - [x] Tri-state status representations: Researched (green wax seal stamp), Researching... (real-time progress bar with countdown seconds), and Seal Decree CTA.
+  - [x] Direct quick-trigger parchment pill in `MobileFloatingHUD.jsx` during active research or garrison auto-harvest.
+  - [x] Tech catalog expansion in `src/constants/technology.js` with passive benefits in `usePlayerStats.js` and desktop `SovereignLedger.jsx`.
+  - [x] Timed research progression in 1000ms loop with deterministic offline catchup in `useGameState.js`.
 
 ## Planned / In Progress
 - [ ] Additional weather sound synthesizers (rain, thunder, blizzard noise nodes).

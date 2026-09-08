@@ -7,6 +7,8 @@ import {
   BUILDINGS,
   EMPTY_PLOT,
   DEFAULT_STATE,
+  TECHNOLOGIES,
+  TECH_CATEGORIES,
   SoundController,
   sounds,
   ISO_W,
@@ -26,6 +28,10 @@ import {
   WaxStampCursor,
   WaxSplats
 } from './src/components/common/index.js';
+
+import {
+  MobileTechCodexModal
+} from './src/components/technology/index.js';
 
 import {
   MonarchHeader,
@@ -72,6 +78,8 @@ export {
   BUILDINGS,
   EMPTY_PLOT,
   DEFAULT_STATE,
+  TECHNOLOGIES,
+  TECH_CATEGORIES,
   SoundController,
   sounds,
   ISO_W,
@@ -93,6 +101,7 @@ export default function App() {
   const [multiSelectedIds, setMultiSelectedIds] = useState([]);
   const [activeLedgerTab, setActiveLedgerTab] = useState('structure');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isTechCodexOpen, setIsTechCodexOpen] = useState(false);
 
   // Modular Custom Hooks
   const {
@@ -110,6 +119,10 @@ export default function App() {
     handleIssueRoyalDecree,
     handleBulkUpgradeBuildings,
     handleResearchTechnology,
+    researchTech,
+    unlockedTech,
+    currentResearch,
+    researchProgress,
     constructBuilding,
     expandTerritory,
     trainTroops,
@@ -155,11 +168,17 @@ export default function App() {
     },
     onToggleTech: () => {
       sounds.playCoin();
-      setDeskView('citadel');
-      setActiveLedgerTab('decrees');
+      if (typeof window !== 'undefined' && window.innerWidth < 768) {
+        setIsTechCodexOpen(prev => !prev);
+      } else {
+        setDeskView('citadel');
+        setActiveLedgerTab('decrees');
+      }
     },
     onEscape: () => {
-      if (multiSelectedIds.length > 0) {
+      if (isTechCodexOpen) {
+        setIsTechCodexOpen(false);
+      } else if (multiSelectedIds.length > 0) {
         setMultiSelectedIds([]);
       } else if (activeRaid) {
         closeRaid();
@@ -292,6 +311,28 @@ export default function App() {
     gameState.resources.stone >= costStone;
 
   const hasUnavengedFeuds = gameState.revengeLedger.some(r => !r.revenged);
+  const hasTroopLogistics = (gameState.technologies || []).includes('tech_troop_logistics');
+  const isResearching = !!(currentResearch || gameState.currentResearch);
+
+  const currentKeepLvl = (gameState.grid && Array.isArray(gameState.grid)
+    ? gameState.grid.find(p => p.buildingId === 'keep')?.level
+    : null) || gameState.buildings?.keep || 1;
+
+  const canResearchAny = Object.values(TECHNOLOGIES).some(tech => {
+    if ((gameState.technologies || []).includes(tech.id)) return false;
+    const reqKeep = tech.requirements?.keepTier || 1;
+    if (currentKeepLvl < reqKeep) return false;
+    const cGold = Math.round((tech.requirements?.cost?.gold || 0) * discount);
+    const cFood = Math.round((tech.requirements?.cost?.food || 0) * discount);
+    const cWood = Math.round((tech.requirements?.cost?.wood || 0) * discount);
+    const cStone = Math.round((tech.requirements?.cost?.stone || 0) * discount);
+    return (
+      (gameState.resources?.gold || 0) >= cGold &&
+      (gameState.resources?.food || 0) >= cFood &&
+      (gameState.resources?.wood || 0) >= cWood &&
+      (gameState.resources?.stone || 0) >= cStone
+    );
+  });
 
   return (
     <div
@@ -343,6 +384,10 @@ export default function App() {
         starvationDeaths={starvationDeaths}
         hasUnavengedFeuds={hasUnavengedFeuds}
         deskView={deskView}
+        currentResearch={currentResearch || gameState.currentResearch}
+        hasTroopLogistics={hasTroopLogistics}
+        troops={gameState.troops}
+        onOpenTech={() => setIsTechCodexOpen(true)}
         onToggleSpeed={handleToggleSpeed}
         onToggleMenu={() => {
           sounds.playWaxSealThud();
@@ -458,6 +503,10 @@ export default function App() {
         readyHarvestsCount={readyHarvestsCount}
         canUpgradeSelected={canUpgradeSelected}
         selectedBuildingName={selectedDef.name}
+        isCodexOpen={isTechCodexOpen}
+        onOpenCodex={() => setIsTechCodexOpen(true)}
+        isResearching={isResearching}
+        canResearchAny={canResearchAny}
         onHarvestAll={() => handleHarvestAll(stats.caps, currentFaction)}
         onUpgradeSelected={(e) => onUpgradeBuilding(selectedBuildingId, e)}
         onTriggerStamp={(e) => triggerWaxSplat(e?.clientX || window.innerWidth / 2, e?.clientY || window.innerHeight / 2)}
@@ -470,6 +519,22 @@ export default function App() {
         settings={settings}
         onUpdateSettings={handleUpdateSettings}
         onResetSave={onResetSave}
+      />
+
+      {/* MOBILE TECH CODEX & ROYAL DECREES MODAL */}
+      <MobileTechCodexModal
+        isOpen={isTechCodexOpen}
+        onClose={() => setIsTechCodexOpen(false)}
+        technologies={gameState.technologies || []}
+        unlockedTech={unlockedTech || gameState.technologies || []}
+        currentResearch={currentResearch || gameState.currentResearch || null}
+        researchProgress={researchProgress || 0}
+        onResearchTechnology={onResearchTechnology}
+        researchTech={researchTech || onResearchTechnology}
+        resources={gameState.resources}
+        buildings={gameState.buildings}
+        grid={gameState.grid}
+        currentFaction={currentFaction}
       />
 
       {/* REWARDED VIDEO AD GATE SIMULATOR */}

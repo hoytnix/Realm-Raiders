@@ -81,8 +81,31 @@
     - **UI & Interaction Binding (`CitadelSvgGrid.jsx`, `ParchmentCitadelMap.jsx`, `SovereignLedger.jsx`, `BuildingInspector.jsx`, `App.jsx`)**: Updated plot click handlers to pass `plot.id`, resolved `selectedPlot` to accurately distinguish between empty foundations (`level: 0`) and constructed structures (`level: plot.level`), and ensured Inspector/Ledger actions (upgrade costs, keep annexation, barracks muster) dynamically reflect individual structure levels.
     - **Hook Import Restoration (`usePlayerStats.js`)**: Restored missing `useMemo` import from React, resolving runtime reference error on app load.
 
+  - **Full Mobile Access for Tech Codex & Royal Decrees**:
+    - **Root Cause Resolution & State Wiring (`App.jsx`, `useGameState.js`)**:
+      - Eliminated the desktop-only constraint on the Tech Codex (`SovereignLedger`), creating dedicated mobile touchpoints.
+      - Integrated `isTechCodexOpen` modal state in `App.jsx`, keyboard hotkey integration ('T' toggles mobile modal on `<md` and desktop right-rail ledger tab on `>=md`, Esc dismisses modal), and full state passthrough (`unlockedTech`, `currentResearch`, `researchProgress`, `researchTech`).
+      - Modeled real-time research progression with `duration` in seconds, 1000ms simulation loop tick-down, deterministic offline research catchup, and dynamic resource deductions.
+    - **Thumb-Zone Bottom-Nav Codex Tab (`MobileBottomNav.jsx`)**:
+      - Added dedicated `Codex` navigation tab positioned between War Council and Chronicle Tome.
+      - Styled with illuminated open grimoire / parchment scroll SVG icon and touch target >= 44px with `haptics.light()` and coin chimes.
+      - Integrated dual badge indicators: pulsing amber ping indicator when research is active, and emerald green dot when royal resources meet requirements for an unresearched decree.
+    - **Slide-Up Parchment Folio (`MobileTechCodexModal.jsx`)**:
+      - Designed mobile-first bottom sheet drawer (`max-h-[90vh]` / `max-h-[85vh]` on tablet/desktop) with tactile drag pill and ornate parchment header titled `"ROYAL CODEX & DECREES"`.
+      - High-contrast ink-stamp close button (`✕`) with 44x44px touch target.
+      - Quick horizontal scroll filter chips: `All`, `Economy` (Troop Auto-Collection), `Military`, and `Fortification`.
+      - Embossed wax-bordered technology cards rendering title, subtitle, duration badge (`⏳ {duration}s`), lore italicization, active realm benefit box (*"Idle garrison troops automatically harvest completed citadel yields."* for `tech_troop_logistics`), Keep tier prerequisite checks, and color-coded resource costs (Gold, Sustenance, Wood, Stone) taking into account the Human faction -50% decree cost discount.
+      - 3 diegetic state representations: **Researched** (green wax seal stamp with checkmark), **Researching...** (animated progress bar with remaining seconds), and **Seal Decree** (crimson wax CTA button).
+      - Accounted for mobile safe-area insets (`pb-[calc(1.5rem+env(safe-area-inset-bottom,1.5rem))]`) avoiding device home bar overlap.
+    - **Direct Quick-Trigger Pill in Floating HUD (`MobileFloatingHUD.jsx`)**:
+      - Rendered a compact parchment pill beneath the chronometer badge when research is ongoing (`📜 {Decree Name}: {seconds}s` with amber ping) or when troop harvest auto-collection is active (`📜 Troop Harvest: Active` with green dot) that opens the Tech Codex on tap.
+    - **Multi-Category Tech Catalog Expansion (`src/constants/technology.js`, `src/hooks/usePlayerStats.js`, `SovereignLedger.jsx`)**:
+      - Expanded catalog with `tech_crop_rotation` (Economy), `tech_phalanx_drills` (Military: +15% defense), `tech_siege_munitions` (Military: +20% raid attack), `tech_crenellated_masonry` (Fortification), and `tech_deep_vault_locks` (Fortification: +15% vault protection).
+      - Upgraded desktop `SovereignLedger.jsx` Decrees tab to display all technologies in the expanded catalog.
+
 ## Active Focus & Next Steps
 - Continue fine-tuning asymmetric balance across factions under multi-building bulk decree progressions.
 - Explore ambient weather synthesizer soundscapes (rain, wind howling, blizzard hums).
+
 
 

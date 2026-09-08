@@ -1,5 +1,5 @@
 import React from 'react';
-import { WEATHER_CONDITIONS } from '../../constants/index.js';
+import { WEATHER_CONDITIONS, TECHNOLOGIES, sounds } from '../../constants/index.js';
 import { formatCompactNumber, haptics } from '../../utils/index.js';
 import { FamineWarning } from './FamineWarning.jsx';
 
@@ -18,6 +18,10 @@ export function MobileFloatingHUD({
   starvationDeaths = 0,
   hasUnavengedFeuds = false,
   deskView = 'citadel',
+  currentResearch = null,
+  hasTroopLogistics = false,
+  troops = null,
+  onOpenTech,
   onToggleSpeed,
   onToggleMenu,
   onRaidGrain
@@ -33,6 +37,7 @@ export function MobileFloatingHUD({
   const yearDisplay = timeState?.year || 26;
   const eraDisplay = timeState?.era || 'ADX';
   const isMenuOpen = deskView === 'menu';
+  const isAutoCollecting = hasTroopLogistics && (troops?.total || 0) >= 1;
 
   const handleSpeedTap = (e) => {
     e.stopPropagation();
@@ -67,6 +72,38 @@ export function MobileFloatingHUD({
               {timeState?.timeSpeed || 1}x
             </button>
           </div>
+
+          {/* Middle Row: Direct Quick-Trigger Codex / Research / Harvest Pill */}
+          {(currentResearch || isAutoCollecting) && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                haptics.light();
+                sounds.playCoin();
+                onOpenTech?.();
+              }}
+              className="pointer-events-auto flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#ebdcc1] via-[#e5d4b3] to-[#dfcba6] border border-[#8c6843] text-[#3f2314] text-[10.5px] font-mono font-bold shadow-[0_3px_10px_rgba(0,0,0,0.6)] self-start active:scale-95 transition"
+              title="Open Royal Codex & Decrees"
+            >
+              <span className="text-xs">📜</span>
+              {currentResearch ? (
+                <>
+                  <span className="text-amber-950 font-black truncate max-w-[170px]">
+                    {TECHNOLOGIES[currentResearch.techId]?.name || 'Decree'}: {Math.ceil(currentResearch.remaining || 0)}s
+                  </span>
+                  <span className="relative flex h-2 w-2 ml-0.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-600" />
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="text-emerald-950 font-black">Troop Harvest: Active</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 ml-0.5" />
+                </>
+              )}
+            </button>
+          )}
 
           {/* Lower Row: Tight Cluster of Resource Pills + Famine Warning */}
           <div className="pointer-events-auto flex items-center gap-1 overflow-x-auto max-w-full pb-0.5 scrollbar-none">

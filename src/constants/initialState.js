@@ -91,6 +91,7 @@ export const DEFAULT_STATE = {
     sfxVolume: 0.8
   },
   technologies: [],
+  currentResearch: null,
   population: 14,
   garrison: 8,
   totalRaidsWon: 0,
