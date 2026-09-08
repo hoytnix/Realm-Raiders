@@ -328,9 +328,10 @@ export function useGameState() {
           }
         }
 
-        // Starvation Mortality: When resources are 0, troops die off during day transitions
+        // Starvation Mortality: When resources are 0, troops and workforce die off during day transitions
         let nextTroops = prev.troops ? { ...prev.troops } : { total: 20, maxCapacity: 30, sustenanceUpkeepPerDay: 1 };
         let nextGarrison = prev.garrison;
+        let nextPopulation = prev.population ?? 25;
 
         if (starvingNow && dayPassed && nextTroops.total > 0) {
           const mortalityRate = 0.10; // 10% die per cycle
@@ -338,11 +339,12 @@ export function useGameState() {
           setStarvationDeaths(deaths);
           nextTroops.total = Math.max(0, nextTroops.total - deaths);
           nextGarrison = Math.max(0, (nextGarrison || 0) - deaths);
+          nextPopulation = Math.max(1, nextPopulation - deaths);
 
           const starvationLog = {
             id: `log-famine-${Date.now()}`,
-            title: 'Famine & Scurvy in the Barracks',
-            text: `With sustenance stores exhausted, ${deaths} soldiers succumbed to starvation. Realm labor capacity dropped!`,
+            title: 'Famine & Scurvy in the Citadel',
+            text: `With sustenance stores exhausted, ${deaths} soldiers and laborers succumbed to starvation. Casualties remain lost until royal levies are recruited!`,
             type: 'loss',
             timestamp: Date.now()
           };
@@ -461,6 +463,7 @@ export function useGameState() {
           currentResearch: nextCurrentResearch,
           troops: nextTroops,
           garrison: nextGarrison,
+          population: nextPopulation,
           battleLogs: newBattleLogs,
           brambleShieldActive: nextBrambleShieldActive,
           soilFertilityBonus: nextSoilFertilityBonus,
@@ -828,35 +831,42 @@ export function useGameState() {
     return true;
   };
 
-  // Recruit troops at Barracks
-  const trainTroops = (count = 1) => {
-    // Halt recruitment while famine is active
+  // Recruit troops & laborers at Barracks, Garrison, or War Council
+  const trainTroops = (requestedCount = 1) => {
+    // Halt recruitment while severe starvation is actively starving the citadel
     const isGracePeriod = (gameState.timeState?.year === 26 && gameState.timeState?.month === 9 && (gameState.timeState?.day || 1) <= 5);
-    const isFamineActive = !isGracePeriod && (gameState.resources?.food || 0) <= 0.05;
+    const isFamineActive = !isGracePeriod && ((gameState.resources?.food || 0) <= 0.05 && (gameState.resources?.water || 0) <= 0.05);
     if (isFamineActive) {
-      sounds.playFamineAlarm();
-      return false;
-    }
-
-    const barracksLvl = gameState.buildings?.barracks || 0;
-    if (barracksLvl < 1) {
       sounds.playFamineAlarm();
       return false;
     }
 
     const currentTroops = gameState.troops?.total || 0;
     const maxCapacity = gameState.troops?.maxCapacity || 30;
-    const actualCount = Math.min(count, maxCapacity - currentTroops);
+    const spaceAvailable = Math.max(0, maxCapacity - currentTroops);
+
+    if (spaceAvailable <= 0) {
+      sounds.playFamineAlarm();
+      return false;
+    }
+
+    const goldPerRecruit = TROOP_RECRUIT_COST.gold || 25;
+    const maxAffordable = Math.floor((gameState.resources?.gold || 0) / goldPerRecruit);
+
+    let actualCount = 0;
+    if (requestedCount === 'max') {
+      actualCount = Math.min(spaceAvailable, maxAffordable);
+    } else {
+      actualCount = Math.min(Number(requestedCount) || 1, spaceAvailable);
+    }
 
     if (actualCount <= 0) {
       sounds.playFamineAlarm();
       return false;
     }
 
-    const costGold = actualCount * TROOP_RECRUIT_COST.gold;
-    const costFood = actualCount * TROOP_RECRUIT_COST.food;
-
-    if (gameState.resources.gold < costGold || gameState.resources.food < costFood) {
+    const costGold = actualCount * goldPerRecruit;
+    if ((gameState.resources?.gold || 0) < costGold) {
       sounds.playFamineAlarm();
       return false;
     }
@@ -868,8 +878,8 @@ export function useGameState() {
       const prevTroops = prev.troops || { total: 20, maxCapacity: 30, sustenanceUpkeepPerDay: 1 };
       const recruitLog = {
         id: `log-recruit-${Date.now()}`,
-        title: `Mustered ${actualCount} Levies`,
-        text: `Recruited ${actualCount} valiant footmen at the Barracks. Citadel labor saturation and combat defense boosted.`,
+        title: `Mustered ${actualCount} Levies & Laborers`,
+        text: `Enlisted ${actualCount} recruits (cost: ${costGold} Gold). Restored garrison defense and agricultural labor capacity.`,
         type: 'win',
         timestamp: Date.now()
       };
@@ -878,14 +888,14 @@ export function useGameState() {
         ...prev,
         resources: {
           ...prev.resources,
-          gold: prev.resources.gold - costGold,
-          food: prev.resources.food - costFood
+          gold: Math.max(0, (prev.resources?.gold || 0) - costGold)
         },
         troops: {
           ...prevTroops,
           total: prevTroops.total + actualCount
         },
         garrison: (prev.garrison || 0) + actualCount,
+        population: (prev.population || 20) + actualCount,
         battleLogs: [recruitLog, ...(prev.battleLogs || [])]
       };
     });

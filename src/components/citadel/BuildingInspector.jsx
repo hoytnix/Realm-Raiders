@@ -8,7 +8,7 @@ import {
   TROOP_RECRUIT_COST,
   sounds
 } from '../../constants/index.js';
-import { haptics } from '../../utils/index.js';
+import { haptics, triggerHaptic } from '../../utils/index.js';
 
 export function BuildingInspector({
   selectedDef = BUILDINGS.keep,
@@ -112,62 +112,65 @@ export function BuildingInspector({
   return (
     <>
       {/* =========================================================================
-          MOBILE EXPANDABLE / SWIPEABLE BOTTOM SHEET (< md)
+          THE ROYAL LEDGER (CITADEL INSPECTOR): MOBILE BOTTOM SHEET (< md)
           ========================================================================= */}
       <div
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         className={`md:hidden fixed bottom-14 left-0 right-0 z-30 bg-[#e4d4b3] border-t-2 border-[#bfa379] shadow-[0_-10px_25px_rgba(0,0,0,0.4)] transition-all duration-300 ease-out flex flex-col ${
-          isExpanded ? 'max-h-[85vh] p-3 overflow-y-auto' : 'max-h-12 py-1 px-3'
+          isExpanded ? 'h-[75vh] p-3 overflow-hidden' : 'h-12 py-1 px-3 overflow-hidden'
         }`}
       >
         {/* Drag Handle Bar & Peek Header */}
         <div
           onClick={toggleExpand}
-          className="w-full flex items-center justify-between cursor-pointer py-1"
+          className="w-full flex items-center justify-between cursor-pointer py-1 flex-shrink-0"
         >
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-[#cbb38b] border border-[#8c6843] flex items-center justify-center text-lg shadow-inner flex-shrink-0">
               {isEmptyPlot ? EMPTY_PLOT.inkSymbol : selectedDef?.inkSymbol}
             </div>
-            <div className="flex items-center gap-1.5">
-              <h3 className="text-xs font-black text-[#442813]">
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] uppercase tracking-wider font-mono font-bold text-[#8c6843]">
+                  The Royal Ledger
+                </span>
+                {!isEmptyPlot && (
+                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#6b4724] text-amber-200 font-bold">
+                    T{currentLvl}
+                  </span>
+                )}
+                {isAutomated && (
+                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-900/20 text-emerald-900 font-bold border border-emerald-700/40 flex items-center gap-0.5">
+                    🛡️ Auto
+                  </span>
+                )}
+              </div>
+              <h3 className="text-xs font-black text-[#442813] leading-tight">
                 {isEmptyPlot ? 'Cleared Foundation' : selectedDef?.name}
               </h3>
-              {!isEmptyPlot && (
-                <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#6b4724] text-amber-200 font-bold">
-                  T{currentLvl}
-                </span>
-              )}
-              {isAutomated && (
-                <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-900/20 text-emerald-900 font-bold border border-emerald-700/40 flex items-center gap-0.5">
-                  🛡️ Auto
-                </span>
-              )}
-              {isEmptyPlot ? (
-                <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-900/20 text-amber-900 font-bold">
-                  Plot Ready ⛏️
-                </span>
-              ) : canAfford ? (
-                <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-green-900/20 text-green-900 font-bold border border-green-700/40 animate-pulse">
-                  Ready ✨
-                </span>
-              ) : (
-                <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-900/10 text-amber-900 font-bold">
-                  🪙{costGold}
-                </span>
-              )}
             </div>
           </div>
 
-          <div className="flex items-center gap-1 text-[10px] font-mono text-[#6b4a2e] font-bold">
-            <span>{isExpanded ? '▼ Close' : isEmptyPlot ? '▲ Commission' : '▲ Details'}</span>
+          <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#6b4a2e] font-bold">
+            {!isEmptyPlot && !isExpanded && (
+              canAfford ? (
+                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-green-900/20 text-green-900 font-bold border border-green-700/40 animate-pulse">
+                  Ready ✨
+                </span>
+              ) : (
+                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-900/10 text-amber-900 font-bold">
+                  🪙{costGold}
+                </span>
+              )
+            )}
+            <span>{isExpanded ? '▼ Close' : isEmptyPlot ? '▲ Commission' : '▲ Royal Ledger'}</span>
           </div>
         </div>
 
         {/* Expanded Sheet Body */}
         {isExpanded && (
-          <div className="mt-2 pt-2 border-t border-[#bfa379]/60 space-y-3 animate-in fade-in duration-200">
+          <div className="flex-1 overflow-y-auto overscroll-contain mt-2 pt-2 border-t border-[#bfa379]/60 space-y-3 animate-in fade-in duration-200 pb-4">
             {/* MODE 1: EMPTY FOUNDATION CAROUSEL */}
             {isEmptyPlot ? (
               <div className="space-y-2">
@@ -218,7 +221,7 @@ export function BuildingInspector({
                 </button>
               </div>
             ) : (
-              /* MODE 2: CONSTRUCTED STRUCTURE INSPECTION */
+              /* MODE 2: CONSTRUCTED STRUCTURE INSPECTION & UPGRADE */
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-[11px] text-[#6b4a2e] leading-snug flex-1">
@@ -226,23 +229,151 @@ export function BuildingInspector({
                   </p>
                 </div>
 
-                {/* Upgrade Cost Requirements */}
-                <div className="flex items-center justify-between bg-[#dfcba6] p-2 rounded-xl border border-[#bfa379]">
-                  <span className="text-[10px] font-mono font-bold text-[#6b4a2e] uppercase">
-                    Upgrade Costs:
-                  </span>
-                  <div className="flex items-center gap-1.5 text-xs font-mono">
-                    <span className={`px-2 py-0.5 rounded border ${resources.gold >= costGold ? 'bg-yellow-900/10 border-yellow-800 text-yellow-900 font-bold' : 'bg-red-900/10 border-red-800 text-red-900 font-bold'}`}>
-                      🪙 {costGold}
-                    </span>
-                    <span className={`px-2 py-0.5 rounded border ${resources.wood >= costWood ? 'bg-orange-900/10 border-orange-800 text-orange-900' : 'bg-red-900/10 border-red-800 text-red-900 font-bold'}`}>
-                      🪵 {costWood}
-                    </span>
-                    <span className={`px-2 py-0.5 rounded border ${resources.stone >= costStone ? 'bg-stone-900/10 border-stone-800 text-stone-900' : 'bg-red-900/10 border-red-800 text-red-900 font-bold'}`}>
-                      🪨 {costStone}
-                    </span>
+                {/* PROMINENT EMBOSSED "SEAL ROYAL UPGRADE" CARD */}
+                <div className="bg-[#dfcba6] p-3 rounded-2xl border-2 border-[#8c6843] shadow-md space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs uppercase font-mono font-bold text-[#8c6843]">
+                        Decree Target:
+                      </span>
+                      <span className="text-xs font-mono font-black text-[#442813]">
+                        Tier {currentLvl} → Tier {currentLvl + 1}
+                      </span>
+                    </div>
+                    {canAfford ? (
+                      <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-800 text-emerald-100 border border-emerald-600 animate-pulse">
+                        Stores Ready ✨
+                      </span>
+                    ) : (
+                      <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-red-900/10 text-red-900 border border-red-800/30">
+                        Deficit
+                      </span>
+                    )}
                   </div>
+
+                  {/* Resource Costs with Color-Coded Deficit Indicators */}
+                  <div className="grid grid-cols-3 gap-2 text-xs font-mono">
+                    <div className={`p-2 rounded-xl border text-center ${
+                      resources.gold >= costGold
+                        ? 'bg-yellow-900/10 border-yellow-800/40 text-yellow-900 font-bold'
+                        : 'bg-red-900/15 border-red-800/60 text-red-900 font-bold'
+                    }`}>
+                      <div className="text-xs">🪙 {costGold}</div>
+                      <div className="text-[9px] font-sans opacity-80 mt-0.5">
+                        {resources.gold >= costGold ? 'Gold' : `(-${costGold - (resources.gold || 0)})`}
+                      </div>
+                    </div>
+                    <div className={`p-2 rounded-xl border text-center ${
+                      resources.wood >= costWood
+                        ? 'bg-orange-900/10 border-orange-800/40 text-orange-900 font-bold'
+                        : 'bg-red-900/15 border-red-800/60 text-red-900 font-bold'
+                    }`}>
+                      <div className="text-xs">🪵 {costWood}</div>
+                      <div className="text-[9px] font-sans opacity-80 mt-0.5">
+                        {resources.wood >= costWood ? 'Timber' : `(-${costWood - (resources.wood || 0)})`}
+                      </div>
+                    </div>
+                    <div className={`p-2 rounded-xl border text-center ${
+                      resources.stone >= costStone
+                        ? 'bg-stone-900/10 border-stone-800/40 text-stone-900 font-bold'
+                        : 'bg-red-900/15 border-red-800/60 text-red-900 font-bold'
+                    }`}>
+                      <div className="text-xs">🪨 {costStone}</div>
+                      <div className="text-[9px] font-sans opacity-80 mt-0.5">
+                        {resources.stone >= costStone ? 'Stone' : `(-${costStone - (resources.stone || 0)})`}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Embossed Action Button: SEAL ROYAL UPGRADE */}
+                  <button
+                    onClick={(e) => {
+                      triggerHaptic('heavy');
+                      handleUpgradeClick(e);
+                    }}
+                    disabled={!canAfford || stampingDecree}
+                    className={`w-full py-3 px-4 rounded-xl font-black text-xs transition flex items-center justify-center gap-2 border-2 shadow-xl ${
+                      canAfford
+                        ? 'bg-gradient-to-r from-red-800 via-rose-800 to-red-700 text-amber-100 hover:brightness-110 active:scale-95 border-red-600 shadow-red-950/40 cursor-pointer'
+                        : 'bg-stone-300 text-stone-600 border-stone-400 cursor-not-allowed'
+                    }`}
+                  >
+                    <span className={`text-base ${stampingDecree ? 'animate-spin' : ''}`}>🩸</span>
+                    <span className="tracking-wide uppercase">
+                      {canAfford ? `SEAL ROYAL UPGRADE (T${currentLvl + 1})` : `Insufficient Resources for Tier ${currentLvl + 1}`}
+                    </span>
+                  </button>
                 </div>
+
+                {/* BARRACKS / GARRISON RECRUITMENT ACTION */}
+                {isBarracks && (
+                  <div className="bg-[#dfcba6] p-2.5 rounded-2xl border-2 border-amber-800/40 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-base">⚔️</span>
+                        <div>
+                          <h4 className="text-xs font-black text-[#442813]">Levy Recruits / Enlist Laborers</h4>
+                          <span className="text-[10px] text-[#6b4a2e]">
+                            Workforce: {troops.total} / {maxTroopCap} • Restores labor & garrison
+                          </span>
+                        </div>
+                      </div>
+                      <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-amber-900/15 text-amber-900 border border-amber-800/30">
+                        25 🪙 / recruit
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-1">
+                      <div className="flex items-center gap-1.5">
+                        {[1, 5].map(cnt => (
+                          <button
+                            key={cnt}
+                            onClick={() => {
+                              sounds.playCoin();
+                              haptics.light();
+                              setRecruitCount(cnt);
+                            }}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold border transition ${
+                              recruitCount === cnt
+                                ? 'bg-amber-900 text-amber-100 border-amber-950'
+                                : 'bg-[#ebdcc1] text-[#442813] border-[#8c6843]'
+                            }`}
+                          >
+                            +{cnt}
+                          </button>
+                        ))}
+                        <button
+                          onClick={() => {
+                            sounds.playCoin();
+                            haptics.light();
+                            const maxAffordable = Math.floor((resources.gold || 0) / 25);
+                            const space = Math.max(1, maxTroopCap - troops.total);
+                            setRecruitCount(Math.min(space, Math.max(1, maxAffordable)));
+                          }}
+                          className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-[#ebdcc1] text-[#442813] border border-[#8c6843] hover:bg-[#dfcba6]"
+                        >
+                          Max
+                        </button>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          triggerHaptic('heavy');
+                          if (onTrainTroops) onTrainTroops(recruitCount);
+                        }}
+                        disabled={!canRecruit}
+                        className={`px-3.5 py-1.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 shadow ${
+                          canRecruit
+                            ? 'bg-gradient-to-r from-red-800 to-rose-900 text-amber-100 hover:brightness-110 active:scale-95 border border-red-700'
+                            : 'bg-stone-400 text-stone-600 cursor-not-allowed'
+                        }`}
+                      >
+                        <span>⚔️</span>
+                        <span>Enlist ({recruitCostGold}🪙)</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* HARVEST AUTOMATION STATUS */}
                 {isHarvestBuilding && isAutomated && (
@@ -573,10 +704,10 @@ export function BuildingInspector({
               <div className="bg-[#dfcba6] px-2.5 py-1.5 rounded-xl border border-[#bfa379] flex items-center gap-2 text-xs">
                 <div>
                   <div className="font-bold text-[#442813] text-[11px]">
-                    Mustering ({troops.total}/{maxTroopCap})
+                    Levy Recruits ({troops.total}/{maxTroopCap})
                   </div>
                   <div className="text-[9px] font-mono text-[#6b4a2e]">
-                    🪙{recruitCostGold} • 🌾{recruitCostFood}
+                    🪙 {recruitCount * 25} (25🪙/ea)
                   </div>
                 </div>
                 <div className="flex gap-1">
@@ -591,9 +722,22 @@ export function BuildingInspector({
                       +{cnt}
                     </button>
                   ))}
+                  <button
+                    onClick={() => {
+                      const maxAffordable = Math.floor((resources.gold || 0) / 25);
+                      const space = Math.max(1, maxTroopCap - troops.total);
+                      setRecruitCount(Math.min(space, Math.max(1, maxAffordable)));
+                    }}
+                    className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[#cbb38b] hover:bg-[#bfa379]"
+                  >
+                    Max
+                  </button>
                 </div>
                 <button
-                  onClick={() => onTrainTroops && onTrainTroops(recruitCount)}
+                  onClick={() => {
+                    triggerHaptic('heavy');
+                    if (onTrainTroops) onTrainTroops(recruitCount);
+                  }}
                   disabled={!canRecruit}
                   className={`px-2.5 py-1 rounded-lg text-xs font-black transition ${
                     canRecruit
@@ -601,7 +745,7 @@ export function BuildingInspector({
                       : 'bg-stone-400 text-stone-600 cursor-not-allowed'
                   }`}
                 >
-                  Recruit
+                  Enlist
                 </button>
               </div>
             )}

@@ -49,19 +49,18 @@ export function MobileFloraSheet({
   return (
     <div
       onClick={handleClose}
-      className="fixed inset-0 z-50 bg-stone-950/85 backdrop-blur-sm flex flex-col justify-end md:justify-center md:items-center animate-in fade-in duration-200"
+      className="fixed inset-0 h-[100dvh] w-full z-40 bg-[#120d08]/95 flex flex-col animate-in fade-in duration-200"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full md:max-w-lg max-h-[90vh] overflow-y-auto bg-gradient-to-b from-[#f5ebd6] via-[#ebdcc1] to-[#dfcba6] border-t-2 md:border-2 border-[#8c6843] rounded-t-3xl md:rounded-3xl p-4 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] text-[#442813] font-serif space-y-3 pb-[calc(1.5rem+env(safe-area-inset-bottom,1.5rem))] md:pb-6"
+        className="w-full h-full bg-gradient-to-b from-[#f5ebd6] via-[#ebdcc1] to-[#dfcba6] flex flex-col overflow-hidden text-[#442813] font-serif"
       >
-        {/* Tactile drag pill */}
-        <div className="w-12 h-1 bg-[#8c6843]/40 rounded-full mx-auto" />
-
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#8c6843]/40 pb-2">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🌿</span>
+        {/* Ornate Parchment Header (Pinned) */}
+        <div className="px-4 py-3 border-b-2 border-[#8c6843]/60 flex items-center justify-between bg-[#dfcba6]/90 flex-shrink-0">
+          <div className="flex items-center gap-2.5">
+            <span className="text-2xl p-1.5 bg-[#ebdcc1] border border-[#8c6843] rounded-xl shadow-inner">
+              🌿
+            </span>
             <div>
               <h3 className="text-sm font-black text-[#3f2314] uppercase tracking-wide">
                 Flora Elemental Management
@@ -73,15 +72,17 @@ export function MobileFloraSheet({
           </div>
           <button
             onClick={handleClose}
-            className="w-8 h-8 rounded-full bg-[#dfcba6] border border-[#8c6843] flex items-center justify-center text-xs font-bold text-[#442813] hover:bg-[#cbb38b] active:scale-95 transition"
+            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-2xl bg-[#dfcba6] border-2 border-[#8c6843] flex items-center justify-center text-base font-bold text-[#442813] hover:bg-[#cbb38b] active:scale-95 transition shadow cursor-pointer"
             aria-label="Close"
           >
             ✕
           </button>
         </div>
 
-        {/* Flora Reserves & Verdant Bloom Action */}
-        <div className="bg-[#dfcba6]/80 p-3 rounded-2xl border border-[#8c6843]/60 space-y-2">
+        {/* Full Viewport Scrolling Content Area */}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-3 space-y-3 pb-[calc(env(safe-area-inset-bottom)+5rem)]">
+          {/* Flora Reserves & Verdant Bloom Action */}
+          <div className="bg-[#dfcba6]/80 p-3 rounded-2xl border border-[#8c6843]/60 space-y-2">
           <div className="flex items-center justify-between text-xs font-mono">
             <span className="font-bold text-[#3f2314]">Flora Reserves</span>
             <span className="font-mono font-bold text-emerald-800">
@@ -213,5 +214,6 @@ export function MobileFloraSheet({
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 }

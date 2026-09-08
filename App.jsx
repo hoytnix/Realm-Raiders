@@ -46,7 +46,8 @@ import {
   ThroneRoomBackground,
   DeskSurface,
   ThroneArmrests,
-  SovereignCommandDock
+  SovereignCommandDock,
+  ParchmentFloraDesk
 } from './src/components/desk/index.js';
 
 import {
@@ -190,7 +191,11 @@ export default function App() {
     },
     onOpenFlora: () => {
       sounds.playCoin();
-      setIsFloraSheetOpen(prev => !prev);
+      if (typeof window !== 'undefined' && window.innerWidth < 768) {
+        setIsFloraSheetOpen(prev => !prev);
+      } else {
+        setDeskView('flora');
+      }
     },
     onEscape: () => {
       if (isFloraSheetOpen) {
@@ -419,22 +424,22 @@ export default function App() {
         deskView={deskView}
       />
 
-      {/* LAYER 2C: MOBILE RESOURCE HUD DOCKED ABOVE BOTTOM BAR / DRAWER */}
-      <div
-        className={`md:hidden fixed left-0 right-0 z-30 px-2 pointer-events-none flex justify-center transition-all duration-300 ease-out ${
-          deskView === 'citadel'
-            ? (isInspectorExpanded ? 'bottom-[calc(85vh+6px)]' : 'bottom-[108px]')
-            : 'bottom-16'
-        }`}
-      >
-        <div className="pointer-events-auto max-w-full">
-          <ResourceBar
-            resources={gameState.resources}
-            stats={stats}
-            variant="mobile"
-          />
+      {/* LAYER 2C: MOBILE RESOURCE HUD DOCKED DIRECTLY ABOVE THE ROYAL LEDGER (Exclusively on Citadel tab) */}
+      {deskView === 'citadel' && (
+        <div
+          className={`md:hidden fixed left-0 right-0 z-30 px-2 pointer-events-none flex justify-center transition-all duration-300 ease-out ${
+            isInspectorExpanded ? 'bottom-[calc(75vh+3.5rem+4px)]' : 'bottom-[calc(3.5rem+3rem+4px)]'
+          }`}
+        >
+          <div className="pointer-events-auto max-w-full">
+            <ResourceBar
+              resources={gameState.resources}
+              stats={stats}
+              variant="mobile"
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* LAYER 3: THE OAK WAR TABLE & THE LIVING PARCHMENT */}
       <DeskSurface
@@ -495,6 +500,20 @@ export default function App() {
             onLaunchRaid={handleLaunchRaid}
             onDeclareBloodFeud={onDeclareBloodFeud}
             onResearchTechnology={onResearchTechnology}
+            onTrainTroops={trainTroops}
+          />
+        )}
+
+        {deskView === 'flora' && (
+          <ParchmentFloraDesk
+            stats={stats}
+            resources={gameState.resources}
+            timeState={timeState}
+            brambleShieldActive={brambleShieldActive}
+            onToggleBrambleShield={toggleBrambleShield}
+            onTriggerVerdantBloom={triggerVerdantBloom}
+            onTransmuteFlora={transmuteFlora}
+            currentFaction={currentFaction}
           />
         )}
 
@@ -539,8 +558,8 @@ export default function App() {
           setDeskView('citadel');
           setActiveLedgerTab('decrees');
         }}
-        onOpenFlora={() => setIsFloraSheetOpen(true)}
-        isFloraOpen={isFloraSheetOpen}
+        onOpenFlora={() => setDeskView('flora')}
+        isFloraOpen={deskView === 'flora'}
       />
 
       {/* LAYER 6: ERGONOMIC THUMB-ZONE BOTTOM NAVIGATION (Mobile only) */}
@@ -590,25 +609,27 @@ export default function App() {
         currentFaction={currentFaction}
       />
 
-      {/* MOBILE FLORA ELEMENTAL MANAGEMENT SHEET */}
-      <MobileFloraSheet
-        isOpen={isFloraSheetOpen || deskView === 'flora'}
-        onClose={() => {
-          setIsFloraSheetOpen(false);
-          if (deskView === 'flora') setDeskView('citadel');
-        }}
-        stats={stats}
-        resources={gameState.resources}
-        timeState={timeState}
-        brambleShieldActive={brambleShieldActive}
-        onToggleBrambleShield={toggleBrambleShield}
-        onTriggerVerdantBloom={triggerVerdantBloom}
-        onTransmuteFlora={transmuteFlora}
-        onNavigate={(view) => {
-          setIsFloraSheetOpen(false);
-          setDeskView(view);
-        }}
-      />
+      {/* MOBILE FLORA ELEMENTAL MANAGEMENT SHEET (Strictly Mobile < md) */}
+      <div className="md:hidden">
+        <MobileFloraSheet
+          isOpen={isFloraSheetOpen || deskView === 'flora'}
+          onClose={() => {
+            setIsFloraSheetOpen(false);
+            if (deskView === 'flora') setDeskView('citadel');
+          }}
+          stats={stats}
+          resources={gameState.resources}
+          timeState={timeState}
+          brambleShieldActive={brambleShieldActive}
+          onToggleBrambleShield={toggleBrambleShield}
+          onTriggerVerdantBloom={triggerVerdantBloom}
+          onTransmuteFlora={transmuteFlora}
+          onNavigate={(view) => {
+            setIsFloraSheetOpen(false);
+            setDeskView(view);
+          }}
+        />
+      </div>
 
       {/* REWARDED VIDEO AD GATE SIMULATOR */}
       {adModalOpen && (

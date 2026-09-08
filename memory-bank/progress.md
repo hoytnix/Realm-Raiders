@@ -122,16 +122,19 @@
   - [x] Removed top mobile Flora button and resource pills cluster from `MobileFloatingHUD.jsx`, keeping minimal chronometer.
   - [x] Stripped "Surge Growth", "Troop Harvest", and "Bramble Shield" status badges from Citadel cartography.
   - [x] Relocated mobile Resource HUD cleanly docked right above the collapsible bottom drawer/navigation bar (`ResourceBar.jsx`, `App.jsx`).
-  - [x] Formatted mobile resource pills into a sleek horizontal translucent ticker with compact values and touch-friendly padding.
-  - [x] Removed desktop "The Living Cartography: Royal Citadel" title banner and eliminated the desktop Menu button (`ParchmentHeader.jsx`).
-  - [x] Added dedicated Flora button (`🌿`) with hotkey `[4]` to desktop `SovereignCommandDock.jsx` and updated hotkeys in `useHotkeys.js`.
-  - [x] Mounted prominent persistent Desktop Resource HUD in `MonarchHeader.jsx` displaying all 5 primary resources with hover tooltips.
-  - [x] Resolved runtime `ReferenceError: speed is not defined` in `useGameState.js` harvest and research ticks.
-  - [x] Resolved Web Audio browser autoplay warnings with deferred gesture unlock in `audio.js`.
-  - [x] Installed and configured ESLint with `no-undef: error`, added `pnpm run lint` script, and added mandatory lint verification step to `GEMINI.md`.
+  - [x] **The Royal Ledger, Famine Levy Recruits, Full-Height Mobile Folios & Desktop Flora Spread**:
+  - [x] Rebranded mobile collapsible drawer to "The Royal Ledger" / "Citadel Inspector" in peek bar and expanded sheet.
+  - [x] Dynamically anchored mobile `ResourceBar` directly above the Royal Ledger: collapsed at `bottom-[calc(4rem+3rem)]` (~112px) and expanded at `bottom-[calc(75vh+3.5rem+4px)]`.
+  - [x] Restricted mobile `ResourceBar` strictly to `activeView === 'citadel'`, preventing clutter on War, Flora, Codex, Chronicle, and Vault.
+  - [x] Added prominent embossed "SEAL ROYAL UPGRADE" decree card with current/target tier, cost deficit indicators, heavy haptics, and wax stamp animations.
+  - [x] Implemented "Levy Recruits / Enlist Laborers" quick-action controls (`+1`, `+5`, `Max`) at Barracks and War Council at 25 Gold per recruit to actively counter famine mortality.
+  - [x] Famine starvation casualties now persist permanently across `population`, `troops`, and `garrison` without passive overnight respawn.
+  - [x] Converted `MobileTechCodexModal` and `MobileFloraSheet` to full-height 100dvh mobile folios with pinned headers and safe-area inset bottom padding.
+  - [x] Created `ParchmentFloraDesk` full-spread 2-page desktop parchment folio for `deskView === 'flora'` on `>=md` screens.
+  - [x] Removed duplicate "Vassal Foraging Lines" tech card from `ParchmentWarCouncil`.
+  - [x] Removed redundant topnav Flora button from `MonarchHeader`.
+  - [x] Validated via `pnpm run lint` and `pnpm run build` with zero errors.
 
 ## Planned / In Progress
 - [ ] Additional weather sound synthesizers (rain, thunder, blizzard noise nodes).
 - [ ] Expanded battle animations (projectile arcs and particle debris on the SVG canvas).
-
-

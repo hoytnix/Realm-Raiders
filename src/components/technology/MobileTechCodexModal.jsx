@@ -69,17 +69,14 @@ export function MobileTechCodexModal({
   return (
     <div
       onClick={handleClose}
-      className="fixed inset-0 z-50 bg-stone-950/85 backdrop-blur-md flex flex-col justify-end sm:items-center sm:justify-center animate-in fade-in duration-200"
+      className="fixed inset-0 h-[100dvh] w-full z-40 bg-[#120d08]/95 flex flex-col md:bg-stone-950/85 md:backdrop-blur-md md:items-center md:justify-center animate-in fade-in duration-200"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-h-[90vh] sm:max-w-lg sm:max-h-[85vh] bg-gradient-to-b from-[#f6ebd6] via-[#ebdcc1] to-[#dfcba6] border-t-2 sm:border-2 border-[#8c6843] rounded-t-3xl sm:rounded-3xl shadow-[0_-12px_45px_rgba(0,0,0,0.9)] flex flex-col overflow-hidden text-[#442813] font-serif"
+        className="w-full h-full md:max-w-2xl md:h-auto md:max-h-[85vh] bg-gradient-to-b from-[#f6ebd6] via-[#ebdcc1] to-[#dfcba6] border-0 md:border-2 md:border-[#8c6843] md:rounded-3xl shadow-2xl flex flex-col overflow-hidden text-[#442813] font-serif"
       >
-        {/* Mobile Tactile Drag Bar */}
-        <div className="w-12 h-1 bg-[#8c6843]/50 rounded-full mx-auto mt-2.5 sm:hidden" />
-
-        {/* Ornate Parchment Header */}
-        <div className="px-4 pt-3 pb-3 border-b-2 border-[#8c6843]/60 flex items-center justify-between bg-[#dfcba6]/50">
+        {/* Ornate Parchment Header (Pinned) */}
+        <div className="px-4 pt-3 pb-3 border-b-2 border-[#8c6843]/60 flex items-center justify-between bg-[#dfcba6]/90 flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-[#8c6843]/20 border border-[#8c6843] flex items-center justify-center text-lg shadow-inner">
               📜
@@ -97,7 +94,7 @@ export function MobileTechCodexModal({
           {/* Ink-Stamp Close Button (44x44px Touch Target) */}
           <button
             onClick={handleClose}
-            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-2xl bg-[#dfcba6] border-2 border-[#8c6843] flex items-center justify-center text-base font-bold text-[#442813] hover:bg-[#cbb38b] active:scale-95 transition shadow"
+            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-2xl bg-[#dfcba6] border-2 border-[#8c6843] flex items-center justify-center text-base font-bold text-[#442813] hover:bg-[#cbb38b] active:scale-95 transition shadow cursor-pointer"
             title="Close Royal Codex"
             aria-label="Close"
           >
@@ -105,8 +102,8 @@ export function MobileTechCodexModal({
           </button>
         </div>
 
-        {/* Category Tabs / Horizontal Filter Chips */}
-        <div className="flex items-center gap-1.5 px-3 py-2 overflow-x-auto scrollbar-none bg-[#e5d4b3]/70 border-b border-[#bfa379]/60">
+        {/* Category Tabs / Horizontal Filter Chips (Pinned) */}
+        <div className="flex items-center gap-1.5 px-3 py-2 overflow-x-auto scrollbar-none bg-[#e5d4b3]/70 border-b border-[#bfa379]/60 flex-shrink-0">
           {Object.values(TECH_CATEGORIES).map(cat => {
             const isSelected = activeCategory === cat.id;
             return (
@@ -129,8 +126,8 @@ export function MobileTechCodexModal({
           })}
         </div>
 
-        {/* Scrollable Tech Cards Container */}
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 pb-[calc(1.5rem+env(safe-area-inset-bottom,1.5rem))]">
+        {/* Scrollable Tech Cards Container (Full Viewport Scrolling) */}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-3 space-y-3 pb-[calc(env(safe-area-inset-bottom)+5rem)]">
           {filteredTechList.map(tech => {
             const isResearched = activeTechs.includes(tech.id);
             const isResearchingThis = currentResearch?.techId === tech.id;

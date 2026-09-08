@@ -3,4 +3,5 @@ export * from './ParchmentHeader.jsx';
 export * from './DeskSurface.jsx';
 export * from './ThroneArmrests.jsx';
 export * from './SovereignCommandDock.jsx';
+export * from './ParchmentFloraDesk.jsx';
 

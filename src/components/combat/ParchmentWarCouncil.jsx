@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { FACTIONS, getElementalMatchup, sounds } from '../../constants/index.js';
 import { generateRivals, haptics } from '../../utils/index.js';
 
-export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBloodFeud, onResearchTechnology }) {
+export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBloodFeud, onResearchTechnology, onTrainTroops }) {
   const [rivals, setRivals] = useState(() => generateRivals(stats.overallRating));
   const [selectedRivalId, setSelectedRivalId] = useState(() => rivals[0]?.id || null);
   const [isInfused, setIsInfused] = useState(false);
+  const [recruitCount, setRecruitCount] = useState(1);
 
   const activeSelectedRival = rivals.find(r => r.id === selectedRivalId) || rivals[0] || null;
 
@@ -16,13 +17,13 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
   const infusionFloraCost = dispatchedSoldiers * 3;
   const canAffordInfusion = (state.resources?.flora || 0) >= infusionFloraCost;
 
-  const hasTroopLogistics = (state.technologies || []).includes('tech_troop_logistics');
-  const keepTier = state.buildings?.keep || 1;
-  const canAffordLogistics =
-    !hasTroopLogistics &&
-    keepTier >= 1 &&
-    (state.resources?.gold || 0) >= 40 &&
-    (state.resources?.food || 0) >= 30;
+  const troops = state.troops || { total: 20, maxCapacity: 30 };
+  const maxTroopCap = stats?.maxTroopCapacity || troops.maxCapacity || 30;
+  const recruitCostGold = recruitCount * 25;
+  const spaceAvailable = Math.max(0, maxTroopCap - (troops.total || 0));
+  const canRecruit = (state.resources?.gold || 0) >= recruitCostGold && spaceAvailable >= recruitCount;
+  const maxAffordable = Math.floor((state.resources?.gold || 0) / 25);
+  const maxCanRecruit = Math.max(1, Math.min(spaceAvailable, maxAffordable));
 
   const handleRefresh = () => {
     sounds.playCoin();
@@ -286,35 +287,66 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
             );
           })() : null}
 
-          {/* Royal Logistics Decree Card at Bottom */}
+          {/* RECRUITMENT ACTION: LEVY RECRUITS / ENLIST LABORERS */}
           <div className="bg-[#ebdcc1] border-2 border-[#8c6843] rounded-xl p-3 shadow-md flex items-center justify-between gap-3 mt-3">
             <div className="flex items-center gap-2.5">
-              <span className="text-xl">🛡️</span>
+              <span className="text-xl">⚔️</span>
               <div>
-                <h4 className="text-xs font-black text-[#442813]">Vassal Foraging Lines</h4>
+                <h4 className="text-xs font-black text-[#442813]">Levy Recruits / Enlist Laborers</h4>
                 <p className="text-[10px] text-[#6b4a2e] leading-tight">
-                  Auto-collects completed harvests when troops ≥ 1
+                  Workforce: {troops.total}/{maxTroopCap} • Restores garrison & labor (25 🪙 / recruit)
                 </p>
               </div>
             </div>
 
-            {hasTroopLogistics ? (
-              <span className="text-[9px] font-mono font-bold px-2 py-1 rounded bg-emerald-800 text-emerald-100 border border-emerald-600">
-                Decree Sealed ✓
-              </span>
-            ) : (
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1">
+                {[1, 5].map(cnt => (
+                  <button
+                    key={cnt}
+                    onClick={() => {
+                      sounds.playCoin();
+                      haptics.light();
+                      setRecruitCount(cnt);
+                    }}
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition ${
+                      recruitCount === cnt
+                        ? 'bg-amber-900 text-amber-100 border border-amber-950'
+                        : 'bg-[#ddcca8] text-[#442813] border border-[#8c6843]'
+                    }`}
+                  >
+                    +{cnt}
+                  </button>
+                ))}
+                <button
+                  onClick={() => {
+                    sounds.playCoin();
+                    haptics.light();
+                    setRecruitCount(maxCanRecruit);
+                  }}
+                  className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#ddcca8] text-[#442813] border border-[#8c6843] hover:bg-[#cbb38b]"
+                >
+                  Max
+                </button>
+              </div>
+
               <button
-                onClick={() => onResearchTechnology && onResearchTechnology('tech_troop_logistics')}
-                disabled={!canAffordLogistics}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black shadow transition ${
-                  canAffordLogistics
+                onClick={() => {
+                  haptics.heavy();
+                  sounds.playCoin();
+                  if (onTrainTroops) onTrainTroops(recruitCount);
+                }}
+                disabled={!canRecruit}
+                className={`px-3 py-1.5 rounded-lg text-xs font-black shadow transition flex items-center gap-1 ${
+                  canRecruit
                     ? 'bg-gradient-to-r from-red-800 to-rose-900 text-amber-100 hover:brightness-110 active:scale-95 border border-red-700'
                     : 'bg-stone-400 text-stone-600 cursor-not-allowed'
                 }`}
               >
-                Seal (🪙40 🌾30)
+                <span>⚔️</span>
+                <span>Enlist ({recruitCostGold}🪙)</span>
               </button>
-            )}
+            </div>
           </div>
         </div>
       </div>
@@ -439,56 +471,75 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
           })}
         </div>
 
-        {/* Royal Logistics Decree: Troop Quartermaster */}
-        <div className="bg-[#ebdcc1] border-2 border-[#8c6843] rounded-2xl p-3 shadow-md flex flex-col items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#cbb38b] border border-[#8c6843] flex items-center justify-center text-xl shadow-inner flex-shrink-0">
-              🛡️
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-xs font-black text-[#442813]">
-                  Vassal Foraging Lines
-                </h3>
-                {hasTroopLogistics ? (
-                  <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-800 text-emerald-100 border border-emerald-600">
-                    Decree Sealed 🛡️
-                  </span>
-                ) : (
-                  <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ${keepTier >= 2 ? 'bg-green-900/10 text-green-900' : 'bg-red-900/10 text-red-900'}`}>
-                    Req Keep T2
-                  </span>
-                )}
+        {/* RECRUITMENT ACTION: LEVY RECRUITS / ENLIST LABORERS (Mobile) */}
+        <div className="bg-[#ebdcc1] border-2 border-[#8c6843] rounded-2xl p-3 shadow-md flex flex-col gap-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 rounded-xl bg-[#cbb38b] border border-[#8c6843] flex items-center justify-center text-xl shadow-inner flex-shrink-0">
+                ⚔️
               </div>
-              <p className="text-[11px] text-[#6b4a2e]">
-                Orders idle garrison levies to automatically collect ripe harvests from all realm silos.
-              </p>
+              <div>
+                <h3 className="text-xs font-black text-[#442813]">
+                  Levy Recruits / Enlist Laborers
+                </h3>
+                <p className="text-[10px] text-[#6b4a2e]">
+                  Enlist troops to restore garrison defense & labor capacity.
+                </p>
+              </div>
             </div>
+            <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-amber-900/15 text-amber-900 border border-amber-800/30">
+              Workforce: {troops.total} / {maxTroopCap}
+            </span>
           </div>
 
-          {hasTroopLogistics ? (
-            <div className="text-[10px] font-mono font-bold text-emerald-900 bg-emerald-900/10 border border-emerald-700/40 rounded-xl px-3 py-1.5 whitespace-nowrap">
-              ✓ Auto-Collection Active
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 w-full justify-end">
-              <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${(state.resources?.gold || 0) >= 40 ? 'bg-yellow-900/10 text-yellow-900' : 'bg-red-900/10 text-red-900'}`}>
-                🪙 40 🌾 30
-              </span>
+          <div className="flex items-center justify-between gap-2 pt-1 border-t border-[#bfa379]/50">
+            <div className="flex items-center gap-1.5">
+              {[1, 5].map(cnt => (
+                <button
+                  key={cnt}
+                  onClick={() => {
+                    sounds.playCoin();
+                    haptics.light();
+                    setRecruitCount(cnt);
+                  }}
+                  className={`min-h-[38px] px-2.5 py-1 rounded-xl text-xs font-mono font-bold border transition ${
+                    recruitCount === cnt
+                      ? 'bg-amber-900 text-amber-100 border-amber-950'
+                      : 'bg-[#dfcba6] text-[#442813] border-[#8c6843]'
+                  }`}
+                >
+                  +{cnt}
+                </button>
+              ))}
               <button
-                onClick={() => onResearchTechnology && onResearchTechnology('tech_troop_logistics')}
-                disabled={!canAffordLogistics}
-                className={`min-h-[40px] px-3 py-1.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 shadow ${
-                  canAffordLogistics
-                    ? 'bg-gradient-to-r from-red-800 to-rose-900 text-amber-100 hover:brightness-110 active:scale-95 shadow border border-red-700'
-                    : 'bg-stone-400 text-stone-600 cursor-not-allowed'
-                }`}
+                onClick={() => {
+                  sounds.playCoin();
+                  haptics.light();
+                  setRecruitCount(maxCanRecruit);
+                }}
+                className="min-h-[38px] px-2.5 py-1 rounded-xl text-xs font-mono font-bold bg-[#dfcba6] text-[#442813] border border-[#8c6843] hover:bg-[#cbb38b]"
               >
-                <span>🩸</span>
-                <span>Seal Decree</span>
+                Max
               </button>
             </div>
-          )}
+
+            <button
+              onClick={() => {
+                haptics.heavy();
+                sounds.playCoin();
+                if (onTrainTroops) onTrainTroops(recruitCount);
+              }}
+              disabled={!canRecruit}
+              className={`min-h-[44px] flex-1 py-2 px-3 rounded-xl font-black text-xs transition flex items-center justify-center gap-1.5 shadow ${
+                canRecruit
+                  ? 'bg-gradient-to-r from-red-800 to-rose-900 text-amber-100 hover:brightness-110 active:scale-95 shadow border border-red-700'
+                  : 'bg-stone-400 text-stone-600 cursor-not-allowed'
+              }`}
+            >
+              <span>⚔️</span>
+              <span>Enlist ({recruitCostGold}🪙)</span>
+            </button>
+          </div>
         </div>
 
         {/* Pinned Retaliation / Blood Feud Ledger */}

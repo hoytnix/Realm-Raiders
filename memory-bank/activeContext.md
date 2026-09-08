@@ -177,35 +177,27 @@
     - **Runtime Reference Fix (`ParchmentCitadelMap.jsx`)**:
       - Restored missing `onTriggerVerdantBloom` prop in parameter destructuring of `ParchmentCitadelMap.jsx`, resolving runtime `ReferenceError: onTriggerVerdantBloom is not defined` WSOD on render.
 
-  - **UI/UX Cleanups, Resource HUD Relocation, Persistent Desktop HUD & Dock Flora Button**:
-    - **Speed Control Lock & Minimal Mobile Chronometer (`useGameState.js`, `RealmChronometerHUD.jsx`, `MobileFloatingHUD.jsx`)**:
-      - Locked game clock in `useGameState.js` to a constant, unalterable 1x baseline tick rate (eliminated speed acceleration handlers).
-      - Removed time-speed toggle button (`1x/2x/5x`) from `RealmChronometerHUD.jsx` and `MobileFloatingHUD.jsx`.
-      - Removed floating Flora button and resource pills cluster from top-left in `MobileFloatingHUD.jsx`, leaving only the minimal, elegant astronomical date/time chronometer and weather badge.
-    - **Citadel Cartography Status Badges Strip (`ParchmentCitadelMap.jsx`, `MobileFloatingHUD.jsx`)**:
-      - Removed "Surge Growth" / Bloom badge from Citadel map controls and mobile floating HUD.
-      - Removed "Troop Harvest" status badge and "Bramble Shield" indicator badge from Citadel map canvas.
-      - Cartography viewport and isometric SVG canvas reclaimed vertical screen real estate without blank padding.
-    - **Mobile Resource HUD Relocation (`MobileFloatingHUD.jsx`, `ResourceBar.jsx`, `App.jsx`, `BuildingInspector.jsx`)**:
-      - Anchored mobile `ResourceBar` directly above the collapsible bottom drawer/navigation bar.
-      - Dynamically responds to drawer state: docked at `bottom-[108px]` above collapsed peek drawer, transitions to `bottom-[calc(85vh+6px)]` when drawer is expanded, and sits pinned at `bottom-16` on other tabs.
-      - Formatted pills (Gold, Sustenance, Timber, Stone, Flora) into a sleek horizontal translucent ticker with compact values and touch-friendly padding.
-    - **Desktop Cartography Title Bar & Menu Elimination (`ParchmentHeader.jsx`)**:
-      - Completely removed banner header titled "THE LIVING CARTOGRAPHY: ROYAL CITADEL" on Citadel view, enabling cartography parchment area to expand upwards to fill cleared vertical space.
-      - Completely eliminated the "MENU" button on desktop.
-    - **Desktop Sovereign Command Dock Flora Tab (`SovereignCommandDock.jsx`, `useHotkeys.js`, `MobileFloraSheet.jsx`, `App.jsx`)**:
-      - Added dedicated Flora button with botanical leaf icon (`🌿`) immediately next to Tech Codex with hotkey `[4]`.
-      - Adjusted Deep Vault to `[5]` and Chronicle to `[6]`, with hotkey routing in `useHotkeys.js`.
-      - Enabled desktop modal view for `MobileFloraSheet.jsx` centered on desktop viewports.
-    - **ReferenceError Fix & ESLint Zero-Error Mandate (`useGameState.js`, `audio.js`, `eslint.config.js`, `GEMINI.md`)**:
-      - Fixed runtime `ReferenceError: speed is not defined` in `useGameState.js` at lines 390 (harvest timers) and 434 (research timer), locking baseline to 1x without dangling speed references.
-      - Fixed Web Audio Autoplay `AudioContext was not allowed to start` warning by deferring ambient start until user pointer/keyboard gesture and catching suspended state transitions safely in `audio.js`.
-      - Integrated ESLint with `@eslint/js`, `globals`, and Flat Config (`eslint.config.js`), configured with `no-undef: error` to catch any undefined references at lint time.
-      - Mandated `pnpm run lint` in `GEMINI.md` Step 3 and Strict Failure Conditions before building.
+  - **The Royal Ledger, Famine Levy Recruits, Full-Height Mobile Folios & Desktop Flora Spread**:
+    - **The Royal Ledger & Dynamic Resource Bar Anchoring (`BuildingInspector.jsx`, `ResourceBar.jsx`, `App.jsx`)**:
+      - Rebranded mobile collapsible drawer to "The Royal Ledger" / "Citadel Inspector" in peek bar and expanded sheet.
+      - Anchored mobile `ResourceBar` directly above the Royal Ledger: collapsed at `bottom-[calc(4rem+3rem)]` (~112px above bottom nav + 48px peek bar), transitioning smoothly to `bottom-[calc(75vh+3.5rem+4px)]` when sheet expands.
+      - Restricted mobile `ResourceBar` strictly to `activeView === 'citadel'`, preventing clutter on War, Flora, Codex, Chronicle, and Vault.
+      - Added prominent embossed "SEAL ROYAL UPGRADE" decree card with current/target tier, cost deficit indicators, `triggerHaptic('heavy')`, and wax stamp animations.
+    - **Military Troop & Laborer Recruitment Loop (`useGameState.js`, `buildings.js`, `BuildingInspector.jsx`, `ParchmentWarCouncil.jsx`)**:
+      - Updated `TROOP_RECRUIT_COST` to `{ gold: 25, food: 0 }`.
+      - Starvation casualties persist permanently across `population`, `troops`, and `garrison` without passive overnight respawn.
+      - Implemented "Levy Recruits / Enlist Laborers" quick-action controls (`+1`, `+5`, `Max`) at Barracks and War Council, allowing monarchs to replenish workforce and garrison at 25 Gold per recruit.
+    - **Full-Height 100dvh Mobile Folios (`MobileTechCodexModal.jsx`, `MobileFloraSheet.jsx`)**:
+      - Converted Codex and Flora mobile sheets to full-height folios (`fixed inset-0 h-[100dvh] w-full z-40 bg-[#120d08]/95 flex flex-col`) with pinned ornate headers and scrollable content areas padded for safe area insets (`pb-[calc(env(safe-area-inset-bottom)+5rem)]`).
+    - **Desktop Flora War Desk Spread (`ParchmentFloraDesk.jsx`, `DeskSurface.jsx`, `MonarchHeader.jsx`)**:
+      - Built a full-spread 2-page desktop parchment folio (`ParchmentFloraDesk`) mounted when `deskView === 'flora'` on `>=md` screens.
+      - Features botanical reserves, composting humus rate, living bramble shield toggle, Verdant Bloom trigger, Deep Vault alchemical transmutations (Granite & Tinctures), and weather/elemental synergies.
+      - Removed extraneous topnav Flora button in `MonarchHeader.jsx`.
+    - **War Council Cleanup (`ParchmentWarCouncil.jsx`)**:
+      - Removed duplicate "Vassal Foraging Lines" tech card from desktop and mobile War Council.
+    - **Verification**:
+      - `pnpm run lint` and `pnpm run build` passing with zero errors.
 
 ## Active Focus & Next Steps
 - Continue strategic balancing across Water, Flame, and Stone unique elemental active sinks and decree expansions.
 - Explore procedural ambient audio additions (rain drops, howling wind, crackling embers).
-
-
-

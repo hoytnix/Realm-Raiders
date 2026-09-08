@@ -49,9 +49,6 @@ export function MonarchHeader({
                   <h1 className="text-xs font-black tracking-wider text-amber-200 whitespace-nowrap">
                     {currentFaction.name}
                   </h1>
-                  <span className="px-1.5 py-0.2 rounded bg-emerald-950/60 text-emerald-300 text-[9px] font-mono font-bold border border-emerald-700/50">
-                    🌿 {currentFaction.element || 'Flora'}
-                  </span>
                 </div>
                 <div className="text-[10px] text-amber-500/80 font-mono">
                   Rating: <span className="text-amber-300 font-bold">{stats.rating}</span>

@@ -190,8 +190,8 @@ export const CONSTRUCTIBLE_BLUEPRINTS = [
 ];
 
 export const TROOP_RECRUIT_COST = {
-  gold: 15,
-  food: 10
+  gold: 25,
+  food: 0
 };
 
 export function calculateResourceCaps(buildings = {}, grid = null) {
