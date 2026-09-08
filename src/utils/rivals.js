@@ -2,23 +2,15 @@
 // PROCEDURAL RIVAL GENERATOR (WAR COUNCIL)
 // ==========================================
 import { FACTIONS } from '../constants/factions.js';
-
-const TITLES = [
-  'Baron Malakor', 'Warmaster Grak', 'Lady Sylviara', 'Thane Ironjaw',
-  'Chieftain Torvash', 'High Priest Corin', 'Queen Vespera', 'Warden Bronzepeak',
-  'General Kaelen', 'Matron Morwena', 'Jarl Valgard', 'Archdruid Baelor'
-];
-
+const TITLES = ['Baron Malakor', 'Warmaster Grak', 'Lady Sylviara', 'Thane Ironjaw', 'Chieftain Torvash', 'High Priest Corin', 'Queen Vespera', 'Warden Bronzepeak', 'General Kaelen', 'Matron Morwena', 'Jarl Valgard', 'Archdruid Baelor'];
 export function generateRivals(playerRating) {
   const factionKeys = Object.keys(FACTIONS);
-
   return [1, 2, 3].map(index => {
-    const variance = (Math.random() * 0.14) - 0.07; // within +/- 7%
+    const variance = Math.random() * 0.14 - 0.07; // within +/- 7%
     const targetRating = Math.max(12, Math.round(playerRating * (1 + variance)));
     const faction = factionKeys[Math.floor(Math.random() * factionKeys.length)];
     const element = FACTIONS[faction]?.element || 'Stone';
     const name = TITLES[Math.floor(Math.random() * TITLES.length)] + ` #${Math.floor(100 + Math.random() * 900)}`;
-
     return {
       id: `rival-${Date.now()}-${index}`,
       name,
@@ -45,9 +37,7 @@ const NPC_PREFIXES = {
   'South-East': ['Cinder-Camp', 'Ashen-Hold', 'Brimstone-Keep', 'Blood-Redoubt', 'Flame-Gulch', 'Pyre-Watch'],
   'North-West': ['Tide-Watch', 'River-Delta', 'Mist-Haven', 'Aquifer-Keep', 'Stream-Spire', 'Shoal-Bastion']
 };
-
 const NPC_SUFFIXES = ['Outpost', 'Stronghold', 'Redoubt', 'Camp', 'Bastion', 'Garrison', 'Keep'];
-
 const CLAN_PROFILES = {
   'North-East': {
     clan: 'Mountain / Stone Clan',
@@ -56,7 +46,10 @@ const CLAN_PROFILES = {
     sigil: '⚒️',
     troopType: 'Ironclad Legionnaires',
     desc: 'Subterranean stoneworks fortress carved directly into basalt crags. Heavy stone vaults and deep shaft mines.',
-    position: { x: 475, y: 55 }
+    position: {
+      x: 475,
+      y: 55
+    }
   },
   'South-East': {
     clan: 'Ash / Fire Raiders',
@@ -65,7 +58,10 @@ const CLAN_PROFILES = {
     sigil: '🔥',
     troopType: 'Bloodfury Berserkers',
     desc: 'Aggressive raider encampment surrounded by spiked palisades, burning oil cauldrons, and siege barricades.',
-    position: { x: 475, y: 255 }
+    position: {
+      x: 475,
+      y: 255
+    }
   },
   'North-West': {
     clan: 'River Clan',
@@ -74,13 +70,14 @@ const CLAN_PROFILES = {
     sigil: '🌊',
     troopType: 'Longbow Mariners',
     desc: 'River delta fortress controlling aquifer irrigation and lock gates. Manned by vigilant river sentinels.',
-    position: { x: 65, y: 60 }
+    position: {
+      x: 65,
+      y: 60
+    }
   }
 };
-
 export function generateNpcVillages(playerRating = 60) {
   const quadrants = ['North-East', 'South-East', 'North-West'];
-
   return quadrants.map((quadrant, idx) => {
     const profile = CLAN_PROFILES[quadrant];
     const prefixList = NPC_PREFIXES[quadrant];
@@ -89,12 +86,11 @@ export function generateNpcVillages(playerRating = 60) {
     const name = `${prefix} ${suffix}`;
 
     // Variance around player rating (+/- 20%)
-    const variance = (Math.random() * 0.40) - 0.20;
+    const variance = Math.random() * 0.40 - 0.20;
     const targetRating = Math.max(30, Math.round(playerRating * (1 + variance) + 20));
     const defensePower = Math.round(targetRating * 0.85 + Math.random() * 15);
     const troopCount = Math.round(12 + Math.random() * 16);
     const readinessPct = Math.round(80 + Math.random() * 20);
-
     return {
       id: `npc-${idx + 1}-${Date.now().toString(36)}`,
       name,
@@ -120,7 +116,4 @@ export function generateNpcVillages(playerRating = 60) {
     };
   });
 }
-
 export const NPC_VILLAGES = generateNpcVillages(150);
-
-
