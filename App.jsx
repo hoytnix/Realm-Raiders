@@ -29,7 +29,8 @@ import {
 
 import {
   MonarchHeader,
-  MobileBottomNav
+  MobileBottomNav,
+  MobileFloatingHUD
 } from './src/components/hud/index.js';
 
 import {
@@ -54,7 +55,8 @@ import {
 } from './src/components/chronicle/index.js';
 
 import {
-  ParchmentMenuView
+  ParchmentMenuView,
+  ParchmentSettingsModal
 } from './src/components/menu/index.js';
 
 import {
@@ -90,10 +92,13 @@ export default function App() {
   const [isStampCursorEquipped, setIsStampCursorEquipped] = useState(false);
   const [multiSelectedIds, setMultiSelectedIds] = useState([]);
   const [activeLedgerTab, setActiveLedgerTab] = useState('structure');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Modular Custom Hooks
   const {
     gameState,
+    settings,
+    handleUpdateSettings,
     isMuted,
     setIsMuted,
     isStarving,
@@ -305,7 +310,7 @@ export default function App() {
         onToggleCandlelight={() => setCandlelitMode(v => !v)}
       />
 
-      {/* LAYER 2: DIEGETIC STATUS HUD (Floating Gilded Banner) */}
+      {/* LAYER 2A: DESKTOP DIEGETIC STATUS HUD (Floating Gilded Crown Bar) */}
       <MonarchHeader
         currentFaction={currentFaction}
         stats={stats}
@@ -316,6 +321,24 @@ export default function App() {
         starvationDeaths={starvationDeaths}
         onToggleSpeed={handleToggleSpeed}
         onToggleMute={() => setIsMuted(!isMuted)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onRaidGrain={() => setDeskView('war')}
+      />
+
+      {/* LAYER 2B: MOBILE FLOATING HUD (< md Zero-Bar Architecture) */}
+      <MobileFloatingHUD
+        timeState={timeState}
+        resources={gameState.resources}
+        stats={stats}
+        isStarving={isStarving}
+        starvationDeaths={starvationDeaths}
+        hasUnavengedFeuds={hasUnavengedFeuds}
+        deskView={deskView}
+        onToggleSpeed={handleToggleSpeed}
+        onToggleMenu={() => {
+          sounds.playWaxSealThud();
+          setDeskView(prev => (prev === 'menu' ? 'citadel' : 'menu'));
+        }}
         onRaidGrain={() => setDeskView('war')}
       />
 
@@ -388,8 +411,11 @@ export default function App() {
             currentFaction={currentFaction}
             stats={stats}
             state={gameState}
-            isMuted={isMuted}
-            onToggleMute={() => setIsMuted(!isMuted)}
+            settings={settings}
+            onUpdateSettings={handleUpdateSettings}
+            isSettingsOpen={isSettingsOpen}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            onCloseSettings={() => setIsSettingsOpen(false)}
             onNavigate={onNavigateMenu}
             onResetSave={onResetSave}
           />
@@ -426,6 +452,15 @@ export default function App() {
         onHarvestAll={() => handleHarvestAll(stats.caps, currentFaction)}
         onUpgradeSelected={(e) => onUpgradeBuilding(selectedBuildingId, e)}
         onTriggerStamp={(e) => triggerWaxSplat(e?.clientX || window.innerWidth / 2, e?.clientY || window.innerHeight / 2)}
+      />
+
+      {/* REALM SETTINGS & AUDIO MODAL */}
+      <ParchmentSettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        settings={settings}
+        onUpdateSettings={handleUpdateSettings}
+        onResetSave={onResetSave}
       />
 
       {/* REWARDED VIDEO AD GATE SIMULATOR */}

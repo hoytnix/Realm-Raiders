@@ -14,14 +14,15 @@ export function MonarchHeader({
   starvationDeaths = 0,
   onToggleSpeed,
   onToggleMute,
+  onOpenSettings,
   onRaidGrain
 }) {
   return (
-    <header className="relative z-20 w-full px-2 sm:px-6 pt-2 sm:pt-3">
+    <header className="hidden md:block relative z-20 w-full px-2 sm:px-6 pt-2 sm:pt-3">
       {/* =========================================================================
           DESKTOP CONSOLIDATED CROWN HUD (Gilded, centered crown bar for 16:9/21:9)
           ========================================================================= */}
-      <div className="hidden md:flex items-center justify-between gap-3 w-full max-w-7xl mx-auto bg-gradient-to-r from-stone-950/95 via-[#251810]/95 to-stone-950/95 border-2 border-amber-700/70 rounded-3xl px-4 py-1.5 shadow-[0_12px_35px_rgba(0,0,0,0.85)] backdrop-blur">
+      <div className="flex items-center justify-between gap-3 w-full max-w-7xl mx-auto bg-gradient-to-r from-stone-950/95 via-[#251810]/95 to-stone-950/95 border-2 border-amber-700/70 rounded-3xl px-4 py-1.5 shadow-[0_12px_35px_rgba(0,0,0,0.85)] backdrop-blur">
         {/* Left Flank: Sovereign Crest & Sustenance Stores (Gold, Food, Water) */}
         <div className="flex items-center gap-2">
           {/* Monarch Crest */}
@@ -109,57 +110,17 @@ export function MonarchHeader({
           >
             {isMuted ? '🔇' : '🔊'}
           </button>
-        </div>
-      </div>
 
-      {/* =========================================================================
-          MOBILE HUD (Preserved compact 2-row layout for <md viewports)
-          ========================================================================= */}
-      <div className="md:hidden flex flex-col items-center justify-between gap-2 w-full">
-        {/* Row 1: Monarch Badge, Astrological Chronometer, Crisis Pill & Sound Controls */}
-        <div className="w-full flex items-center justify-between gap-1.5">
-          {/* Monarch Title & Rating */}
-          <div className="bg-stone-900/90 border border-amber-600/40 rounded-2xl px-2.5 py-1 shadow-lg backdrop-blur flex items-center gap-1.5 flex-shrink-0">
-            <span className="text-base">{currentFaction.sigil}</span>
-            <div>
-              <h1 className="text-[11px] font-black tracking-wider text-amber-200 line-clamp-1">
-                {currentFaction.name}
-              </h1>
-              <span className="text-[9px] text-amber-500/80 font-mono block">
-                ⭐ {stats.overallRating}
-              </span>
-            </div>
-          </div>
-
-          {/* Astrological Chronometer */}
-          <div className="flex items-center gap-1.5">
-            <RealmChronometerHUD
-              timeState={timeState}
-              onToggleSpeed={onToggleSpeed}
-            />
-
-            {/* Mobile Famine Crisis Pill */}
-            <FamineWarning
-              isStarving={isStarving}
-              onRaidGrain={onRaidGrain}
-              starvationDeaths={starvationDeaths}
-              laborEfficiency={stats?.laborEfficiency}
-            />
-
-            {/* Sound Mute Toggle */}
+          {/* Settings Trigger */}
+          {onOpenSettings && (
             <button
-              onClick={onToggleMute}
-              className="w-7 h-7 rounded-xl bg-stone-900/80 border border-amber-700/40 text-amber-400 hover:text-amber-200 flex items-center justify-center text-xs shadow transition active:scale-95 flex-shrink-0"
-              title="Toggle Synthesizer Sound"
+              onClick={onOpenSettings}
+              className="w-8 h-8 rounded-xl bg-stone-900/90 border border-amber-600/50 text-amber-300 hover:text-amber-100 flex items-center justify-center text-xs shadow-md transition active:scale-95 flex-shrink-0"
+              title="Open Realm Settings & Audio"
             >
-              {isMuted ? '🔇' : '🔊'}
+              ⚙️
             </button>
-          </div>
-        </div>
-
-        {/* Row 2 on mobile: Horizontally Scrollable Resource Ticker */}
-        <div className="w-full flex items-center justify-between gap-2 overflow-hidden">
-          <ResourceBar resources={resources} stats={stats} />
+          )}
         </div>
       </div>
     </header>

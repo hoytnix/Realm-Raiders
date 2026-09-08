@@ -3,10 +3,17 @@
  * Provides diegetic physical weight to touch interactions.
  */
 export const haptics = {
+  enabled: true,
+
+  setEnabled: function(val) {
+    this.enabled = !!val;
+  },
+
   /**
    * Short, light pulse (10ms) on building selection, tab switch, or button tap
    */
-  light: () => {
+  light: function() {
+    if (!this.enabled) return;
     if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
       try {
         navigator.vibrate(10);
@@ -17,7 +24,8 @@ export const haptics = {
   /**
    * Medium double-pulse (20ms, 40ms) when collecting harvests or sweep-harvesting
    */
-  harvest: () => {
+  harvest: function() {
+    if (!this.enabled) return;
     if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
       try {
         navigator.vibrate([20, 40, 20]);
@@ -28,7 +36,8 @@ export const haptics = {
   /**
    * Heavy thud (50ms) when stamping a Royal Decree or launching a catapult strike
    */
-  heavy: () => {
+  heavy: function() {
+    if (!this.enabled) return;
     if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
       try {
         navigator.vibrate(50);

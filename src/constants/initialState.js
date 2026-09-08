@@ -80,6 +80,14 @@ export const DEFAULT_STATE = {
     weather: 'autumn_breeze',
     timeSpeed: 1
   },
+  settings: {
+    masterAudio: true,
+    ambientAudio: true,
+    sfxAudio: true,
+    hapticsEnabled: true,
+    ambientVolume: 0.5,
+    sfxVolume: 0.8
+  },
   technologies: [],
   population: 14,
   garrison: 8,

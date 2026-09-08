@@ -98,7 +98,7 @@ export function ParchmentCitadelMap({
         {readyCount > 0 && onHarvestAll && (
           <button
             onClick={() => onHarvestAll(stats.caps, faction)}
-            className="absolute top-2 left-2 z-20 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-800 to-green-700 hover:brightness-110 active:scale-95 border-2 border-emerald-400 text-emerald-100 text-xs font-mono font-black shadow-2xl flex items-center gap-1.5 animate-bounce transition"
+            className="hidden md:flex absolute top-2 left-2 z-20 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-800 to-green-700 hover:brightness-110 active:scale-95 border-2 border-emerald-400 text-emerald-100 text-xs font-mono font-black shadow-2xl items-center gap-1.5 animate-bounce transition"
             title="Claim all ripe yields immediately [Space]"
           >
             <span className="text-base">🌾</span>

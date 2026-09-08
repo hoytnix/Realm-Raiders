@@ -3,5 +3,6 @@ export * from './ResourceBar.jsx';
 export * from './FamineWarning.jsx';
 export * from './MonarchHeader.jsx';
 export * from './MobileBottomNav.jsx';
+export * from './MobileFloatingHUD.jsx';
 export * from './WeatherForecastTooltip.jsx';
 

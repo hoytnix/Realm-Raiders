@@ -18,7 +18,7 @@ export function ParchmentHeader({ deskView, setDeskView, hasUnavengedFeuds }) {
   };
 
   return (
-    <div className="px-4 py-2 border-b-2 border-[#bfa379]/60 flex items-center justify-between bg-[#ece1c5]/60 z-20">
+    <div className="hidden md:flex px-4 py-2 border-b-2 border-[#bfa379]/60 items-center justify-between bg-[#ece1c5]/60 z-20">
       <div className="flex items-center gap-2">
         <span className="text-base sm:text-lg">📜</span>
         <span className="text-xs sm:text-sm font-black uppercase tracking-widest text-[#5c3e23]">

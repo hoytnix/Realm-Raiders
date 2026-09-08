@@ -75,9 +75,16 @@
   - [x] Interactive diegetic desk paraphernalia (clickable wall sconces for candlelit night mode, clickable wax seal stamp cursor, clickable armrest ledger tome).
   - [x] Multi-building marquee drag selection and bulk upgrade decrees (`handleBulkUpgradeBuildings`).
   - [x] Panoramic 2-page illuminated war room modal spread (`ParchmentWarCouncil`).
+- [x] **Zero-Bar Mobile Floating HUD & Realm Settings**:
+  - [x] Eliminated double top navigation bars on mobile (`hidden md:flex` on `ParchmentHeader` and `hidden md:block` on `MonarchHeader`), enabling cartography canvas to reach Y=0.
+  - [x] Floating top-left chronometer and compact resource cluster (`MobileFloatingHUD.jsx`).
+  - [x] Floating top-right 44x44px diegetic hamburger button with animated 3-bar icon and haptics.
+  - [x] Multi-channel procedural audio synthesis in `SoundController` (master, sfx, castle ambient wind drone).
+  - [x] Dedicated diegetic `ParchmentSettingsModal` with audio sliders, sample tests, and vibration toggle.
+  - [x] Realm Settings card and settings modal trigger integrated into `ParchmentMenuView`.
 
 ## Planned / In Progress
-- [ ] Additional sound synthesizers (ambient wind, rain, blizzard noise nodes).
+- [ ] Additional weather sound synthesizers (rain, thunder, blizzard noise nodes).
 - [ ] Expanded battle animations (projectile arcs and particle debris on the SVG canvas).
 
 

@@ -1,20 +1,33 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { haptics } from '../../utils/index.js';
+import { ParchmentSettingsModal } from './ParchmentSettingsModal.jsx';
 
 export function ParchmentMenuView({
   currentFaction,
   stats,
   state,
-  isMuted,
-  onToggleMute,
+  settings,
+  onUpdateSettings,
+  isSettingsOpen: controlledSettingsOpen,
+  onOpenSettings,
+  onCloseSettings,
   onNavigate,
   onResetSave
 }) {
+  const [internalSettingsOpen, setInternalSettingsOpen] = useState(false);
+  const isSettingsOpen = controlledSettingsOpen !== undefined ? controlledSettingsOpen : internalSettingsOpen;
+  const handleOpenSettings = onOpenSettings || (() => setInternalSettingsOpen(true));
+  const handleCloseSettings = onCloseSettings || (() => setInternalSettingsOpen(false));
+
   const pendingBloodFeuds = state.revengeLedger.filter(r => !r.revenged).length;
 
   const handleNavClick = (dest) => {
     haptics.light();
-    onNavigate(dest);
+    if (dest === 'settings') {
+      handleOpenSettings();
+    } else {
+      onNavigate(dest);
+    }
   };
 
   const handleReset = () => {
@@ -55,6 +68,16 @@ export function ParchmentMenuView({
       badge: `${state.battleLogs.length} Battle Inscriptions`,
       actionLabel: 'Open Scribe Tome →',
       accentColor: 'border-stone-600/60 bg-[#e6ddc9]'
+    },
+    {
+      id: 'settings',
+      title: 'Realm Settings & Audio',
+      tagline: 'Procedural Synthesizer & Tactile Controls',
+      description: 'Tune master audio, atmospheric castle drone, sound effects volume, and device tactile haptics.',
+      icon: '⚙️',
+      badge: 'Sound & Haptics',
+      actionLabel: 'Configure Realm →',
+      accentColor: 'border-[#8c6843]/60 bg-[#ede3cf]'
     }
   ];
 
@@ -83,7 +106,7 @@ export function ParchmentMenuView({
       </div>
 
       {/* Primary Destination Links */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {menuSections.map(sec => (
           <div
             key={sec.id}
@@ -193,11 +216,14 @@ export function ParchmentMenuView({
       <div className="border-t-2 border-[#bfa379]/60 pt-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <button
-            onClick={() => { haptics.light(); onToggleMute(); }}
+            onClick={() => {
+              haptics.light();
+              handleOpenSettings();
+            }}
             className="min-h-[44px] px-3.5 py-2 rounded-xl bg-[#ddcca8] hover:bg-[#d0bc93] active:scale-95 text-[#442813] text-xs font-bold border border-[#8c6843] flex items-center gap-1.5 shadow-sm transition"
           >
-            <span>{isMuted ? '🔇' : '🔊'}</span>
-            <span>{isMuted ? 'Synthesizer Muted' : 'Audio Active'}</span>
+            <span>⚙️</span>
+            <span>Realm Settings & Audio</span>
           </button>
         </div>
 
@@ -209,6 +235,15 @@ export function ParchmentMenuView({
           <span>Reset Citadel & Allegiance</span>
         </button>
       </div>
+
+      {/* Realm Settings Modal */}
+      <ParchmentSettingsModal
+        isOpen={isSettingsOpen}
+        onClose={handleCloseSettings}
+        settings={settings}
+        onUpdateSettings={onUpdateSettings}
+        onResetSave={onResetSave}
+      />
     </div>
   );
 }

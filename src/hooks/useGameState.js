@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   STORAGE_KEY,
   DEFAULT_STATE,
@@ -74,6 +74,11 @@ export function useGameState() {
         }
         if (parsed.buildings.farm === undefined) parsed.buildings.farm = 0;
         if (parsed.buildings.barracks === undefined) parsed.buildings.barracks = 0;
+        if (!parsed.settings) {
+          parsed.settings = { ...DEFAULT_STATE.settings };
+        } else {
+          parsed.settings = { ...DEFAULT_STATE.settings, ...parsed.settings };
+        }
 
         return parsed;
       }
@@ -83,16 +88,39 @@ export function useGameState() {
     return DEFAULT_STATE;
   });
 
-  const [isMuted, setIsMuted] = useState(false);
   const [isStarving, setIsStarving] = useState(false);
   const [starvationDeaths, setStarvationDeaths] = useState(0);
   const [inkPulseTick, setInkPulseTick] = useState(0);
   const [autoCollectNotice, setAutoCollectNotice] = useState(null);
 
-  // Sync mute state with procedural audio synthesizer
+  const settings = gameState.settings || DEFAULT_STATE.settings;
+  const isMuted = !settings.masterAudio;
+
+  const handleUpdateSettings = useCallback((newSettings) => {
+    setGameState(prev => ({
+      ...prev,
+      settings: {
+        ...(prev.settings || DEFAULT_STATE.settings),
+        ...newSettings
+      }
+    }));
+  }, []);
+
+  const setIsMuted = useCallback((val) => {
+    const mutedVal = typeof val === 'function' ? val(!gameState.settings?.masterAudio) : val;
+    handleUpdateSettings({ masterAudio: !mutedVal });
+  }, [gameState.settings?.masterAudio, handleUpdateSettings]);
+
+  // Sync settings with procedural audio synthesizer and haptics
   useEffect(() => {
-    sounds.muted = isMuted;
-  }, [isMuted]);
+    if (!settings) return;
+    sounds.setMasterMute(!settings.masterAudio);
+    sounds.setAmbientMute(!settings.ambientAudio);
+    sounds.setSfxMute(!settings.sfxAudio);
+    sounds.setAmbientVolume(settings.ambientVolume ?? 0.5);
+    sounds.setSfxVolume(settings.sfxVolume ?? 0.8);
+    haptics.setEnabled(settings.hapticsEnabled ?? true);
+  }, [settings]);
 
   // Persist gameState changes to LocalStorage
   useEffect(() => {
@@ -842,6 +870,8 @@ export function useGameState() {
   return {
     gameState,
     setGameState,
+    settings,
+    handleUpdateSettings,
     isMuted,
     setIsMuted,
     isStarving,
