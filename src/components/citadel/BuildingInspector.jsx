@@ -34,6 +34,7 @@ export function BuildingInspector({
   isExpanded: propIsExpanded,
   setIsExpanded: propSetIsExpanded
 }) {
+  const unassignedCount = (villagers || []).filter(v => v.role === 'Unassigned').length;
   const [localExpanded, setLocalExpanded] = useState(false);
   const isExpanded = propIsExpanded !== undefined ? propIsExpanded : localExpanded;
   const setIsExpanded = propSetIsExpanded || setLocalExpanded;

@@ -2,6 +2,37 @@ import { useState, useEffect, useCallback } from 'react';
 import { STORAGE_KEY, DEFAULT_STATE, FACTIONS, BUILDINGS, SEASONS, SEASON_ORDER, WEATHER_CONDITIONS, WEATHER_POOL, REALM_MONTHS, getNextWeather, calculateResourceCaps, TECHNOLOGIES, TERRITORY_TIERS, MAX_TERRITORY_TIER, TROOP_RECRUIT_COST, createDefaultGrid, getBuildingUpgradeCost, calculateBuildingYield, calculateBuildDuration, toRomanTier, formatBuildDuration, sounds, DEFAULT_VILLAGERS, VILLAGER_NAMES } from '../constants/index.js';
 import { haptics } from '../utils/index.js';
 export function useGameState() {
+  const recruitLaborer = () => {
+    setGameState(prev => {
+      const cost = 10;
+      if ((prev.resources?.gold || 0) < cost) return prev;
+      const count = (prev.villagers || []).length + 1;
+      return {
+        ...prev,
+        resources: {
+          ...prev.resources,
+          gold: prev.resources.gold - cost
+        },
+        villagers: [...(prev.villagers || []), {
+          id: 'vil_' + Date.now() + '_' + count,
+          name: 'Citizen ' + count,
+          role: 'Unassigned',
+          assignedBuildingId: null,
+          morale: 100
+        }]
+      };
+    });
+  };
+  const assignVillagerRole = (villagerId, role) => {
+    setGameState(prev => ({
+      ...prev,
+      villagers: (prev.villagers || []).map(v => v.id === villagerId ? {
+        ...v,
+        role,
+        assignedBuildingId: role === 'Unassigned' ? null : v.assignedBuildingId
+      } : v)
+    }));
+  };
   const [gameState, setGameState] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -1650,6 +1681,8 @@ export function useGameState() {
     recordRaidVictory,
     handleDoubleRaidSpoils,
     handleResetKingdom,
-    selectFaction
+    selectFaction,
+    assignVillagerRole,
+    recruitLaborer
   };
 }

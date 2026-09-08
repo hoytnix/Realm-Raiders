@@ -7,7 +7,10 @@ export function ParchmentWarCouncil({
   onLaunchRaid,
   onDeclareBloodFeud,
   onResearchTechnology,
-  onTrainTroops
+  onTrainTroops,
+  gameState,
+  onAssignRole,
+  onRecruitLaborer
 }) {
   const [warCouncilTab, setWarCouncilTab] = React.useState('campaigns');
   const [rivals, setRivals] = useState(() => generateRivals(stats.overallRating));
