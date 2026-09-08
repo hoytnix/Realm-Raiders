@@ -53,7 +53,11 @@ export const DEFAULT_VILLAGERS = [{
 export const DEFAULT_STATE = {
   faction: null,
   territoryTier: 1,
-  troops: 4,
+  troops: {
+    total: 4,
+    maxCapacity: 30,
+    sustenanceUpkeepPerDay: 1
+  },
   villagers: DEFAULT_VILLAGERS,
   resources: {
     gold: 60,

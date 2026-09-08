@@ -282,6 +282,17 @@
     - **Verification**:
       - `pnpm run lint` and `pnpm run build` passing cleanly with 0 errors.
 
+  - **Critical AST Patch Corruption Rollback & Silent Failure Fix**:
+    - **Root Cause**: Previous AST-based patches (commits `e84e991`, `4278604`, `496d7cf`) corrupted `useGameState.js` (1784 → 2405 lines), `useHotkeys.js` (gutted to stub), and `initialState.js` (`troops` schema broken).
+    - **5 Bugs Fixed**:
+      1. **`useHotkeys.js` gutted**: Restored complete ergonomic hotkey system (Spacebar claim all, WASD/Arrow pan, 1-5 navigation, T/C tech codex, Esc dismiss) with proper input element filtering and `realm-claim-all` custom DOM event support.
+      2. **`troops: 4` corruption** (3 locations in `useGameState.js`): Tick loop, `constructBuilding`, and `trainTroops` all hardcoded `troops: 4` (plain number) instead of proper `{ total, maxCapacity, sustenanceUpkeepPerDay }` object. Fixed to preserve/compute proper troops objects. Also fixed in `initialState.js`.
+      3. **`assignWorkerToBuilding` broken**: Treated `buildings` as an array (`.find(b => b.id)`) and used uppercase type names (`LUMBER_MILL`, `QUARRY`, `SPRING`), but `buildings` is an object and types are lowercase (`lumber`, `quarry`, `well`). Rewrote to use grid-based plot lookup with correct role mapping and capacity calculation (`min(5, level + 1)`).
+      4. **`handlePayExtortionTribute` leaked into state**: Injected as property inside ~28 `setGameState` return objects, serialized to localStorage. Added migration cleanup in `migrateSaveState`.
+      5. **Troops schema migration**: Added `migrateSaveState` migration to convert corrupted `troops: <number>` saves into proper object schema.
+    - **Recovery Strategy**: `git checkout 42ed5b3 -- src/hooks/useGameState.js` to restore clean 1784-line base, then applied targeted surgical fixes.
+    - **Verification**: `pnpm run lint` (0 errors, 2 warnings in unrelated patches) and `pnpm run build` (2.98s clean).
+
 ## Active Focus & Next Steps
 - Continue strategic balancing across Water, Flame, and Stone unique elemental active sinks and decree expansions.
 - Explore procedural ambient audio additions (rain drops, howling wind, crackling embers).

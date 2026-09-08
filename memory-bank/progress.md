@@ -162,6 +162,14 @@
   - [x] UI Cleanups: Removed Target/Recenter button (`🎯`) beneath Zoom Out; stripped top header bars from `MobileTechCodexModal.jsx` and `MobileFloraSheet.jsx` (flush layout with floating close `✕`).
   - [x] Chronometer Dawn 06:00 Boot Time on 1st Harvestide 26 ADX with `🌅` dawn glyph.
 
+- [x] **Critical AST Patch Corruption Rollback & Silent Failure Fix**:
+  - [x] Restored `useGameState.js` from clean commit `42ed5b3` (2405 → 1784 lines), removing all injected `claimYield`, `claimAll`, and `handlePayExtortionTribute` inside state objects.
+  - [x] Fixed `troops: 4` corruption in tick loop, `constructBuilding`, and `trainTroops` — now preserves proper `{ total, maxCapacity, sustenanceUpkeepPerDay }` object schema.
+  - [x] Rewrote `assignWorkerToBuilding` to use grid-based plot lookup instead of broken array `.find()` on the buildings object, with correct lowercase type-to-role mapping.
+  - [x] Restored complete `useHotkeys.js` ergonomic hotkey system (Spacebar claim all, WASD pan, 1-5 nav, T/C codex, Esc dismiss).
+  - [x] Fixed `initialState.js` troops from plain number to proper object schema.
+  - [x] Added `migrateSaveState` troops migration and `handlePayExtortionTribute` cleanup for corrupted saves.
+
 ## Planned / In Progress
 - [ ] Additional weather sound synthesizers (rain, thunder, blizzard noise nodes).
 - [ ] Expanded battle animations (projectile arcs and particle debris on the SVG canvas).

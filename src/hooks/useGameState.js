@@ -22,27 +22,7 @@ export function useGameState() {
           assignedBuildingId: null,
           morale: 100
         }],
-        handlePayExtortionTribute,
-        claimYield: buildingId => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => b.id === buildingId ? {
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            } : b)
-          }));
-        },
-        claimAll: () => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => ({
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            }))
-          }));
-        }
+        handlePayExtortionTribute
       };
     });
   };
@@ -200,54 +180,14 @@ export function useGameState() {
               return {
                 ...plot,
                 level: parsed.buildings && parsed.buildings[plot.buildingId] || 1,
-                handlePayExtortionTribute,
-                claimYield: buildingId => {
-                  setGameState(prev => ({
-                    ...prev,
-                    buildings: prev.buildings.map(b => b.id === buildingId ? {
-                      ...b,
-                      yieldAmount: 0,
-                      pendingYield: 0
-                    } : b)
-                  }));
-                },
-                claimAll: () => {
-                  setGameState(prev => ({
-                    ...prev,
-                    buildings: prev.buildings.map(b => ({
-                      ...b,
-                      yieldAmount: 0,
-                      pendingYield: 0
-                    }))
-                  }));
-                }
+                handlePayExtortionTribute
               };
             }
             if (!plot.buildingId && (plot.level === undefined || plot.level === null)) {
               return {
                 ...plot,
                 level: 0,
-                handlePayExtortionTribute,
-                claimYield: buildingId => {
-                  setGameState(prev => ({
-                    ...prev,
-                    buildings: prev.buildings.map(b => b.id === buildingId ? {
-                      ...b,
-                      yieldAmount: 0,
-                      pendingYield: 0
-                    } : b)
-                  }));
-                },
-                claimAll: () => {
-                  setGameState(prev => ({
-                    ...prev,
-                    buildings: prev.buildings.map(b => ({
-                      ...b,
-                      yieldAmount: 0,
-                      pendingYield: 0
-                    }))
-                  }));
-                }
+                handlePayExtortionTribute
               };
             }
             return plot;
@@ -667,53 +607,13 @@ export function useGameState() {
                   upgradeTimeRemaining: 0,
                   targetTier: undefined,
                   totalUpgradeTime: undefined,
-                  handlePayExtortionTribute,
-                  claimYield: buildingId => {
-                    setGameState(prev => ({
-                      ...prev,
-                      buildings: prev.buildings.map(b => b.id === buildingId ? {
-                        ...b,
-                        yieldAmount: 0,
-                        pendingYield: 0
-                      } : b)
-                    }));
-                  },
-                  claimAll: () => {
-                    setGameState(prev => ({
-                      ...prev,
-                      buildings: prev.buildings.map(b => ({
-                        ...b,
-                        yieldAmount: 0,
-                        pendingYield: 0
-                      }))
-                    }));
-                  }
+                  handlePayExtortionTribute
                 };
               } else {
                 return {
                   ...plot,
                   upgradeTimeRemaining: nextRemaining,
-                  handlePayExtortionTribute,
-                  claimYield: buildingId => {
-                    setGameState(prev => ({
-                      ...prev,
-                      buildings: prev.buildings.map(b => b.id === buildingId ? {
-                        ...b,
-                        yieldAmount: 0,
-                        pendingYield: 0
-                      } : b)
-                    }));
-                  },
-                  claimAll: () => {
-                    setGameState(prev => ({
-                      ...prev,
-                      buildings: prev.buildings.map(b => ({
-                        ...b,
-                        yieldAmount: 0,
-                        pendingYield: 0
-                      }))
-                    }));
-                  }
+                  handlePayExtortionTribute
                 };
               }
             }
@@ -736,7 +636,10 @@ export function useGameState() {
           currentResearch: nextCurrentResearch,
           grid: nextGrid,
           buildings: nextBuildings,
-          troops: 4,
+          troops: {
+            ...(prev.troops && typeof prev.troops === 'object' ? prev.troops : { total: 0, maxCapacity: 30, sustenanceUpkeepPerDay: 1 }),
+            total: nextGarrison
+          },
           garrison: nextGarrison,
           population: nextPopulation,
           battleLogs: newBattleLogs,
@@ -761,27 +664,7 @@ export function useGameState() {
             ...prev.impendingRaid,
             warningTicks: prev.impendingRaid.warningTicks - 1
           } : null : prev.incomingRaid || (prev.raidCooldown || 0) > 0 || (prev.calendar?.day ?? 1) < 5 ? null : checkIncomingRaid(prev),
-          incomingRaid: prev.impendingRaid && prev.impendingRaid.warningTicks <= 1 ? prev.impendingRaid.rival : prev.incomingRaid || null,
-          claimYield: buildingId => {
-            setGameState(prev => ({
-              ...prev,
-              buildings: prev.buildings.map(b => b.id === buildingId ? {
-                ...b,
-                yieldAmount: 0,
-                pendingYield: 0
-              } : b)
-            }));
-          },
-          claimAll: () => {
-            setGameState(prev => ({
-              ...prev,
-              buildings: prev.buildings.map(b => ({
-                ...b,
-                yieldAmount: 0,
-                pendingYield: 0
-              }))
-            }));
-          }
+          incomingRaid: prev.impendingRaid && prev.impendingRaid.warningTicks <= 1 ? prev.impendingRaid.rival : prev.incomingRaid || null
         };
       });
     }, 1000);
@@ -864,27 +747,7 @@ export function useGameState() {
             [targetPlot.buildingId]: 0
           } : {})
         },
-        handlePayExtortionTribute,
-        claimYield: buildingId => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => b.id === buildingId ? {
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            } : b)
-          }));
-        },
-        claimAll: () => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => ({
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            }))
-          }));
-        }
+        handlePayExtortionTribute
       };
     });
   };
@@ -959,27 +822,7 @@ export function useGameState() {
         ...prev,
         resources: updatedRes,
         harvestTimers: resetTimers,
-        handlePayExtortionTribute,
-        claimYield: buildingId => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => b.id === buildingId ? {
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            } : b)
-          }));
-        },
-        claimAll: () => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => ({
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            }))
-          }));
-        }
+        handlePayExtortionTribute
       };
     });
     return harvestedCount;
@@ -1048,27 +891,7 @@ export function useGameState() {
             flora: (prev.resources.flora || 0) - (costFlora || 0)
           },
           buildings: nextBuildings,
-          handlePayExtortionTribute,
-          claimYield: buildingId => {
-            setGameState(prev => ({
-              ...prev,
-              buildings: prev.buildings.map(b => b.id === buildingId ? {
-                ...b,
-                yieldAmount: 0,
-                pendingYield: 0
-              } : b)
-            }));
-          },
-          claimAll: () => {
-            setGameState(prev => ({
-              ...prev,
-              buildings: prev.buildings.map(b => ({
-                ...b,
-                yieldAmount: 0,
-                pendingYield: 0
-              }))
-            }));
-          }
+          handlePayExtortionTribute
         };
       }
       const nextGrid = prev.grid.map(p => {
@@ -1079,27 +902,7 @@ export function useGameState() {
             upgradeTimeRemaining: buildDuration,
             totalUpgradeTime: buildDuration,
             targetTier: targetTier,
-            handlePayExtortionTribute,
-            claimYield: buildingId => {
-              setGameState(prev => ({
-                ...prev,
-                buildings: prev.buildings.map(b => b.id === buildingId ? {
-                  ...b,
-                  yieldAmount: 0,
-                  pendingYield: 0
-                } : b)
-              }));
-            },
-            claimAll: () => {
-              setGameState(prev => ({
-                ...prev,
-                buildings: prev.buildings.map(b => ({
-                  ...b,
-                  yieldAmount: 0,
-                  pendingYield: 0
-                }))
-              }));
-            }
+            handlePayExtortionTribute
           };
         }
         return p;
@@ -1122,27 +925,7 @@ export function useGameState() {
         },
         grid: nextGrid,
         battleLogs: [decreeLog, ...(prev.battleLogs || [])],
-        handlePayExtortionTribute,
-        claimYield: buildingId => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => b.id === buildingId ? {
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            } : b)
-          }));
-        },
-        claimAll: () => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => ({
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            }))
-          }));
-        }
+        handlePayExtortionTribute
       };
     });
     return true;
@@ -1171,27 +954,7 @@ export function useGameState() {
             ...plot,
             buildingId: buildingType,
             level: 1,
-            handlePayExtortionTribute,
-            claimYield: buildingId => {
-              setGameState(prev => ({
-                ...prev,
-                buildings: prev.buildings.map(b => b.id === buildingId ? {
-                  ...b,
-                  yieldAmount: 0,
-                  pendingYield: 0
-                } : b)
-              }));
-            },
-            claimAll: () => {
-              setGameState(prev => ({
-                ...prev,
-                buildings: prev.buildings.map(b => ({
-                  ...b,
-                  yieldAmount: 0,
-                  pendingYield: 0
-                }))
-              }));
-            }
+            handlePayExtortionTribute
           };
         }
         return plot;
@@ -1235,29 +998,9 @@ export function useGameState() {
         grid: newGrid,
         buildings: newBuildings,
         harvestTimers: newHarvestTimers,
-        troops: 4,
+        troops: newTroops,
         battleLogs: [constructLog, ...(prev.battleLogs || [])],
-        handlePayExtortionTribute,
-        claimYield: buildingId => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => b.id === buildingId ? {
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            } : b)
-          }));
-        },
-        claimAll: () => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => ({
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            }))
-          }));
-        }
+        handlePayExtortionTribute
       };
     });
     return true;
@@ -1307,27 +1050,7 @@ export function useGameState() {
           stone: prev.resources.stone - stone
         },
         battleLogs: [annexLog, ...(prev.battleLogs || [])],
-        handlePayExtortionTribute,
-        claimYield: buildingId => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => b.id === buildingId ? {
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            } : b)
-          }));
-        },
-        claimAll: () => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => ({
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            }))
-          }));
-        }
+        handlePayExtortionTribute
       };
     });
     return true;
@@ -1400,32 +1123,15 @@ export function useGameState() {
           ...prev.resources,
           gold: Math.max(0, (prev.resources?.gold || 0) - costGold)
         },
-        troops: 4,
+        troops: {
+          ...prevTroops,
+          total: (prevTroops.total || 0) + actualCount
+        },
         villagers: [...baseVillagers, ...newVillagers],
         garrison: (prev.garrison || 0) + actualCount,
         population: (prev.population || 20) + actualCount,
         battleLogs: [recruitLog, ...(prev.battleLogs || [])],
-        handlePayExtortionTribute,
-        claimYield: buildingId => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => b.id === buildingId ? {
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            } : b)
-          }));
-        },
-        claimAll: () => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => ({
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            }))
-          }));
-        }
+        handlePayExtortionTribute
       };
     });
     return true;
@@ -1470,27 +1176,7 @@ export function useGameState() {
             ...v,
             role: assignedRole,
             assignedBuildingId: assignedRole === 'Unassigned' || assignedRole === 'Soldier' ? null : assignedPlotId,
-            handlePayExtortionTribute,
-            claimYield: buildingId => {
-              setGameState(prev => ({
-                ...prev,
-                buildings: prev.buildings.map(b => b.id === buildingId ? {
-                  ...b,
-                  yieldAmount: 0,
-                  pendingYield: 0
-                } : b)
-              }));
-            },
-            claimAll: () => {
-              setGameState(prev => ({
-                ...prev,
-                buildings: prev.buildings.map(b => ({
-                  ...b,
-                  yieldAmount: 0,
-                  pendingYield: 0
-                }))
-              }));
-            }
+            handlePayExtortionTribute
           };
         }
         return v;
@@ -1498,27 +1184,7 @@ export function useGameState() {
       return {
         ...prev,
         villagers: updatedVils,
-        handlePayExtortionTribute,
-        claimYield: buildingId => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => b.id === buildingId ? {
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            } : b)
-          }));
-        },
-        claimAll: () => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => ({
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            }))
-          }));
-        }
+        handlePayExtortionTribute
       };
     });
   }, []);
@@ -1534,31 +1200,11 @@ export function useGameState() {
           role: 'Unassigned',
           assignedBuildingId: null
         } : v),
-        handlePayExtortionTribute,
-        claimYield: buildingId => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => b.id === buildingId ? {
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            } : b)
-          }));
-        },
-        claimAll: () => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => ({
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            }))
-          }));
-        }
+        handlePayExtortionTribute
       };
     });
   }, []);
-  const assignWorkerToBuilding = (buildingId, villagerId = null) => {
+  const assignWorkerToBuilding = (plotId, villagerId = null) => {
     setGameState(prev => {
       const villagers = prev.villagers || [];
       const unassigned = villagers.filter(v => v.role === 'Unassigned');
@@ -1567,47 +1213,28 @@ export function useGameState() {
       }
       const targetVillager = villagerId ? villagers.find(v => v.id === villagerId) : unassigned[0];
       if (!targetVillager) return prev;
-      const targetBuilding = (prev.buildings || []).find(b => b.id === buildingId);
-      if (!targetBuilding) return prev;
-      const maxCapacity = (targetBuilding.tier || 1) * 2;
-      const currentWorkers = targetBuilding.assignedWorkersCount || 0;
+      // Look up the plot from the grid array
+      const grid = prev.grid || [];
+      const targetPlot = grid.find(p => p.id === plotId);
+      if (!targetPlot || !targetPlot.buildingId || targetPlot.buildingId === 'empty') return prev;
+      const plotLevel = targetPlot.level || 1;
+      const maxCapacity = Math.min(5, plotLevel + 1);
+      const currentWorkers = villagers.filter(v => v.assignedBuildingId === plotId).length;
       if (currentWorkers >= maxCapacity) return prev;
+      // Map building type to villager role
       let role = 'Farming';
-      if (targetBuilding.type === 'LUMBER_MILL') role = 'Forestry';
-      if (targetBuilding.type === 'QUARRY') role = 'Masonry';
-      if (targetBuilding.type === 'SPRING') role = 'Waterbearing';
+      const bType = targetPlot.buildingId;
+      if (bType === 'lumber') role = 'Forestry';
+      else if (bType === 'quarry') role = 'Masonry';
+      else if (bType === 'well') role = 'Waterbearing';
+      else if (bType === 'barracks') role = 'Soldier';
       return {
         ...prev,
         villagers: villagers.map(v => v.id === targetVillager.id ? {
           ...v,
           role,
-          assignedBuildingId: buildingId
-        } : v),
-        buildings: prev.buildings.map(b => b.id === buildingId ? {
-          ...b,
-          assignedWorkersCount: currentWorkers + 1
-        } : b),
-        handlePayExtortionTribute,
-        claimYield: buildingId => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => b.id === buildingId ? {
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            } : b)
-          }));
-        },
-        claimAll: () => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => ({
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            }))
-          }));
-        }
+          assignedBuildingId: plotId
+        } : v)
       };
     });
   };
@@ -1626,27 +1253,7 @@ export function useGameState() {
           role: 'Unassigned',
           assignedBuildingId: null
         } : v),
-        handlePayExtortionTribute,
-        claimYield: buildingId => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => b.id === buildingId ? {
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            } : b)
-          }));
-        },
-        claimAll: () => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => ({
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            }))
-          }));
-        }
+        handlePayExtortionTribute
       };
     });
   }, []);
@@ -1675,27 +1282,7 @@ export function useGameState() {
           assignedBuildingId: rivalId
         } : v),
         battleLogs: [spyLog, ...(prev.battleLogs || [])],
-        handlePayExtortionTribute,
-        claimYield: buildingId => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => b.id === buildingId ? {
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            } : b)
-          }));
-        },
-        claimAll: () => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => ({
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            }))
-          }));
-        }
+        handlePayExtortionTribute
       };
     });
   }, []);
@@ -1791,27 +1378,7 @@ export function useGameState() {
           progress: 0
         },
         battleLogs: [researchLog, ...(prev.battleLogs || [])],
-        handlePayExtortionTribute,
-        claimYield: buildingId => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => b.id === buildingId ? {
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            } : b)
-          }));
-        },
-        claimAll: () => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => ({
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            }))
-          }));
-        }
+        handlePayExtortionTribute
       };
     });
     return true;
@@ -1881,27 +1448,7 @@ export function useGameState() {
         resources: updatedRes,
         harvestTimers: resetTimers,
         battleLogs: [bloomLog, ...(prev.battleLogs || [])],
-        handlePayExtortionTribute,
-        claimYield: buildingId => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => b.id === buildingId ? {
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            } : b)
-          }));
-        },
-        claimAll: () => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => ({
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            }))
-          }));
-        }
+        handlePayExtortionTribute
       };
     });
     return true;
@@ -1928,27 +1475,7 @@ export function useGameState() {
         ...prev,
         brambleShieldActive: nextActive,
         battleLogs: [shieldLog, ...(prev.battleLogs || [])],
-        handlePayExtortionTribute,
-        claimYield: buildingId => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => b.id === buildingId ? {
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            } : b)
-          }));
-        },
-        claimAll: () => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => ({
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            }))
-          }));
-        }
+        handlePayExtortionTribute
       };
     });
   };
@@ -1987,27 +1514,7 @@ export function useGameState() {
           [gainRes]: Math.min(targetCap, (prev.resources?.[gainRes] || 0) + gainAmt)
         },
         battleLogs: [transLog, ...(prev.battleLogs || [])],
-        handlePayExtortionTribute,
-        claimYield: buildingId => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => b.id === buildingId ? {
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            } : b)
-          }));
-        },
-        claimAll: () => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => ({
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            }))
-          }));
-        }
+        handlePayExtortionTribute
       };
     });
     return true;
@@ -2056,27 +1563,7 @@ export function useGameState() {
         ...prev,
         resources: updatedRes,
         battleLogs: [forageLog, ...(prev.battleLogs || [])],
-        handlePayExtortionTribute,
-        claimYield: buildingId => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => b.id === buildingId ? {
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            } : b)
-          }));
-        },
-        claimAll: () => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => ({
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            }))
-          }));
-        }
+        handlePayExtortionTribute
       };
     });
     setLastForageTimestamp(now);
@@ -2149,27 +1636,7 @@ export function useGameState() {
               upgradeTimeRemaining: buildDuration,
               totalUpgradeTime: buildDuration,
               targetTier: targetTier,
-              handlePayExtortionTribute,
-              claimYield: buildingId => {
-                setGameState(prev => ({
-                  ...prev,
-                  buildings: prev.buildings.map(b => b.id === buildingId ? {
-                    ...b,
-                    yieldAmount: 0,
-                    pendingYield: 0
-                  } : b)
-                }));
-              },
-              claimAll: () => {
-                setGameState(prev => ({
-                  ...prev,
-                  buildings: prev.buildings.map(b => ({
-                    ...b,
-                    yieldAmount: 0,
-                    pendingYield: 0
-                  }))
-                }));
-              }
+              handlePayExtortionTribute
             };
           }
           return plot;
@@ -2192,27 +1659,7 @@ export function useGameState() {
         },
         grid: nextGrid,
         battleLogs: [bulkLog, ...(prev.battleLogs || [])],
-        handlePayExtortionTribute,
-        claimYield: buildingId => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => b.id === buildingId ? {
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            } : b)
-          }));
-        },
-        claimAll: () => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => ({
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            }))
-          }));
-        }
+        handlePayExtortionTribute
       };
     });
     return true;
@@ -2262,27 +1709,7 @@ export function useGameState() {
           timestamp: Date.now(),
           type: 'diplomacy'
         }, ...(prev.chronicle || [])],
-        handlePayExtortionTribute,
-        claimYield: buildingId => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => b.id === buildingId ? {
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            } : b)
-          }));
-        },
-        claimAll: () => {
-          setGameState(prev => ({
-            ...prev,
-            buildings: prev.buildings.map(b => ({
-              ...b,
-              yieldAmount: 0,
-              pendingYield: 0
-            }))
-          }));
-        }
+        handlePayExtortionTribute
       };
     });
   }, []);
@@ -2294,27 +1721,7 @@ export function useGameState() {
       if (currentDay < 5 || hasMockFeuds) {
         return {
           ...prev,
-          bloodFeuds: [],
-          claimYield: buildingId => {
-            setGameState(prev => ({
-              ...prev,
-              buildings: prev.buildings.map(b => b.id === buildingId ? {
-                ...b,
-                yieldAmount: 0,
-                pendingYield: 0
-              } : b)
-            }));
-          },
-          claimAll: () => {
-            setGameState(prev => ({
-              ...prev,
-              buildings: prev.buildings.map(b => ({
-                ...b,
-                yieldAmount: 0,
-                pendingYield: 0
-              }))
-            }));
-          }
+          bloodFeuds: []
         };
       }
       return prev;
@@ -2365,27 +1772,7 @@ export function useGameState() {
     selectFaction,
     assignVillagerRole,
     recruitLaborer,
-    handlePayExtortionTribute,
-    claimYield: buildingId => {
-      setGameState(prev => ({
-        ...prev,
-        buildings: prev.buildings.map(b => b.id === buildingId ? {
-          ...b,
-          yieldAmount: 0,
-          pendingYield: 0
-        } : b)
-      }));
-    },
-    claimAll: () => {
-      setGameState(prev => ({
-        ...prev,
-        buildings: prev.buildings.map(b => ({
-          ...b,
-          yieldAmount: 0,
-          pendingYield: 0
-        }))
-      }));
-    }
+    handlePayExtortionTribute
   };
 }
 function migrateSaveState(rawState) {
@@ -2401,5 +1788,14 @@ function migrateSaveState(rawState) {
     ...rawState
   };
   state.saveVersion = CURRENT_SAVE_VERSION;
+  // Migrate troops from corrupted plain number to proper object schema
+  if (state.troops && typeof state.troops !== 'object') {
+    const troopVal = typeof state.troops === 'number' ? state.troops : 0;
+    state.troops = { total: troopVal, maxCapacity: 30, sustenanceUpkeepPerDay: 1 };
+  }
+  // Strip serialized function references that leaked into state
+  if (typeof state.handlePayExtortionTribute === 'function' || state.handlePayExtortionTribute != null) {
+    delete state.handlePayExtortionTribute;
+  }
   return state;
 }
