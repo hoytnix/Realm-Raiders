@@ -49,6 +49,18 @@
       "description": "Purges mock retaliation missives and displays the 3 surrounding map kingdoms",
       "appliedAt": "2026-09-08T15:57:12.834Z",
       "sha256": "52bb3dcb5f013840caa5eb832610bcfaf999916fe434ad8b39d3da9bc4be06b1"
+    },
+    {
+      "id": "008_worker_staffing_and_amortization_balance",
+      "file": "008_worker_staffing_and_amortization_balance.mjs",
+      "description": "Enforce >= 1 worker staffing invariant for production and calibrate alpha 1.58 / beta 1.36 amortization",
+      "appliedAt": "2026-09-08T16:11:52.703Z",
+      "sha256": "66654451b7d6ce8943c5b9df592a5652655adabe159b9f4b3553d84e5387a22b",
+      "modifiedFiles": [
+        "src/constants/buildings.js",
+        "src/hooks/useGameState.js",
+        "src/components/citadel/BuildingHoverTooltip.jsx"
+      ]
     }
   ]
 }

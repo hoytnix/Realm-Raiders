@@ -28,3 +28,6 @@ lerna-debug.log*
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# Local AST patch rollback backups
+.ast-snapshots/

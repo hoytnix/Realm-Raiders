@@ -1,3 +1,4 @@
+import { AMORTIZATION_CONFIG } from "../constants/buildings.js";
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { STORAGE_KEY, DEFAULT_STATE, FACTIONS, BUILDINGS, SEASONS, SEASON_ORDER, WEATHER_CONDITIONS, WEATHER_POOL, REALM_MONTHS, getNextWeather, calculateResourceCaps, TECHNOLOGIES, TERRITORY_TIERS, MAX_TERRITORY_TIER, TROOP_RECRUIT_COST, createDefaultGrid, getBuildingUpgradeCost, calculateBuildingYield, calculateBuildDuration, toRomanTier, formatBuildDuration, sounds, DEFAULT_VILLAGERS, VILLAGER_NAMES } from '../constants/index.js';
 import { haptics, checkIncomingRaid, calculateProvocationIndex, getFactionExtortionDemand } from '../utils/index.js';
