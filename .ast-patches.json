@@ -21,6 +21,13 @@
       "description": "Enforces Day 5 Truce of Foundations, plunder wealth gating, and raid cooldowns",
       "appliedAt": "2026-09-08T15:19:10.318Z",
       "sha256": "ba78829517ac49798cfeb8cd36c23178951e543432a484a7b43e1b120167657a"
+    },
+    {
+      "id": "004_ai_strategy_high_rice_overhaul",
+      "file": "004_ai_strategy_high_rice_overhaul.mjs",
+      "description": "Implements Provocation Index, telegraphed warhorns, combinatorial extortion tribute, and demoralization",
+      "appliedAt": "2026-09-08T15:26:52.621Z",
+      "sha256": "9c985659db1045be8fec6f374c9a0b15aac35170b9cbaae2ccf93012deb42c58"
     }
   ]
 }

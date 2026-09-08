@@ -75,7 +75,8 @@ export default function App() {
     dispatchSpy,
     setGameState,
     assignVillagerRole,
-    recruitLaborer
+    recruitLaborer,
+    handlePayExtortionTribute
   } = useGameState();
   const {
     currentFaction,
@@ -301,7 +302,22 @@ export default function App() {
         </div>}
 
       {/* LAYER 3: THE OAK WAR TABLE & THE LIVING PARCHMENT */}
-      <DeskSurface tilt={tilt} isStarving={isStarving} gameState={gameState} stats={stats} currentFaction={currentFaction} deskView={deskView} setDeskView={setDeskView} onToggleStampCursor={() => setIsStampCursorEquipped(v => !v)} isStampCursorEquipped={isStampCursorEquipped}>
+      <DeskSurface tilt={tilt} isStarving={isStarving} gameState={gameState} stats={stats} currentFaction={currentFaction} deskView={deskView} setDeskView={setDeskView} onToggleStampCursor={() => setIsStampCursorEquipped(v => !v)} isStampCursorEquipped={isStampCursorEquipped}>{gameState.impendingRaid ? <div data-testid="warhorn-banner" className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-lg bg-[#3a1a14] border-2 border-[#b87333] rounded-xl p-3 text-amber-100 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-3 animate-pulse">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">📯</span>
+                          <div>
+                            <p className="text-xs font-black uppercase tracking-wider text-amber-200">
+                              Warhorns Echo: {gameState.impendingRaid.rival?.name} Approaches!
+                            </p>
+                            <p className="text-[10px] text-amber-300">
+                              Arrives in {gameState.impendingRaid.warningTicks}s • Threat: {gameState.impendingRaid.threatLevel}x
+                            </p>
+                          </div>
+                        </div>
+                        {gameState.impendingRaid.demand ? <button onClick={handlePayExtortionTribute} className="text-[10px] font-bold py-1.5 px-2.5 rounded bg-amber-700 hover:bg-amber-600 text-amber-100 border border-amber-500 whitespace-nowrap shadow transition active:scale-95">
+                            Pay Tribute ({gameState.impendingRaid.demand.summary})
+                          </button> : null}
+                      </div> : null}
         {deskView === 'citadel' && <ParchmentCitadelMap buildings={gameState.buildings} harvestTimers={gameState.harvestTimers} grid={gameState.grid} territoryTier={gameState.territoryTier || 1} troops={gameState.troops} technologies={gameState.technologies || []} onHarvest={onHarvest} onHarvestAll={handleHarvestAll} selectedBuildingId={selectedBuildingId} onSelectBuilding={setSelectedBuildingId} onUpgradeBuilding={onUpgradeBuilding} onConstructBuilding={constructBuilding} onExpandTerritory={expandTerritory} onTrainTroops={trainTroops} onResearchTechnology={onResearchTechnology} onTransmuteFlora={transmuteFlora} onTriggerVerdantBloom={triggerVerdantBloom} brambleShieldActive={brambleShieldActive} onToggleBrambleShield={toggleBrambleShield} resources={gameState.resources} faction={currentFaction} stats={stats} timeState={timeState} inkPulseTick={inkPulseTick} stampingDecree={stampingDecree} onHoverUpgrade={setIsHoveringUpgradeable} multiSelectedIds={multiSelectedIds} onMultiSelectBuildings={setMultiSelectedIds} onClearMultiSelect={() => setMultiSelectedIds([])} onBulkUpgrade={onBulkUpgrade} activeLedgerTab={activeLedgerTab} setActiveLedgerTab={setActiveLedgerTab} battleLogs={gameState.battleLogs} isInspectorExpanded={isInspectorExpanded} setIsInspectorExpanded={setIsInspectorExpanded} villagers={gameState.villagers || []} onAssignWorker={assignWorkerToBuilding} onUnassignWorker={unassignWorkerFromBuilding} onAssignVillager={assignVillager} onUnassignVillager={unassignVillager} onOpenRoster={() => setIsRosterOpen(true)} onDispatchSpy={dispatchSpy} onDeployRaid={startRaidAdFlow} playerRating={stats?.rating || 60} revealedRivals={gameState?.revealedRivals} />}
 
         {deskView === 'war' && <ParchmentWarCouncil stats={stats} state={gameState} onLaunchRaid={handleLaunchRaid} onDeclareBloodFeud={onDeclareBloodFeud} onResearchTechnology={onResearchTechnology} onTrainTroops={trainTroops} gameState={gameState} onAssignRole={assignVillagerRole} onRecruitLaborer={recruitLaborer} />}

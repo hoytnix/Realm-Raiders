@@ -157,5 +157,6 @@ export const DEFAULT_STATE = {
   lastTickTimestamp: Date.now(),
   incomingRaid: null,
   raidCooldown: 300,
-  truceOfFoundations: true
+  truceOfFoundations: true,
+  impendingRaid: null
 };

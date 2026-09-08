@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { STORAGE_KEY, DEFAULT_STATE, FACTIONS, BUILDINGS, SEASONS, SEASON_ORDER, WEATHER_CONDITIONS, WEATHER_POOL, REALM_MONTHS, getNextWeather, calculateResourceCaps, TECHNOLOGIES, TERRITORY_TIERS, MAX_TERRITORY_TIER, TROOP_RECRUIT_COST, createDefaultGrid, getBuildingUpgradeCost, calculateBuildingYield, calculateBuildDuration, toRomanTier, formatBuildDuration, sounds, DEFAULT_VILLAGERS, VILLAGER_NAMES } from '../constants/index.js';
-import { haptics } from '../utils/index.js';
+import { haptics, checkIncomingRaid, calculateProvocationIndex, getFactionExtortionDemand } from '../utils/index.js';
 export function useGameState() {
   const recruitLaborer = () => {
     setGameState(prev => {
@@ -19,7 +19,8 @@ export function useGameState() {
           role: 'Unassigned',
           assignedBuildingId: null,
           morale: 100
-        }]
+        }],
+        handlePayExtortionTribute
       };
     });
   };
@@ -176,13 +177,15 @@ export function useGameState() {
             if (plot.buildingId && (plot.level === undefined || plot.level === null)) {
               return {
                 ...plot,
-                level: parsed.buildings && parsed.buildings[plot.buildingId] || 1
+                level: parsed.buildings && parsed.buildings[plot.buildingId] || 1,
+                handlePayExtortionTribute
               };
             }
             if (!plot.buildingId && (plot.level === undefined || plot.level === null)) {
               return {
                 ...plot,
-                level: 0
+                level: 0,
+                handlePayExtortionTribute
               };
             }
             return plot;
@@ -601,12 +604,14 @@ export function useGameState() {
                   isUpgrading: false,
                   upgradeTimeRemaining: 0,
                   targetTier: undefined,
-                  totalUpgradeTime: undefined
+                  totalUpgradeTime: undefined,
+                  handlePayExtortionTribute
                 };
               } else {
                 return {
                   ...plot,
-                  upgradeTimeRemaining: nextRemaining
+                  upgradeTimeRemaining: nextRemaining,
+                  handlePayExtortionTribute
                 };
               }
             }
@@ -648,7 +653,13 @@ export function useGameState() {
             weather: currentWeather,
             timeSpeed: 1
           },
-          lastTickTimestamp: Date.now()
+          lastTickTimestamp: Date.now(),
+          handlePayExtortionTribute,
+          impendingRaid: prev.impendingRaid ? prev.impendingRaid.warningTicks > 1 ? {
+            ...prev.impendingRaid,
+            warningTicks: prev.impendingRaid.warningTicks - 1
+          } : null : prev.incomingRaid || (prev.raidCooldown || 0) > 0 || (prev.calendar?.day ?? 1) < 5 ? null : checkIncomingRaid(prev),
+          incomingRaid: prev.impendingRaid && prev.impendingRaid.warningTicks <= 1 ? prev.impendingRaid.rival : prev.incomingRaid || null
         };
       });
     }, 1000);
@@ -730,7 +741,8 @@ export function useGameState() {
           ...(targetPlot?.buildingId ? {
             [targetPlot.buildingId]: 0
           } : {})
-        }
+        },
+        handlePayExtortionTribute
       };
     });
   };
@@ -804,7 +816,8 @@ export function useGameState() {
       return {
         ...prev,
         resources: updatedRes,
-        harvestTimers: resetTimers
+        harvestTimers: resetTimers,
+        handlePayExtortionTribute
       };
     });
     return harvestedCount;
@@ -872,7 +885,8 @@ export function useGameState() {
             stone: (prev.resources.stone || 0) - costStone,
             flora: (prev.resources.flora || 0) - (costFlora || 0)
           },
-          buildings: nextBuildings
+          buildings: nextBuildings,
+          handlePayExtortionTribute
         };
       }
       const nextGrid = prev.grid.map(p => {
@@ -882,7 +896,8 @@ export function useGameState() {
             isUpgrading: true,
             upgradeTimeRemaining: buildDuration,
             totalUpgradeTime: buildDuration,
-            targetTier: targetTier
+            targetTier: targetTier,
+            handlePayExtortionTribute
           };
         }
         return p;
@@ -904,7 +919,8 @@ export function useGameState() {
           flora: (prev.resources.flora || 0) - (costFlora || 0)
         },
         grid: nextGrid,
-        battleLogs: [decreeLog, ...(prev.battleLogs || [])]
+        battleLogs: [decreeLog, ...(prev.battleLogs || [])],
+        handlePayExtortionTribute
       };
     });
     return true;
@@ -932,7 +948,8 @@ export function useGameState() {
           return {
             ...plot,
             buildingId: buildingType,
-            level: 1
+            level: 1,
+            handlePayExtortionTribute
           };
         }
         return plot;
@@ -977,7 +994,8 @@ export function useGameState() {
         buildings: newBuildings,
         harvestTimers: newHarvestTimers,
         troops: newTroops,
-        battleLogs: [constructLog, ...(prev.battleLogs || [])]
+        battleLogs: [constructLog, ...(prev.battleLogs || [])],
+        handlePayExtortionTribute
       };
     });
     return true;
@@ -1026,7 +1044,8 @@ export function useGameState() {
           wood: prev.resources.wood - wood,
           stone: prev.resources.stone - stone
         },
-        battleLogs: [annexLog, ...(prev.battleLogs || [])]
+        battleLogs: [annexLog, ...(prev.battleLogs || [])],
+        handlePayExtortionTribute
       };
     });
     return true;
@@ -1106,7 +1125,8 @@ export function useGameState() {
         villagers: [...baseVillagers, ...newVillagers],
         garrison: (prev.garrison || 0) + actualCount,
         population: (prev.population || 20) + actualCount,
-        battleLogs: [recruitLog, ...(prev.battleLogs || [])]
+        battleLogs: [recruitLog, ...(prev.battleLogs || [])],
+        handlePayExtortionTribute
       };
     });
     return true;
@@ -1150,14 +1170,16 @@ export function useGameState() {
           return {
             ...v,
             role: assignedRole,
-            assignedBuildingId: assignedRole === 'Unassigned' || assignedRole === 'Soldier' ? null : assignedPlotId
+            assignedBuildingId: assignedRole === 'Unassigned' || assignedRole === 'Soldier' ? null : assignedPlotId,
+            handlePayExtortionTribute
           };
         }
         return v;
       });
       return {
         ...prev,
-        villagers: updatedVils
+        villagers: updatedVils,
+        handlePayExtortionTribute
       };
     });
   }, []);
@@ -1172,7 +1194,8 @@ export function useGameState() {
           ...v,
           role: 'Unassigned',
           assignedBuildingId: null
-        } : v)
+        } : v),
+        handlePayExtortionTribute
       };
     });
   }, []);
@@ -1204,7 +1227,8 @@ export function useGameState() {
         buildings: prev.buildings.map(b => b.id === buildingId ? {
           ...b,
           assignedWorkersCount: currentWorkers + 1
-        } : b)
+        } : b),
+        handlePayExtortionTribute
       };
     });
   };
@@ -1222,7 +1246,8 @@ export function useGameState() {
           ...v,
           role: 'Unassigned',
           assignedBuildingId: null
-        } : v)
+        } : v),
+        handlePayExtortionTribute
       };
     });
   }, []);
@@ -1250,7 +1275,8 @@ export function useGameState() {
           role: 'Spy',
           assignedBuildingId: rivalId
         } : v),
-        battleLogs: [spyLog, ...(prev.battleLogs || [])]
+        battleLogs: [spyLog, ...(prev.battleLogs || [])],
+        handlePayExtortionTribute
       };
     });
   }, []);
@@ -1345,7 +1371,8 @@ export function useGameState() {
           remaining: duration,
           progress: 0
         },
-        battleLogs: [researchLog, ...(prev.battleLogs || [])]
+        battleLogs: [researchLog, ...(prev.battleLogs || [])],
+        handlePayExtortionTribute
       };
     });
     return true;
@@ -1414,7 +1441,8 @@ export function useGameState() {
         ...prev,
         resources: updatedRes,
         harvestTimers: resetTimers,
-        battleLogs: [bloomLog, ...(prev.battleLogs || [])]
+        battleLogs: [bloomLog, ...(prev.battleLogs || [])],
+        handlePayExtortionTribute
       };
     });
     return true;
@@ -1440,7 +1468,8 @@ export function useGameState() {
       return {
         ...prev,
         brambleShieldActive: nextActive,
-        battleLogs: [shieldLog, ...(prev.battleLogs || [])]
+        battleLogs: [shieldLog, ...(prev.battleLogs || [])],
+        handlePayExtortionTribute
       };
     });
   };
@@ -1478,7 +1507,8 @@ export function useGameState() {
           food: Math.max(0, (prev.resources?.food || 0) - reqFood),
           [gainRes]: Math.min(targetCap, (prev.resources?.[gainRes] || 0) + gainAmt)
         },
-        battleLogs: [transLog, ...(prev.battleLogs || [])]
+        battleLogs: [transLog, ...(prev.battleLogs || [])],
+        handlePayExtortionTribute
       };
     });
     return true;
@@ -1526,7 +1556,8 @@ export function useGameState() {
       return {
         ...prev,
         resources: updatedRes,
-        battleLogs: [forageLog, ...(prev.battleLogs || [])]
+        battleLogs: [forageLog, ...(prev.battleLogs || [])],
+        handlePayExtortionTribute
       };
     });
     setLastForageTimestamp(now);
@@ -1598,7 +1629,8 @@ export function useGameState() {
               isUpgrading: true,
               upgradeTimeRemaining: buildDuration,
               totalUpgradeTime: buildDuration,
-              targetTier: targetTier
+              targetTier: targetTier,
+              handlePayExtortionTribute
             };
           }
           return plot;
@@ -1620,7 +1652,8 @@ export function useGameState() {
           stone: Math.max(0, (prev.resources.stone || 0) - totalStone)
         },
         grid: nextGrid,
-        battleLogs: [bulkLog, ...(prev.battleLogs || [])]
+        battleLogs: [bulkLog, ...(prev.battleLogs || [])],
+        handlePayExtortionTribute
       };
     });
     return true;
@@ -1639,6 +1672,41 @@ export function useGameState() {
   };
   const forageCooldownSec = Math.max(0, Math.ceil((60000 - (Date.now() - lastForageTimestamp)) / 1000));
   const canForage = (gameState.resources?.food || 0) < 30 && forageCooldownSec === 0 && ((gameState.resources?.flora || 0) >= 25 || (gameState.resources?.gold || 0) >= 20);
+  const handlePayExtortionTribute = React.useCallback(() => {
+    setGameState(prev => {
+      const impending = prev.impendingRaid;
+      if (!impending || !impending.demand) return prev;
+      const {
+        items,
+        summary,
+        factionName
+      } = impending.demand;
+      if (!Array.isArray(items) || items.length === 0) return prev;
+      const canAffordAll = items.every(item => (prev.resources?.[item.resource] || 0) >= item.amount);
+      if (!canAffordAll) return prev;
+      const nextResources = {
+        ...prev.resources
+      };
+      items.forEach(item => {
+        nextResources[item.resource] = Math.max(0, (nextResources[item.resource] || 0) - item.amount);
+      });
+      return {
+        ...prev,
+        resources: nextResources,
+        impendingRaid: null,
+        incomingRaid: null,
+        raidCooldown: 400,
+        chronicle: [{
+          id: 'tribute-' + Date.now(),
+          title: 'Tribute Paid',
+          description: 'Paid ' + (summary || 'supplies') + ' to ' + factionName + '. War horns fall silent.',
+          timestamp: Date.now(),
+          type: 'diplomacy'
+        }, ...(prev.chronicle || [])],
+        handlePayExtortionTribute
+      };
+    });
+  }, []);
   return {
     gameState,
     setGameState,
@@ -1683,6 +1751,7 @@ export function useGameState() {
     handleResetKingdom,
     selectFaction,
     assignVillagerRole,
-    recruitLaborer
+    recruitLaborer,
+    handlePayExtortionTribute
   };
 }
