@@ -174,6 +174,8 @@
       - Connected "Seal Decree with Royal Wax" `onClick` directly to `onResearchTech(tech.id)` with zero dependence on `selectedBuildingId`.
       - Checked affordability directly against `gameState.resources` with a clear red wax seal badge showing specific resource deficits when unaffordable.
       - Integrated `triggerHaptic('heavy')`, wax stamp impression card animation, and state transition to "Inscribing Decree..." (progress bar) and "Enacted" (green wax seal).
+    - **Runtime Reference Fix (`ParchmentCitadelMap.jsx`)**:
+      - Restored missing `onTriggerVerdantBloom` prop in parameter destructuring of `ParchmentCitadelMap.jsx`, resolving runtime `ReferenceError: onTriggerVerdantBloom is not defined` WSOD on render.
 
 ## Active Focus & Next Steps
 - Continue strategic balancing across Water, Flame, and Stone unique elemental active sinks and decree expansions.

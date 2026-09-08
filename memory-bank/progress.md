@@ -116,6 +116,7 @@
   - [x] Dynamic rotated aqueduct connections and floating map control cluster (compass rose button ↺ / ↻, zoom in/out, recenter, 'R' key).
   - [x] Stripped redundant mobile hamburger button from `MobileFloatingHUD` for unobstructed edge-to-edge cartography.
   - [x] Fixed Tech Codex "Seal Decree with Royal Wax" action with direct `onResearchTech` wiring, heavy haptics, wax stamp animation, and red wax deficit indicators.
+  - [x] Restored `onTriggerVerdantBloom` prop in `ParchmentCitadelMap.jsx`, fixing white screen of death (WSOD).
 
 ## Planned / In Progress
 - [ ] Additional weather sound synthesizers (rain, thunder, blizzard noise nodes).

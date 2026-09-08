@@ -35,6 +35,7 @@ export function ParchmentCitadelMap({
   setActiveLedgerTab,
   battleLogs = [],
   onTransmuteFlora,
+  onTriggerVerdantBloom,
   brambleShieldActive = false,
   onToggleBrambleShield,
   rotationAngle: propRotationAngle,
