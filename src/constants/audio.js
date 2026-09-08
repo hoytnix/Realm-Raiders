@@ -55,13 +55,13 @@ export class SoundController {
 
   init() {
     if (!this.ctx) {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const AudioCtx = typeof window !== 'undefined' ? (window.AudioContext || window.webkitAudioContext) : null;
       if (AudioCtx) {
         this.ctx = new AudioCtx();
       }
     }
     if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume();
+      this.ctx.resume().catch(() => {});
     }
   }
 
@@ -69,6 +69,25 @@ export class SoundController {
     if (this.masterMuted || this.ambientMuted || this.ambientNodes) return;
     this.init();
     if (!this.ctx) return;
+    if (this.ctx.state === 'suspended') {
+      // Defer starting ambient until user interaction to comply with browser autoplay policy
+      const unlockAmbient = () => {
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume().then(() => {
+            if (!this.masterMuted && !this.ambientMuted && !this.ambientNodes) {
+              this.startAmbient();
+            }
+          }).catch(() => {});
+        } else if (!this.masterMuted && !this.ambientMuted && !this.ambientNodes) {
+          this.startAmbient();
+        }
+      };
+      if (typeof window !== 'undefined') {
+        window.addEventListener('pointerdown', unlockAmbient, { once: true });
+        window.addEventListener('keydown', unlockAmbient, { once: true });
+      }
+      return;
+    }
     try {
       const now = this.ctx.currentTime;
       // Procedural medieval castle breeze drone

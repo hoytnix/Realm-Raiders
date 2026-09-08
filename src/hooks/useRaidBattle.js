@@ -75,7 +75,7 @@ export function useRaidBattle() {
 
     const bonusLootRatio = (currentFactionData.id === 'humans' ? 1.1 : 1.0) * seasonRaidMult * weatherRaidMult * elementalAtkMult * infusionPlunderMult;
 
-    let lootStolen = 0;
+    let lootStolen;
     const newLoot = { ...lootGained };
 
     if (targetKey === 'granary') {

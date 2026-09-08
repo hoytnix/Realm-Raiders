@@ -126,6 +126,9 @@
   - [x] Removed desktop "The Living Cartography: Royal Citadel" title banner and eliminated the desktop Menu button (`ParchmentHeader.jsx`).
   - [x] Added dedicated Flora button (`🌿`) with hotkey `[4]` to desktop `SovereignCommandDock.jsx` and updated hotkeys in `useHotkeys.js`.
   - [x] Mounted prominent persistent Desktop Resource HUD in `MonarchHeader.jsx` displaying all 5 primary resources with hover tooltips.
+  - [x] Resolved runtime `ReferenceError: speed is not defined` in `useGameState.js` harvest and research ticks.
+  - [x] Resolved Web Audio browser autoplay warnings with deferred gesture unlock in `audio.js`.
+  - [x] Installed and configured ESLint with `no-undef: error`, added `pnpm run lint` script, and added mandatory lint verification step to `GEMINI.md`.
 
 ## Planned / In Progress
 - [ ] Additional weather sound synthesizers (rain, thunder, blizzard noise nodes).

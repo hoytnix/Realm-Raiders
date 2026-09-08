@@ -387,7 +387,7 @@ export function useGameState() {
 
             const timerKey = plot.id;
             const currentVal = updatedTimers[timerKey] ?? updatedTimers[plot.buildingId] ?? 0;
-            const nextVal = currentVal + (1 * speed * plotSpeedMult);
+            const nextVal = currentVal + (1 * plotSpeedMult);
 
             if (canAutoCollect && nextVal >= effectiveCycleDuration) {
               // Troop Quartermaster / Garrison automatically collects completed harvest!
@@ -427,11 +427,11 @@ export function useGameState() {
           sounds.playCoin();
         }
 
-        // Advance ongoing research decree
+        // Advance ongoing research decree (1s per tick at 1x baseline)
         let nextCurrentResearch = prev.currentResearch ? { ...prev.currentResearch } : null;
         let nextTechnologies = prev.technologies ? [...prev.technologies] : [];
         if (nextCurrentResearch) {
-          const remaining = Math.max(0, (nextCurrentResearch.remaining ?? nextCurrentResearch.duration) - (1 * speed));
+          const remaining = Math.max(0, (nextCurrentResearch.remaining ?? nextCurrentResearch.duration) - 1);
           if (remaining <= 0) {
             const techDef = TECHNOLOGIES[nextCurrentResearch.techId];
             if (techDef && !nextTechnologies.includes(nextCurrentResearch.techId)) {

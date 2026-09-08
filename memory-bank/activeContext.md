@@ -197,9 +197,11 @@
       - Added dedicated Flora button with botanical leaf icon (`🌿`) immediately next to Tech Codex with hotkey `[4]`.
       - Adjusted Deep Vault to `[5]` and Chronicle to `[6]`, with hotkey routing in `useHotkeys.js`.
       - Enabled desktop modal view for `MobileFloraSheet.jsx` centered on desktop viewports.
-    - **Persistent Desktop Resource HUD (`ResourceBar.jsx`, `ResourcePill.jsx`, `MonarchHeader.jsx`)**:
-      - Mounted prominent, persistent `ResourceBar` centered horizontally in the gilded crown bar on desktop (`hidden md:flex`).
-      - Displayed all 5 primary resources (**Gold**, **Sustenance**, **Timber/Wood**, **Stone**, and **Flora**) with high-contrast diegetic icons, readable numerical values, storage caps, and production trend tooltips on hover.
+    - **ReferenceError Fix & ESLint Zero-Error Mandate (`useGameState.js`, `audio.js`, `eslint.config.js`, `GEMINI.md`)**:
+      - Fixed runtime `ReferenceError: speed is not defined` in `useGameState.js` at lines 390 (harvest timers) and 434 (research timer), locking baseline to 1x without dangling speed references.
+      - Fixed Web Audio Autoplay `AudioContext was not allowed to start` warning by deferring ambient start until user pointer/keyboard gesture and catching suspended state transitions safely in `audio.js`.
+      - Integrated ESLint with `@eslint/js`, `globals`, and Flat Config (`eslint.config.js`), configured with `no-undef: error` to catch any undefined references at lint time.
+      - Mandated `pnpm run lint` in `GEMINI.md` Step 3 and Strict Failure Conditions before building.
 
 ## Active Focus & Next Steps
 - Continue strategic balancing across Water, Flame, and Stone unique elemental active sinks and decree expansions.
