@@ -112,14 +112,17 @@ You operate strictly under one of two modes based on task complexity:
 * **Audio Engine**: Web Audio API (`AudioContext`, `OscillatorNode`, `GainNode`).
 * **Iconography**: Bundled diegetic SVG glyphs & Unicode runes; never rely on external unbundled fonts.
 * **Save Key**: `realmraid_parchment_v1`.
+* **Package Manager**: `pnpm` ONLY. Always use `pnpm` instead of `npm` or `yarn`.
 * **Build / Dev Commands**:
-  * Development Server: `npm run dev` (or `vite` / `pnpm dev` per package setup)
-  * Production Build: `npm run build`
-  * Lint / Typecheck: `npx eslint .` / `npx tsc --noEmit`
+  * Install Dependencies: `pnpm install`
+  * Development Server: `pnpm dev`
+  * Production Build: `pnpm run build`
+  * Lint / Typecheck: `pnpm eslint .` / `pnpm tsc --noEmit`
 
 ---
 
 ### STRICT FAILURE CONDITIONS
+* NEVER use `npm` or `yarn`; ALWAYS use `pnpm` exclusively for managing packages and running commands.
 * NEVER assume past context without verifying it against `activeContext.md`.
 * NEVER skip reading the Memory Bank, even if a user prompt appears brief or self-contained.
 * NEVER use shell commands such as `cat`, `echo`, heredocs, or shell redirection to create or edit files; ALWAYS use built-in tools (`write_to_file`, `replace_file_content`).

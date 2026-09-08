@@ -21,6 +21,13 @@
   - [x] Decomposed UI into `src/components/{common, hud, desk, citadel, combat, chronicle, menu, onboarding}`.
   - [x] Centralized constants and config schemas in `src/constants/`.
   - [x] Reduced root `App.jsx` from 2538 lines down to a clean ~160-line orchestrator.
+- [x] **Netlify SPA Build Scaffolding & Tooling**:
+  - [x] Added `package.json` with React 18, Vite 5, Tailwind CSS, PostCSS, Autoprefixer, and build/dev scripts.
+  - [x] Added `index.html` entry point with diegetic medieval typography and root container.
+  - [x] Added `index.jsx` and `index.css` (with parchment scrollbar stylings and Tailwind directives).
+  - [x] Added `vite.config.js`, `tailwind.config.js`, `postcss.config.js`.
+  - [x] Added `netlify.toml` and `public/_redirects` for Netlify static SPA hosting and route redirects.
+  - [x] Migrated project to `pnpm` exclusively, configured build approvals, and updated `GEMINI.md`.
 
 ## Planned / In Progress
 - [ ] Additional sound synthesizers (ambient wind, rain, blizzard noise nodes).
