@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FACTIONS, getElementalMatchup, sounds } from '../../constants/index.js';
 import { generateRivals, haptics } from '../../utils/index.js';
 export function ParchmentWarCouncil({
@@ -12,7 +12,7 @@ export function ParchmentWarCouncil({
   onAssignRole,
   onRecruitLaborer
 }) {
-  const [warCouncilTab, setWarCouncilTab] = React.useState('campaigns');
+  const [warCouncilTab, setWarCouncilTab] = useState('campaigns');
   const [rivals, setRivals] = useState(() => {
     const settlements = gameState?.rivalSettlements || state?.rivalSettlements;
     if (Array.isArray(settlements) && settlements.length > 0) {
@@ -20,7 +20,7 @@ export function ParchmentWarCouncil({
     }
     return generateRivals(stats?.overallRating || 100);
   });
-  React.useEffect(() => {
+  useEffect(() => {
     const settlements = gameState?.rivalSettlements || state?.rivalSettlements;
     if (Array.isArray(settlements) && settlements.length > 0) {
       setRivals(settlements);
@@ -28,7 +28,7 @@ export function ParchmentWarCouncil({
   }, [gameState?.rivalSettlements, state?.rivalSettlements]);
   const [selectedRivalId, setSelectedRivalId] = useState(() => rivals[0]?.id || null);
   const [isInfused, setIsInfused] = useState(false);
-  React.useEffect(() => {
+  useEffect(() => {
     if (gameState && Array.isArray(gameState.rivalSettlements) && gameState.rivalSettlements.length > 0) {
       setRivals(gameState.rivalSettlements);
     }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { STORAGE_KEY, DEFAULT_STATE, FACTIONS, BUILDINGS, SEASONS, SEASON_ORDER, WEATHER_CONDITIONS, WEATHER_POOL, REALM_MONTHS, getNextWeather, calculateResourceCaps, TECHNOLOGIES, TERRITORY_TIERS, MAX_TERRITORY_TIER, TROOP_RECRUIT_COST, createDefaultGrid, getBuildingUpgradeCost, calculateBuildingYield, calculateBuildDuration, toRomanTier, formatBuildDuration, sounds, DEFAULT_VILLAGERS, VILLAGER_NAMES } from '../constants/index.js';
 import { haptics, checkIncomingRaid, calculateProvocationIndex, getFactionExtortionDemand } from '../utils/index.js';
 export function useGameState() {
@@ -1672,7 +1672,7 @@ export function useGameState() {
   };
   const forageCooldownSec = Math.max(0, Math.ceil((60000 - (Date.now() - lastForageTimestamp)) / 1000));
   const canForage = (gameState.resources?.food || 0) < 30 && forageCooldownSec === 0 && ((gameState.resources?.flora || 0) >= 25 || (gameState.resources?.gold || 0) >= 20);
-  const handlePayExtortionTribute = React.useCallback(() => {
+  const handlePayExtortionTribute = useCallback(() => {
     setGameState(prev => {
       const impending = prev.impendingRaid;
       if (!impending || !impending.demand) return prev;

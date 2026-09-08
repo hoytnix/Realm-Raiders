@@ -35,6 +35,13 @@
       "description": "Replaces mock retaliation missives and procedural war targets with the 3 surrounding map kingdoms",
       "appliedAt": "2026-09-08T15:31:24.705Z",
       "sha256": "44839dec78c864815f60c2f70b69cbe895e4e14a36ce45e2f132498ab5eafe28"
+    },
+    {
+      "id": "006_fix_react_reference_and_perimeter_sync",
+      "file": "006_fix_react_reference_and_perimeter_sync.mjs",
+      "description": "Fixes React ReferenceError BSOD and ensures clean perimeter kingdom synchronization",
+      "appliedAt": "2026-09-08T15:51:54.396Z",
+      "sha256": "f5e40d28b96f24c6712e14fc641b0f636db585a82517bb985c7fe2f249c35c2d"
     }
   ]
 }
