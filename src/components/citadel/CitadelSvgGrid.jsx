@@ -13,6 +13,7 @@ import {
   sounds
 } from '../../constants/index.js';
 import { haptics, triggerHaptic } from '../../utils/index.js';
+import { generateNpcVillages } from '../../utils/rivals.js';
 import { BuildingHoverTooltip } from './BuildingHoverTooltip.jsx';
 
 export function CitadelSvgGrid({
@@ -35,13 +36,21 @@ export function CitadelSvgGrid({
   faction = null,
   stats = {},
   rotationAngle = 0,
-  rotateKingdom
+  rotateKingdom,
+  villagers = [],
+  onDispatchSpy,
+  onDeployRaid,
+  playerRating = 60
 }) {
   const containerRef = useRef(null);
   // Pinch-to-zoom and pan state
   const [scale, setScale] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isInteracting, setIsInteracting] = useState(false);
+
+  // Opposing NPC Settlements state & inspected village flyout
+  const [npcVillages] = useState(() => generateNpcVillages(playerRating || 60));
+  const [activeNpcVillage, setActiveNpcVillage] = useState(null);
 
   // Desktop Hover preview tooltip state
   const [hoveredBuilding, setHoveredBuilding] = useState(null);
@@ -469,6 +478,138 @@ export function CitadelSvgGrid({
           </>
         )}
 
+        {/* Opposing NPC Settlements in Peripheral Cartography Sectors */}
+        {npcVillages.map(village => {
+          const { x, y } = village.position;
+          const isHovered = activeNpcVillage?.id === village.id;
+          const bannerColor = village.faction === 'dwarves' ? '#78350f' : village.faction === 'orcs' ? '#991b1b' : '#0284c7';
+
+          return (
+            <g
+              key={village.id}
+              onClick={() => {
+                sounds.playDaggerThrust();
+                triggerHaptic('medium');
+                setActiveNpcVillage(village);
+              }}
+              className="cursor-pointer group"
+            >
+              {/* Outer Ground Base Diamond */}
+              <polygon
+                points={`
+                  ${x},${y - 18}
+                  ${x + 36},${y}
+                  ${x},${y + 18}
+                  ${x - 36},${y}
+                `}
+                fill={village.faction === 'orcs' ? 'rgba(127, 29, 29, 0.28)' : village.faction === 'dwarves' ? 'rgba(120, 53, 15, 0.28)' : 'rgba(3, 105, 161, 0.25)'}
+                stroke={bannerColor}
+                strokeWidth={isHovered ? '2.5' : '1.4'}
+                strokeDasharray="4,2"
+                className="transition-all duration-300 group-hover:stroke-amber-400"
+              />
+
+              {/* Exterior Sentry Patrol Ring Path */}
+              <ellipse
+                cx={x}
+                cy={y + 3}
+                rx="28"
+                ry="13"
+                fill="none"
+                stroke="#8c6843"
+                strokeWidth="0.8"
+                strokeDasharray="2,3"
+                opacity="0.5"
+              />
+
+              {/* Patrolling Sentry Animation */}
+              <g className="animate-pulse">
+                <circle cx={x - 16} cy={y + 2} r="3" fill="#292524" stroke={bannerColor} strokeWidth="0.8" />
+                <text x={x - 16} y={y + 4.5} textAnchor="middle" fontSize="4.5" fill="#fef08a">⚔️</text>
+              </g>
+
+              {/* Stronghold Watchtower Base & Walls */}
+              <polygon
+                points={`
+                  ${x - 14},${y - 22}
+                  ${x},${y - 29}
+                  ${x + 14},${y - 22}
+                  ${x + 14},${y - 2}
+                  ${x},${y + 5}
+                  ${x - 14},${y - 2}
+                `}
+                fill={village.faction === 'dwarves' ? '#44403c' : village.faction === 'orcs' ? '#450a0a' : '#1e293b'}
+                stroke="#1c1917"
+                strokeWidth="1.2"
+              />
+
+              {/* Fluttering Faction Banner */}
+              <line x1={x - 12} y1={y - 8} x2={x - 12} y2={y - 42} stroke="#78350f" strokeWidth="1.5" />
+              <polygon
+                points={`
+                  ${x - 12},${y - 40}
+                  ${x - 26},${y - 35}
+                  ${x - 12},${y - 30}
+                `}
+                fill={bannerColor}
+                stroke="#451a03"
+                strokeWidth="0.8"
+                className="animate-pulse"
+              />
+
+              {/* Watchtower Brazier with Animated Flame and Smoke */}
+              <rect x={x + 7} y={y - 28} width="5" height="7" fill="#1c1917" />
+              <circle cx={x + 9.5} cy={y - 30} r="3.5" fill="#f97316" className="animate-ping" opacity="0.7" />
+              <circle cx={x + 9.5} cy={y - 30} r="2.2" fill="#fef08a" />
+              <path
+                d={`M ${x + 9.5} ${y - 33} Q ${x + 6} ${y - 42} ${x + 10} ${y - 50}`}
+                stroke="#a8a29e"
+                strokeWidth="1.2"
+                strokeLinecap="round"
+                fill="none"
+                opacity="0.65"
+                className="animate-pulse"
+              />
+
+              {/* Central Sigil Glyph */}
+              <text
+                x={x}
+                y={y - 10}
+                textAnchor="middle"
+                fontSize="12"
+                className="select-none pointer-events-none"
+              >
+                {village.sigil}
+              </text>
+
+              {/* Clan Crest Name Tag */}
+              <rect
+                x={x - 36}
+                y={y + 11}
+                width="72"
+                height="13"
+                rx="3.5"
+                fill="#1c1917"
+                stroke={bannerColor}
+                strokeWidth="1"
+                opacity="0.92"
+              />
+              <text
+                x={x}
+                y={y + 20.5}
+                textAnchor="middle"
+                fill="#f5ecd8"
+                fontSize="6.8"
+                fontWeight="bold"
+                fontFamily="monospace"
+                className="select-none pointer-events-none"
+              >
+                {village.name}
+              </text>
+            </g>
+          );
+        })}
+
         {/* Render Annexed Citadel Plots: Empty Foundations and Constructed Structures */}
         {annexedPlots.map(plot => {
           const { x, y } = plot;
@@ -548,6 +689,8 @@ export function CitadelSvgGrid({
           const isReadyToHarvest = cycleDur > 0 && progressRatio >= 1;
           const hasTroopLogistics = (technologies || []).includes('tech_troop_logistics');
           const isAutomated = hasTroopLogistics && (troops?.total ?? 20) >= 1 && cycleDur > 0 && b.baseYield;
+          const plotWorkers = (villagers || []).filter(v => v.assignedBuildingId === plot.id);
+          const isUnstaffed = cycleDur > 0 && b.baseYield && plotWorkers.length === 0;
 
           return (
             <g
@@ -744,10 +887,160 @@ export function CitadelSvgGrid({
                   </text>
                 </g>
               )}
+
+              {/* Unstaffed Worker Warning Floating Badge */}
+              {isUnstaffed && !isReadyToHarvest && !plot.isUpgrading && (
+                <g className="animate-pulse pointer-events-none select-none">
+                  <rect
+                    x={x - 36}
+                    y={y - height - 24}
+                    width="72"
+                    height="15"
+                    rx="4"
+                    fill="#451a03"
+                    stroke="#f59e0b"
+                    strokeWidth="1.2"
+                    className="shadow"
+                  />
+                  <text
+                    x={x}
+                    y={y - height - 13}
+                    textAnchor="middle"
+                    fill="#fef08a"
+                    fontSize="7.5"
+                    fontWeight="black"
+                    fontFamily="monospace"
+                  >
+                    ⚠️ UNSTAFFED
+                  </text>
+                </g>
+              )}
             </g>
           );
         })}
       </svg>
+
+      {/* Interactive Opposing Settlement Intel Flyout Modal */}
+      {activeNpcVillage && (
+        <div
+          onClick={() => setActiveNpcVillage(null)}
+          className="fixed inset-0 z-50 bg-black/60 md:backdrop-blur-xs flex items-center justify-center p-3 animate-in fade-in duration-150"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm bg-gradient-to-b from-[#f5ebd6] via-[#ebdcc1] to-[#dfcba6] border-2 border-[#8c6843] rounded-3xl shadow-2xl p-4 text-[#442813] font-serif space-y-3"
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-[#8c6843]/40 pb-2.5">
+              <div className="flex items-center gap-2.5">
+                <span className="text-2xl p-2 rounded-2xl bg-[#dfcba6] border border-[#8c6843] shadow-inner">
+                  {activeNpcVillage.sigil}
+                </span>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="text-sm font-black uppercase text-[#3f2314]">
+                      {activeNpcVillage.name}
+                    </h3>
+                  </div>
+                  <span className="text-[10px] font-mono text-[#6b4a2e]">
+                    {activeNpcVillage.clan} • {activeNpcVillage.quadrant} Sector
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  sounds.playCoin();
+                  haptics.light();
+                  setActiveNpcVillage(null);
+                }}
+                className="w-6 h-6 rounded-full bg-[#dfcba6] hover:bg-[#cbb38b] border border-[#8c6843] text-xs font-bold text-[#442813] flex items-center justify-center transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Description */}
+            <p className="text-[10.5px] leading-relaxed text-[#6b4a2e] bg-[#dfcba6]/50 p-2.5 rounded-xl border border-[#bfa379]/50">
+              {activeNpcVillage.description}
+            </p>
+
+            {/* Garrison Readiness & Defense Power */}
+            <div className="bg-[#dfcba6] p-2.5 rounded-xl border border-[#bfa379] space-y-1.5 font-mono text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] uppercase font-bold text-[#6b4a2e]">Garrison Intel:</span>
+                <span className="text-emerald-900 font-bold text-[10.5px]">{activeNpcVillage.garrisonReady}</span>
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-[#442813]">
+                <span>Manned By:</span>
+                <span className="font-bold">{activeNpcVillage.garrison}</span>
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-[#442813]">
+                <span>Defense Power:</span>
+                <span className="font-bold text-red-900">🛡️ {activeNpcVillage.defensePower} (Rating: {activeNpcVillage.rating})</span>
+              </div>
+            </div>
+
+            {/* Scouted Stockpiles */}
+            <div className="space-y-1">
+              <span className="text-[9px] font-mono uppercase font-bold text-[#6b4a2e]">
+                Scouted Stockpiles (Plunder Potential):
+              </span>
+              <div className="grid grid-cols-5 gap-1 text-[10px] font-mono text-center">
+                <div className="bg-[#ebdcc1] p-1 rounded-lg border border-[#bfa379]">
+                  <span className="block">🪙</span>
+                  <span className="font-bold text-[#442813]">{activeNpcVillage.lootPool.gold}</span>
+                </div>
+                <div className="bg-[#ebdcc1] p-1 rounded-lg border border-[#bfa379]">
+                  <span className="block">🌾</span>
+                  <span className="font-bold text-[#442813]">{activeNpcVillage.lootPool.food}</span>
+                </div>
+                <div className="bg-[#ebdcc1] p-1 rounded-lg border border-[#bfa379]">
+                  <span className="block">💧</span>
+                  <span className="font-bold text-[#442813]">{activeNpcVillage.lootPool.water}</span>
+                </div>
+                <div className="bg-[#ebdcc1] p-1 rounded-lg border border-[#bfa379]">
+                  <span className="block">🪵</span>
+                  <span className="font-bold text-[#442813]">{activeNpcVillage.lootPool.wood}</span>
+                </div>
+                <div className="bg-[#ebdcc1] p-1 rounded-lg border border-[#bfa379]">
+                  <span className="block">🪨</span>
+                  <span className="font-bold text-[#442813]">{activeNpcVillage.lootPool.stone}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 pt-1 font-mono">
+              <button
+                onClick={() => {
+                  onDispatchSpy?.(activeNpcVillage);
+                  sounds.playDaggerThrust();
+                  triggerHaptic('heavy');
+                  haptics.heavy();
+                }}
+                className="flex-1 py-2 px-2 rounded-xl bg-[#dfcba6] hover:bg-[#d5be97] border border-[#8c6843] text-[#3f2314] font-bold text-xs transition flex items-center justify-center gap-1.5 active:scale-95 shadow cursor-pointer"
+              >
+                <span>🕵️</span>
+                <span>Dispatch Spy</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  sounds.playWarHorn();
+                  triggerHaptic('heavy');
+                  haptics.heavy();
+                  setActiveNpcVillage(null);
+                  onDeployRaid?.(activeNpcVillage);
+                }}
+                className="flex-1 py-2 px-2 rounded-xl bg-gradient-to-r from-red-800 to-rose-900 hover:brightness-110 text-amber-100 font-black text-xs transition flex items-center justify-center gap-1.5 active:scale-95 shadow border border-red-700 cursor-pointer"
+              >
+                <span>⚔️</span>
+                <span>Deploy Raid</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Rich Desktop Hover Preview Tooltip */}
       {hoveredBuilding && (
@@ -814,22 +1107,6 @@ export function CitadelSvgGrid({
           aria-label="Zoom Out"
         >
           −
-        </button>
-
-        {/* Recenter Button */}
-        <button
-          onClick={() => {
-            triggerHaptic('selection');
-            haptics.light();
-            sounds.playCoin();
-            setScale(1);
-            setPan({ x: 0, y: 0 });
-          }}
-          className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#ebdcc1] to-[#dfcba6] border border-[#8c6843] shadow-md flex items-center justify-center text-xs text-[#442813] hover:brightness-105 active:scale-90 transition cursor-pointer"
-          title="Recenter Citadel View"
-          aria-label="Recenter"
-        >
-          🎯
         </button>
       </div>
     </div>

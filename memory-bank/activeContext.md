@@ -252,6 +252,36 @@
     - **Verification**:
       - `pnpm run lint` and `pnpm run build` passing with zero errors.
 
+  - **Water Resource Lifecycle, Named Villager Roster, Worker-Dependent Building Efficiency, Procedural NPC Villages & UI Cleanups**:
+    - **Water Resource Lifecycle (`initialState.js`, `buildings.js`, `ResourceBar.jsx`, `useGameState.js`)**:
+      - Initialized starting `water: 150` and baseline `waterCap: 300` in `initialState.js` and `DEFAULT_STATE`.
+      - Calibrated Spring / Well to produce Water as its primary yield (+25 base water per cycle) and dynamically scale storage caps alongside Deep Vaults (`calculateResourceCaps`).
+      - Added baseline population water consumption loop to `useGameState.js`. Running out of water triggers severe dehydration alert and -30% agricultural/industrial yield debuffs (`isDehydrated`).
+      - Added cyan droplet `💧` Water `ResourcePill` to `ResourceBar.jsx` displaying real-time amount, cap, and consumption trends.
+    - **Named Villager Roster Architecture (`initialState.js`, `VillagerRosterModal.jsx`, `SovereignLedger.jsx`, `useGameState.js`, `App.jsx`)**:
+      - Added persistent `villagers` array schema (`id`, `name`, `role`, `assignedBuildingId`, `morale: 100`) and medieval name pool (`VILLAGER_NAMES`).
+      - Roles supported: `Unassigned` (Idle reserve), `Farming`, `Masonry`, `Forestry`, `Waterbearing`, `Soldier`, `Spy`.
+      - Implemented `VillagerRosterModal.jsx` featuring citizen census, work location tracking, starvation/dehydration alerts, and inline job reassignment dropdowns.
+      - Integrated dedicated 4th folio tab `Roster` (`activeLedgerTab === 'roster'`) directly inside desktop `SovereignLedger.jsx`.
+      - Barracks troop recruitment (`trainTroops`) now generates uniquely named citizens and appends them to the royal roster.
+      - Implemented `assignVillager`, `unassignVillager`, `assignWorkerToBuilding`, `unassignWorkerFromBuilding`, and `dispatchSpy`.
+    - **Worker-Dependent Building Operation & Efficiency (`useGameState.js`, `BuildingInspector.jsx`, `SovereignLedger.jsx`, `CitadelSvgGrid.jsx`)**:
+      - Production structures (`farm`, `lumber`, `quarry`, `well`, `granary`) require at least 1 assigned worker to generate yields.
+      - Unstaffed buildings (0 workers) halt their cycle timers and display a floating amber `⚠️ UNSTAFFED` badge on the 2.5D cartography canvas.
+      - Worker capacity per structure: `min(5, level + 1)`.
+      - Yield efficiency formula: `Yield = BaseYield * (0.6 + 0.4 * workers) * TierMultiplier`.
+      - Interactive "Guild Workforce" cards with Assign, Unassign, and Roster modal triggers integrated into both `BuildingInspector.jsx` and `SovereignLedger.jsx`.
+    - **Procedural Opposing NPC Settlements in Peripheral Sectors (`rivals.js`, `CitadelSvgGrid.jsx`, `ParchmentCitadelMap.jsx`, `App.jsx`)**:
+      - Procedural random generator `generateNpcVillages(playerRating)` supporting 3 peripheral quadrants: North-East (Mountain / Stone Clan), South-East (Ash / Fire Raiders), North-West (River Clan).
+      - Rendered in 2.5D isometric SVG canvas with clan palisades, watchtower braziers with animated flame and drifting smoke wisps, fluttering faction crest banners, and patrolling sentries along exterior paths.
+      - Interactive Intel Dossier flyout modal on click/tap displaying garrison readiness, defense power, scouted plunder stockpiles (gold, food, water, wood, stone), "Dispatch Spy" action, and "Deploy Raid" action launching catapult pillage flow.
+    - **UI Cleanups & Dawn 06:00 Boot Time (`CitadelSvgGrid.jsx`, `MobileTechCodexModal.jsx`, `MobileFloraSheet.jsx`, `RealmChronometerHUD.jsx`, `MobileFloatingHUD.jsx`)**:
+      - Removed Target/Recenter button (`🎯`) beneath Zoom Out button on map toolbar.
+      - Stripped top header banner bars from `MobileTechCodexModal.jsx` and `MobileFloraSheet.jsx` for flush layouts with subtle floating close (`✕`) buttons.
+      - Initialized chronometer clock at 06:00 AM Dawn on the 1st of Harvestide, 26 ADX with sunrise glyph (`🌅`).
+    - **Verification**:
+      - `pnpm run lint` and `pnpm run build` passing cleanly with 0 errors.
+
 ## Active Focus & Next Steps
 - Continue strategic balancing across Water, Flame, and Stone unique elemental active sinks and decree expansions.
 - Explore procedural ambient audio additions (rain drops, howling wind, crackling embers).

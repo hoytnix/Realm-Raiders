@@ -41,7 +41,16 @@ export function ParchmentCitadelMap({
   rotationAngle: propRotationAngle,
   rotateKingdom: propRotateKingdom,
   isInspectorExpanded,
-  setIsInspectorExpanded
+  setIsInspectorExpanded,
+  villagers = [],
+  onAssignWorker,
+  onUnassignWorker,
+  onAssignVillager,
+  onUnassignVillager,
+  onOpenRoster,
+  onDispatchSpy,
+  onDeployRaid,
+  playerRating
 }) {
   const [localRotationAngle, setLocalRotationAngle] = React.useState(0);
   const rotationAngle = propRotationAngle !== undefined ? propRotationAngle : localRotationAngle;
@@ -154,6 +163,10 @@ export function ParchmentCitadelMap({
           stats={stats}
           rotationAngle={rotationAngle}
           rotateKingdom={rotateKingdom}
+          villagers={villagers}
+          onDispatchSpy={onDispatchSpy}
+          onDeployRaid={onDeployRaid}
+          playerRating={playerRating || stats?.rating}
         />
 
         {/* Mobile-Only Collapsible Bottom Sheet */}
@@ -182,6 +195,12 @@ export function ParchmentCitadelMap({
             onTrainTroops={onTrainTroops}
             onResearchTechnology={onResearchTechnology}
             onTransmuteFlora={onTransmuteFlora}
+            villagers={villagers}
+            onAssignWorker={onAssignWorker}
+            onUnassignWorker={onUnassignWorker}
+            onAssignVillager={onAssignVillager}
+            onUnassignVillager={onUnassignVillager}
+            onOpenRoster={onOpenRoster}
           />
         </div>
       </div>
@@ -209,6 +228,11 @@ export function ParchmentCitadelMap({
           onTrainTroops={onTrainTroops}
           onResearchTechnology={onResearchTechnology}
           onTransmuteFlora={onTransmuteFlora}
+          villagers={villagers}
+          onAssignWorker={onAssignWorker}
+          onUnassignWorker={onUnassignWorker}
+          onAssignVillager={onAssignVillager}
+          onUnassignVillager={onUnassignVillager}
           activeLedgerTab={activeLedgerTab}
           setActiveLedgerTab={setActiveLedgerTab}
           battleLogs={battleLogs}

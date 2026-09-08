@@ -25,6 +25,16 @@ export function ResourceBar({ resources = {}, stats = {}, variant = 'desktop', c
       tooltip: 'Grain stores feeding the populace & levies. Depletion triggers starvation!'
     },
     {
+      key: 'water',
+      label: 'Water',
+      icon: '💧',
+      color: 'text-cyan-300',
+      amount: resources?.water,
+      cap: stats?.caps?.water || 300,
+      upkeep: stats?.upkeep?.water,
+      tooltip: 'Fresh spring water for population and levies. Depletion causes severe dehydration debuffs!'
+    },
+    {
       key: 'wood',
       label: 'Timber',
       icon: '🪵',

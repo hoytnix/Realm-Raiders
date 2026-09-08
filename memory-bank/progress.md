@@ -149,6 +149,18 @@
   - [x] Elevated `MobileBottomNav` to `z-50` and reordered it after full-height folios in `App.jsx`, keeping the bottom navbar permanently visible and accessible.
   - [x] Wired seamless mutual tab switching (`onCloseCodex`, `onCloseFlora`) across all 6 tabs and elevated takeover modals to `z-[60]`.
   - [x] Validated via `pnpm run lint` and `pnpm run build` with zero errors.
+- [x] **Water Resource Lifecycle, Named Villagers, Worker Efficiency & Procedural NPC Settlements**:
+  - [x] Initialized starting Water: 150, baseline cap: 300 (scales with Wells and Vaults); Spring/Well produces +25 base water/cycle.
+  - [x] Baseline population water consumption with dehydration alert and -30% yield penalty when dry.
+  - [x] Cyan droplet `💧` Water `ResourcePill` integrated in `ResourceBar.jsx`.
+  - [x] Named Villager system (`villagers` array, procedural names from pool, roles: Unassigned, Farming, Masonry, Forestry, Waterbearing, Soldier, Spy).
+  - [x] `VillagerRosterModal.jsx` and `SovereignLedger.jsx` Roster tab with role change selectors.
+  - [x] Worker-dependent building efficiency formula `Yield = BaseYield * (0.6 + 0.4 * workers) * TierMultiplier`, where 0 workers = `⚠️ UNSTAFFED` (halts harvest timers with floating amber badge).
+  - [x] Procedural Opposing NPC Settlements generator (`generateNpcVillages` in `rivals.js`) across 3 peripheral quadrants.
+  - [x] Interactive SVG opposing settlements with braziers, smoke wisps, fluttering faction banners, and patrolling sentries.
+  - [x] Opposing settlement Intel Dossier flyout with garrison readiness, scouted stockpiles, "Dispatch Spy", and "Deploy Raid".
+  - [x] UI Cleanups: Removed Target/Recenter button (`🎯`) beneath Zoom Out; stripped top header bars from `MobileTechCodexModal.jsx` and `MobileFloraSheet.jsx` (flush layout with floating close `✕`).
+  - [x] Chronometer Dawn 06:00 Boot Time on 1st Harvestide 26 ADX with `🌅` dawn glyph.
 
 ## Planned / In Progress
 - [ ] Additional weather sound synthesizers (rain, thunder, blizzard noise nodes).

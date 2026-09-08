@@ -55,32 +55,17 @@ export function MobileFloraSheet({
         onClick={(e) => e.stopPropagation()}
         className="w-full h-full bg-gradient-to-b from-[#f5ebd6] via-[#ebdcc1] to-[#dfcba6] flex flex-col overflow-hidden text-[#442813] font-serif"
       >
-        {/* Ornate Parchment Header (Pinned) */}
-        <div className="px-4 py-3 border-b-2 border-[#8c6843]/60 flex items-center justify-between bg-[#dfcba6]/90 flex-shrink-0">
-          <div className="flex items-center gap-2.5">
-            <span className="text-2xl p-1.5 bg-[#ebdcc1] border border-[#8c6843] rounded-xl shadow-inner">
-              🌿
-            </span>
-            <div>
-              <h3 className="text-sm font-black text-[#3f2314] uppercase tracking-wide">
-                Flora Elemental Management
-              </h3>
-              <span className="text-[10px] font-mono text-[#6b4a2e]">
-                Sylvaeth Verdant Affinity & Living Brambles
-              </span>
-            </div>
-          </div>
-          <button
-            onClick={handleClose}
-            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-2xl bg-[#dfcba6] border-2 border-[#8c6843] flex items-center justify-center text-base font-bold text-[#442813] hover:bg-[#cbb38b] active:scale-95 transition shadow cursor-pointer"
-            aria-label="Close"
-          >
-            ✕
-          </button>
-        </div>
+        {/* Subtle Floating Close Button */}
+        <button
+          onClick={handleClose}
+          className="absolute top-2.5 right-2.5 z-30 w-8 h-8 rounded-full bg-[#dfcba6] border border-[#8c6843] flex items-center justify-center text-xs font-bold text-[#442813] hover:bg-[#cbb38b] active:scale-95 transition shadow cursor-pointer"
+          aria-label="Close"
+        >
+          ✕
+        </button>
 
-        {/* Full Viewport Scrolling Content Area */}
-        <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-3 space-y-3 pb-[calc(env(safe-area-inset-bottom)+5rem)]">
+        {/* Full Viewport Scrolling Content Area extending to upper boundary */}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 pt-3 pb-3 space-y-3 pb-[calc(env(safe-area-inset-bottom)+5rem)]">
           {/* Flora Reserves & Verdant Bloom Action */}
           <div className="bg-[#dfcba6]/80 p-3 rounded-2xl border border-[#8c6843]/60 space-y-2">
           <div className="flex items-center justify-between text-xs font-mono">

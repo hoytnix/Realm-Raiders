@@ -76,7 +76,7 @@ export const BUILDINGS = {
     baseCost: { gold: 40, wood: 20, stone: 0 },
     costMult: 1.42,
     cycleDuration: 25,
-    baseYield: { water: 50 },
+    baseYield: { water: 25 },
     baseCapacity: 1200,
     baseHp: 260,
     laborRequired: 2,
@@ -230,8 +230,8 @@ export const BASE_BUILDING_YIELDS = {
   farm: 55,
   FARM: 55,
   granary: 55,
-  well: 50,
-  SPRING: 50,
+  well: 25,
+  SPRING: 25,
   lumber: 45,
   LUMBER_MILL: 45,
   quarry: 30,
@@ -373,9 +373,14 @@ export function calculateResourceCaps(buildings = {}, grid = null) {
       }
     });
 
+    const vaultWaterBonus = hasVault ? Math.floor(goldCap * 0.2) : 0;
+    const finalWaterCap = hasWell
+      ? Math.max(300, waterCap + vaultWaterBonus)
+      : Math.max(300, 300 + vaultWaterBonus);
+
     return {
       food: Math.max(1000, foodGranaryCap + foodFarmCap),
-      water: Math.max(1000, hasWell ? waterCap : getTierCap(BUILDINGS.well?.baseCapacity || 1200, buildings.well || 1)),
+      water: finalWaterCap,
       wood: Math.max(1000, hasLumber ? woodCap : getTierCap(BUILDINGS.lumber?.baseCapacity || 1500, buildings.lumber || 1)),
       stone: Math.max(1000, hasQuarry ? stoneCap : getTierCap(BUILDINGS.quarry?.baseCapacity || 1500, buildings.quarry || 1)),
       flora: Math.max(500, hasGreenhouse ? floraCap : getTierCap(BUILDINGS.greenhouse?.baseCapacity || 800, buildings.greenhouse || 1)),
@@ -385,14 +390,15 @@ export function calculateResourceCaps(buildings = {}, grid = null) {
 
   const foodGranaryCap = getTierCap(BUILDINGS.granary?.baseCapacity || 1200, buildings.granary || 1);
   const foodFarmCap = getTierCap(BUILDINGS.farm?.baseCapacity || 800, buildings.farm || 0);
+  const vaultCap = getTierCap(BUILDINGS.vault?.baseCapacity || 2000, buildings.vault || 0);
 
   return {
     food: foodGranaryCap + foodFarmCap,
-    water: getTierCap(BUILDINGS.well?.baseCapacity || 1200, buildings.well || 1),
+    water: Math.max(300, (buildings.well ? getTierCap(BUILDINGS.well?.baseCapacity || 1200, buildings.well) : 300) + Math.floor(vaultCap * 0.2)),
     wood: getTierCap(BUILDINGS.lumber?.baseCapacity || 1500, buildings.lumber || 1),
     stone: getTierCap(BUILDINGS.quarry?.baseCapacity || 1500, buildings.quarry || 1),
     flora: getTierCap(BUILDINGS.greenhouse?.baseCapacity || 800, buildings.greenhouse || 1),
-    gold: getTierCap(BUILDINGS.vault?.baseCapacity || 2000, buildings.vault || 1)
+    gold: vaultCap || 2000
   };
 }
 

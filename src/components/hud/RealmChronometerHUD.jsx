@@ -15,6 +15,8 @@ export function RealmChronometerHUD({ timeState }) {
   const season = SEASONS[SEASON_ORDER[timeState.seasonIndex]] || SEASONS.autumn;
   const weather = WEATHER_CONDITIONS[timeState.weather] || WEATHER_CONDITIONS.autumn_breeze || WEATHER_CONDITIONS.clear;
   const isNight = timeState.hour < 6 || timeState.hour >= 20;
+  const isDawn = timeState.hour >= 6 && timeState.hour < 8;
+  const timeOrbGlyph = isNight ? '🌙' : isDawn ? '🌅' : '☀️';
 
   const formattedTime = `${timeState.hour.toString().padStart(2, '0')}:${timeState.minute.toString().padStart(2, '0')}`;
   const dayOrdinal = formatOrdinal(timeState.day || 1);
@@ -24,9 +26,9 @@ export function RealmChronometerHUD({ timeState }) {
 
   return (
     <div className="relative flex items-center gap-1.5 sm:gap-2 bg-stone-900/90 border border-amber-600/50 rounded-2xl px-2 sm:px-3 py-1 sm:py-1.5 shadow-xl backdrop-blur text-amber-200">
-      {/* Sun / Moon Orb Dial */}
+      {/* Sun / Moon / Dawn Orb Dial */}
       <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr from-amber-700 via-stone-800 to-amber-950 border border-amber-500/60 flex items-center justify-center text-xs sm:text-sm shadow-inner flex-shrink-0">
-        {isNight ? '🌙' : '☀️'}
+        {timeOrbGlyph}
       </div>
 
       <div className="text-left">

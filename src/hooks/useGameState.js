@@ -21,7 +21,9 @@ import {
   calculateBuildDuration,
   toRomanTier,
   formatBuildDuration,
-  sounds
+  sounds,
+  DEFAULT_VILLAGERS,
+  VILLAGER_NAMES
 } from '../constants/index.js';
 import { haptics } from '../utils/index.js';
 
@@ -115,7 +117,7 @@ export function useGameState() {
             monthName: 'Harvestide (September)',
             year: 26,
             era: 'ADX',
-            hour: 8,
+            hour: 6,
             minute: 0,
             seasonIndex: 2,
             weather: 'autumn_breeze',
@@ -130,6 +132,18 @@ export function useGameState() {
           if (!parsed.timeState.weather || parsed.timeState.weather === 'clear') {
             parsed.timeState.weather = 'autumn_breeze';
           }
+        }
+        if (!parsed.villagers || !Array.isArray(parsed.villagers) || parsed.villagers.length === 0) {
+          parsed.villagers = DEFAULT_VILLAGERS;
+        }
+        if (!parsed.resources) {
+          parsed.resources = { ...DEFAULT_STATE.resources };
+        }
+        if (parsed.resources.water === undefined) {
+          parsed.resources.water = 150;
+        }
+        if (parsed.waterCap === undefined) {
+          parsed.waterCap = 300;
         }
         if (!parsed.technologies || !Array.isArray(parsed.technologies)) {
           parsed.technologies = [];
@@ -185,6 +199,7 @@ export function useGameState() {
   });
 
   const [isStarving, setIsStarving] = useState(false);
+  const [isDehydrated, setIsDehydrated] = useState(false);
   const [starvationDeaths, setStarvationDeaths] = useState(0);
   const [inkPulseTick, setInkPulseTick] = useState(0);
   const [autoCollectNotice, setAutoCollectNotice] = useState(null);
@@ -291,10 +306,16 @@ export function useGameState() {
 
         // Starter Grace Buffer: Prevent famine from triggering during Days 1-5 of Harvestide, 26 ADX
         const isGracePeriod = (newYear === 26 && newMonth === 9 && newDay <= 5);
-        const starvingNow = !isGracePeriod && ((prev.resources?.food ?? 0) <= 0.05 || (prev.resources?.water ?? 0) <= 0.05);
+        const starvingNow = !isGracePeriod && ((prev.resources?.food ?? 0) <= 0.05);
+        const dehydratedNow = !isGracePeriod && ((prev.resources?.water ?? 0) <= 0.05);
+
         if (starvingNow !== isStarving) {
           setIsStarving(starvingNow);
           if (starvingNow) sounds.playFamineAlarm();
+        }
+        if (dehydratedNow !== isDehydrated) {
+          setIsDehydrated(dehydratedNow);
+          if (dehydratedNow) sounds.playFamineAlarm();
         }
 
         // Calculate troop demographic upkeep with Flora Drought Vulnerability (baseline consumption reduced by 50%)
@@ -308,7 +329,7 @@ export function useGameState() {
           factionData.upkeepMultiplier *
           (season.multipliers.upkeep || 1.0);
 
-        const upkeepWater = (prev.population * 0.15 + livingTroops * 0.20 + troopUpkeep * 0.8) *
+        const upkeepWater = (prev.population * 0.18 + livingTroops * 0.22 + troopUpkeep * 0.9) *
           factionData.upkeepMultiplier *
           (season.multipliers.upkeep || 1.0);
 
@@ -317,13 +338,26 @@ export function useGameState() {
         // Slow hunger ticks to every 25 seconds (25 ticks) to eliminate early-game starvation spirals
         const nextHungerTick = (prev.hungerTick || 0) + 1;
         let hungerReset = false;
+        let newBattleLogs = prev.battleLogs || [];
+
         if (nextHungerTick >= 25) {
           hungerReset = true;
+          const prevWater = nextRes.water;
           nextRes.food = Math.max(0, nextRes.food - upkeepFood);
           nextRes.water = Math.max(0, nextRes.water - upkeepWater);
+          if (prevWater > 0 && nextRes.water <= 0 && !isGracePeriod) {
+            newBattleLogs = [
+              {
+                id: `log-dehydrated-${Date.now()}`,
+                title: 'Aquifers Parched: Dehydration Crisis',
+                text: 'Fresh water supplies ran dry! Citadels suffer severe productivity and defense penalties until wells are replenished.',
+                type: 'loss',
+                timestamp: Date.now()
+              },
+              ...newBattleLogs
+            ];
+          }
         }
-
-        let newBattleLogs = prev.battleLogs || [];
 
         // Living Bramble Shield Upkeep (deduct 2 Flora/hr, or 1 Flora/hr with Bramble Bastion)
         let nextBrambleShieldActive = prev.brambleShieldActive;
@@ -416,6 +450,20 @@ export function useGameState() {
         plotsToHarvest.forEach(plot => {
           const bDef = BUILDINGS[plot.buildingId];
           if (bDef && bDef.cycleDuration && bDef.baseYield) {
+            const isWorkerBuilding = ['farm', 'granary', 'lumber', 'quarry', 'well'].includes(plot.buildingId);
+            const assignedWorkers = (prev.villagers || []).filter(v => v.assignedBuildingId === plot.id);
+            const workerCount = assignedWorkers.length;
+            const maxCapacity = Math.min(5, (plot.level || 1) + 1);
+            const activeWorkers = Math.min(workerCount, maxCapacity);
+
+            const timerKey = plot.id;
+
+            // Strict worker requirement: must have >= 1 assigned worker to operate
+            if (isWorkerBuilding && workerCount === 0) {
+              // IDLE (UNSTAFFED): halt production cycle progress timer
+              return;
+            }
+
             const isAgriTimber = plot.buildingId === 'farm' || plot.buildingId === 'granary' || plot.buildingId === 'lumber';
             let plotSpeedMult = 1.0;
             if (plot.isUpgrading) {
@@ -435,7 +483,6 @@ export function useGameState() {
               ? Math.max(1, Math.round(bDef.cycleDuration * 0.8))
               : bDef.cycleDuration;
 
-            const timerKey = plot.id;
             const currentVal = updatedTimers[timerKey] ?? updatedTimers[plot.buildingId] ?? 0;
             const nextVal = currentVal + (1 * plotSpeedMult);
 
@@ -452,10 +499,16 @@ export function useGameState() {
               const isAgriOrTimber = plot.buildingId === 'farm' || plot.buildingId === 'granary' || plot.buildingId === 'lumber';
               const effectiveLabor = isAgriOrTimber ? 1.0 : laborEfficiency;
 
+              // Efficiency scaling by worker count: BaseYield * (0.6 + 0.4 * workers) * TierMultiplier
+              const workerMultiplier = isWorkerBuilding ? (0.6 + 0.4 * activeWorkers) : 1.0;
+
               const tierBaseYield = calculateBuildingYield(plot.buildingId, lvl);
               let totalYield = Math.round(
-                tierBaseYield * fMult * sMult * wMult * effectiveLabor * farmFertilityMult
+                tierBaseYield * workerMultiplier * fMult * sMult * wMult * effectiveLabor * farmFertilityMult
               );
+              if (dehydratedNow) {
+                totalYield = Math.round(totalYield * 0.7);
+              }
               if (plot.isUpgrading) {
                 totalYield = Math.round(totalYield * 0.5);
               }
@@ -632,7 +685,16 @@ export function useGameState() {
     const bDef = BUILDINGS[bId];
     if (!bDef || !bDef.baseYield || !currentFaction) return;
 
-    const timerKey = targetPlot ? targetPlot.id : bId;
+    const isWorkerBuilding = ['farm', 'granary', 'lumber', 'quarry', 'well'].includes(bId);
+    const plotKey = targetPlot ? targetPlot.id : bId;
+    const assignedWorkers = (gameState.villagers || []).filter(v => v.assignedBuildingId === plotKey);
+    const workerCount = assignedWorkers.length;
+
+    if (isWorkerBuilding && workerCount === 0) {
+      return; // Strict requirement: unstaffed buildings cannot produce
+    }
+
+    const timerKey = plotKey;
     const hasOvergrowth = (gameState.technologies || []).includes('tech_flora_overgrowth');
     const effectiveDuration = (hasOvergrowth && (bId === 'farm' || bId === 'lumber'))
       ? Math.max(1, Math.round(bDef.cycleDuration * 0.8))
@@ -649,6 +711,10 @@ export function useGameState() {
     const lvl = targetPlot ? (targetPlot.level || 1) : (gameState.buildings[bId] || 1);
     const laborEfficiency = getLaborEfficiency(gameState);
 
+    const maxCapacity = Math.min(5, (lvl || 1) + 1);
+    const activeWorkers = Math.min(workerCount, maxCapacity);
+    const workerMultiplier = isWorkerBuilding ? (0.6 + 0.4 * activeWorkers) : 1.0;
+
     const [resKey, baseVal] = Object.entries(bDef.baseYield)[0];
     const fMult = currentFaction.productionMultipliers[resKey] || 1.0;
     const sMult = season.multipliers[resKey] || 1.0;
@@ -659,8 +725,11 @@ export function useGameState() {
 
     const tierBaseYield = calculateBuildingYield(bId, lvl);
     let totalYield = Math.round(
-      tierBaseYield * fMult * sMult * wMult * effectiveLabor * farmFertilityMult
+      tierBaseYield * workerMultiplier * fMult * sMult * wMult * effectiveLabor * farmFertilityMult
     );
+    if ((gameState.resources?.water || 0) <= 0.05) {
+      totalYield = Math.round(totalYield * 0.7); // Dehydration debuff
+    }
     if (targetPlot?.isUpgrading) {
       totalYield = Math.round(totalYield * 0.5);
     }
@@ -704,6 +773,14 @@ export function useGameState() {
       const bDef = BUILDINGS[plot.buildingId];
       if (!bDef || !bDef.baseYield || !bDef.cycleDuration) return;
 
+      const isWorkerBuilding = ['farm', 'granary', 'lumber', 'quarry', 'well'].includes(plot.buildingId);
+      const assignedWorkers = (gameState.villagers || []).filter(v => v.assignedBuildingId === plot.id);
+      const workerCount = assignedWorkers.length;
+
+      if (isWorkerBuilding && workerCount === 0) {
+        return; // Unstaffed building
+      }
+
       const effectiveDuration = (hasOvergrowth && (plot.buildingId === 'farm' || plot.buildingId === 'lumber'))
         ? Math.max(1, Math.round(bDef.cycleDuration * 0.8))
         : bDef.cycleDuration;
@@ -713,6 +790,10 @@ export function useGameState() {
       if (currentProgress >= effectiveDuration) {
         harvestedCount++;
         const lvl = plot.level || 1;
+        const maxCapacity = Math.min(5, (lvl || 1) + 1);
+        const activeWorkers = Math.min(workerCount, maxCapacity);
+        const workerMultiplier = isWorkerBuilding ? (0.6 + 0.4 * activeWorkers) : 1.0;
+
         const [resKey] = Object.entries(bDef.baseYield)[0];
         const fMult = currentFaction.productionMultipliers[resKey] || 1.0;
         const sMult = season.multipliers[resKey] || 1.0;
@@ -723,8 +804,11 @@ export function useGameState() {
 
         const tierBaseYield = calculateBuildingYield(plot.buildingId, lvl);
         let totalYield = Math.round(
-          tierBaseYield * fMult * sMult * wMult * effectiveLabor * farmFertilityMult
+          tierBaseYield * workerMultiplier * fMult * sMult * wMult * effectiveLabor * farmFertilityMult
         );
+        if ((gameState.resources?.water || 0) <= 0.05) {
+          totalYield = Math.round(totalYield * 0.7);
+        }
         if (plot.isUpgrading) {
           totalYield = Math.round(totalYield * 0.5);
         }
@@ -1061,6 +1145,20 @@ export function useGameState() {
         timestamp: Date.now()
       };
 
+      const baseVillagers = prev.villagers || [];
+      const newVillagers = [];
+      for (let i = 0; i < actualCount; i++) {
+        const baseName = VILLAGER_NAMES[Math.floor(Math.random() * VILLAGER_NAMES.length)];
+        const numSuffix = Math.floor(100 + Math.random() * 900);
+        newVillagers.push({
+          id: `vil_${Date.now()}_${Math.random().toString(36).substring(2, 7)}_${i}`,
+          name: `${baseName} #${numSuffix}`,
+          role: 'Unassigned',
+          assignedBuildingId: null,
+          morale: 100
+        });
+      }
+
       return {
         ...prev,
         resources: {
@@ -1071,6 +1169,7 @@ export function useGameState() {
           ...prevTroops,
           total: prevTroops.total + actualCount
         },
+        villagers: [...baseVillagers, ...newVillagers],
         garrison: (prev.garrison || 0) + actualCount,
         population: (prev.population || 20) + actualCount,
         battleLogs: [recruitLog, ...(prev.battleLogs || [])]
@@ -1079,6 +1178,146 @@ export function useGameState() {
 
     return true;
   };
+
+  // Reassign villager to a specific role / building
+  const assignVillager = useCallback((villagerId, role, buildingPlotId = null) => {
+    sounds.playCoin();
+    haptics.light();
+    setGameState(prev => {
+      const vils = prev.villagers || [];
+      const targetVil = vils.find(v => v.id === villagerId);
+      if (!targetVil) return prev;
+
+      let assignedPlotId = buildingPlotId;
+      let assignedRole = role;
+
+      if (!assignedPlotId && ['Farming', 'Masonry', 'Forestry', 'Waterbearing'].includes(role)) {
+        const roleToBuilding = {
+          Farming: ['farm', 'granary'],
+          Masonry: ['quarry'],
+          Forestry: ['lumber'],
+          Waterbearing: ['well']
+        };
+        const allowedBldgs = roleToBuilding[role] || [];
+        const candidatePlot = (prev.grid || []).find(p => {
+          if (!allowedBldgs.includes(p.buildingId)) return false;
+          const currentWorkers = vils.filter(v => v.assignedBuildingId === p.id && v.id !== villagerId).length;
+          const cap = Math.min(5, (p.level || 1) + 1);
+          return currentWorkers < cap;
+        });
+        if (candidatePlot) {
+          assignedPlotId = candidatePlot.id;
+        }
+      } else if (assignedPlotId) {
+        const plot = (prev.grid || []).find(p => p.id === assignedPlotId);
+        if (plot?.buildingId) {
+          if (plot.buildingId === 'farm' || plot.buildingId === 'granary') assignedRole = 'Farming';
+          else if (plot.buildingId === 'lumber') assignedRole = 'Forestry';
+          else if (plot.buildingId === 'quarry') assignedRole = 'Masonry';
+          else if (plot.buildingId === 'well') assignedRole = 'Waterbearing';
+        }
+      }
+
+      const updatedVils = vils.map(v => {
+        if (v.id === villagerId) {
+          return {
+            ...v,
+            role: assignedRole,
+            assignedBuildingId: (assignedRole === 'Unassigned' || assignedRole === 'Soldier') ? null : assignedPlotId
+          };
+        }
+        return v;
+      });
+
+      return { ...prev, villagers: updatedVils };
+    });
+  }, []);
+
+  const unassignVillager = useCallback((villagerId) => {
+    sounds.playCoin();
+    haptics.light();
+    setGameState(prev => {
+      const vils = prev.villagers || [];
+      return {
+        ...prev,
+        villagers: vils.map(v => v.id === villagerId ? { ...v, role: 'Unassigned', assignedBuildingId: null } : v)
+      };
+    });
+  }, []);
+
+  const assignWorkerToBuilding = useCallback((plotId) => {
+    setGameState(prev => {
+      const vils = prev.villagers || [];
+      const plot = (prev.grid || []).find(p => p.id === plotId);
+      if (!plot || !plot.buildingId) return prev;
+
+      const currentWorkers = vils.filter(v => v.assignedBuildingId === plotId);
+      const maxCap = Math.min(5, (plot.level || 1) + 1);
+      if (currentWorkers.length >= maxCap) return prev;
+
+      // Prioritize unassigned villager, or any non-soldier/non-spy villager
+      const candidate = vils.find(v => v.role === 'Unassigned' || !v.assignedBuildingId) ||
+        vils.find(v => v.role !== 'Soldier' && v.role !== 'Spy' && v.assignedBuildingId !== plotId);
+      if (!candidate) return prev;
+
+      sounds.playCoin();
+      haptics.light();
+
+      let role = 'Farming';
+      if (plot.buildingId === 'lumber') role = 'Forestry';
+      else if (plot.buildingId === 'quarry') role = 'Masonry';
+      else if (plot.buildingId === 'well') role = 'Waterbearing';
+
+      return {
+        ...prev,
+        villagers: vils.map(v => v.id === candidate.id ? { ...v, role, assignedBuildingId: plotId } : v)
+      };
+    });
+  }, []);
+
+  const unassignWorkerFromBuilding = useCallback((plotId) => {
+    setGameState(prev => {
+      const vils = prev.villagers || [];
+      const assigned = vils.filter(v => v.assignedBuildingId === plotId);
+      if (assigned.length === 0) return prev;
+
+      sounds.playCoin();
+      haptics.light();
+
+      const target = assigned[assigned.length - 1];
+      return {
+        ...prev,
+        villagers: vils.map(v => v.id === target.id ? { ...v, role: 'Unassigned', assignedBuildingId: null } : v)
+      };
+    });
+  }, []);
+
+  const dispatchSpy = useCallback((villagerId, rivalId, rivalName = 'opposing settlement') => {
+    sounds.playLaunch();
+    haptics.heavy();
+    setGameState(prev => {
+      const vils = prev.villagers || [];
+      let target = villagerId ? vils.find(v => v.id === villagerId) : null;
+      if (!target) {
+        target = vils.find(v => v.role === 'Spy') || vils.find(v => v.role === 'Unassigned') || vils[0];
+      }
+      if (!target) return prev;
+
+      const spyLog = {
+        id: `log-spy-${Date.now()}`,
+        title: `Espionage Infiltration: ${rivalName}`,
+        text: `${target.name} dispatched as a royal spy to infiltrate ${rivalName}. Intel recovered and perimeter defenses sabotaged!`,
+        type: 'win',
+        timestamp: Date.now()
+      };
+
+      return {
+        ...prev,
+        villagers: vils.map(v => v.id === target.id ? { ...v, role: 'Spy', assignedBuildingId: rivalId } : v),
+        battleLogs: [spyLog, ...(prev.battleLogs || [])]
+      };
+    });
+  }, []);
 
   const recordRaidVictory = (rival, newLoot, caps) => {
     haptics.harvest();
@@ -1543,7 +1782,14 @@ export function useGameState() {
     isMuted,
     setIsMuted,
     isStarving,
+    isDehydrated,
     starvationDeaths,
+    villagers: gameState.villagers || [],
+    assignVillager,
+    unassignVillager,
+    assignWorkerToBuilding,
+    unassignWorkerFromBuilding,
+    dispatchSpy,
     inkPulseTick,
     autoCollectNotice,
     handleToggleSpeed,

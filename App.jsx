@@ -51,7 +51,8 @@ import {
 } from './src/components/desk/index.js';
 
 import {
-  ParchmentCitadelMap
+  ParchmentCitadelMap,
+  VillagerRosterModal
 } from './src/components/citadel/index.js';
 
 import {
@@ -108,6 +109,7 @@ export default function App() {
   const [isTechCodexOpen, setIsTechCodexOpen] = useState(false);
   const [isFloraSheetOpen, setIsFloraSheetOpen] = useState(false);
   const [isInspectorExpanded, setIsInspectorExpanded] = useState(false);
+  const [isRosterOpen, setIsRosterOpen] = useState(false);
 
   // Modular Custom Hooks
   const {
@@ -117,6 +119,7 @@ export default function App() {
     isMuted,
     setIsMuted,
     isStarving,
+    isDehydrated,
     starvationDeaths,
     inkPulseTick,
     handleHarvestBuilding,
@@ -143,6 +146,11 @@ export default function App() {
     forageEmergencyRations,
     canForage,
     forageCooldownSec,
+    assignVillager,
+    unassignVillager,
+    assignWorkerToBuilding,
+    unassignWorkerFromBuilding,
+    dispatchSpy,
     setGameState
   } = useGameState();
 
@@ -490,6 +498,15 @@ export default function App() {
             battleLogs={gameState.battleLogs}
             isInspectorExpanded={isInspectorExpanded}
             setIsInspectorExpanded={setIsInspectorExpanded}
+            villagers={gameState.villagers || []}
+            onAssignWorker={assignWorkerToBuilding}
+            onUnassignWorker={unassignWorkerFromBuilding}
+            onAssignVillager={assignVillager}
+            onUnassignVillager={unassignVillager}
+            onOpenRoster={() => setIsRosterOpen(true)}
+            onDispatchSpy={dispatchSpy}
+            onDeployRaid={startRaidAdFlow}
+            playerRating={stats?.rating || 60}
           />
         )}
 
@@ -658,6 +675,18 @@ export default function App() {
           onClose={closeRaid}
         />
       )}
+
+      {/* ROYAL VILLAGER ROSTER MODAL */}
+      <VillagerRosterModal
+        isOpen={isRosterOpen}
+        onClose={() => setIsRosterOpen(false)}
+        villagers={gameState.villagers || []}
+        grid={gameState.grid || []}
+        onAssignVillager={assignVillager}
+        onUnassignVillager={unassignVillager}
+        isStarving={isStarving}
+        isDehydrated={isDehydrated}
+      />
     </div>
   );
 }

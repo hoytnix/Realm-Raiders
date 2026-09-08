@@ -16,6 +16,7 @@ import {
   sounds
 } from '../../constants/index.js';
 import { haptics, triggerHaptic } from '../../utils/index.js';
+import { ROLE_DEFINITIONS } from './VillagerRosterModal.jsx';
 
 export function SovereignLedger({
   selectedBuildingId = 'keep',
@@ -36,6 +37,11 @@ export function SovereignLedger({
   onTrainTroops,
   onResearchTechnology,
   onTransmuteFlora,
+  villagers = [],
+  onAssignWorker,
+  onUnassignWorker,
+  onAssignVillager,
+  onUnassignVillager,
   activeLedgerTab = 'structure',
   setActiveLedgerTab,
   battleLogs = []
@@ -55,6 +61,11 @@ export function SovereignLedger({
   const isVault = selectedDef?.id === 'vault' || selectedBuildingId === 'vault';
   const isKeep = selectedDef?.id === 'keep' || selectedBuildingId === 'keep';
   const isBarracks = selectedDef?.id === 'barracks' || selectedBuildingId === 'barracks';
+
+  const inspectPlotId = selectedPlot?.id || selectedBuildingId;
+  const assignedWorkers = (villagers || []).filter(v => v.assignedBuildingId === inspectPlotId);
+  const maxWorkers = Math.min(5, (currentLvl || 1) + 1);
+  const isUnstaffed = isHarvestBuilding && assignedWorkers.length === 0;
 
   const isUpgrading = !!selectedPlot?.isUpgrading;
   const upgradeTimeRemaining = selectedPlot?.upgradeTimeRemaining || 0;
@@ -179,14 +190,14 @@ export function SovereignLedger({
         </div>
 
         {/* Folio Tabs */}
-        <div className="grid grid-cols-3 gap-1 bg-[#cbb38b]/60 p-1 rounded-xl border border-[#8c6843]/50 text-xs font-bold">
+        <div className="grid grid-cols-4 gap-1 bg-[#cbb38b]/60 p-1 rounded-xl border border-[#8c6843]/50 text-xs font-bold">
           <button
             onClick={() => {
               sounds.playCoin();
               haptics.light();
               setActiveLedgerTab('structure');
             }}
-            className={`py-1.5 px-2 rounded-lg transition text-center flex items-center justify-center gap-1 text-[11px] ${
+            className={`py-1.5 px-1.5 rounded-lg transition text-center flex items-center justify-center gap-1 text-[10.5px] ${
               activeLedgerTab === 'structure'
                 ? 'bg-[#f4ecd8] text-[#442813] shadow font-black border border-[#8c6843]'
                 : 'text-[#6b4a2e] hover:bg-[#dfcba6]'
@@ -200,16 +211,32 @@ export function SovereignLedger({
             onClick={() => {
               sounds.playCoin();
               haptics.light();
+              setActiveLedgerTab('roster');
+            }}
+            className={`py-1.5 px-1.5 rounded-lg transition text-center flex items-center justify-center gap-1 text-[10.5px] ${
+              activeLedgerTab === 'roster'
+                ? 'bg-[#f4ecd8] text-[#442813] shadow font-black border border-[#8c6843]'
+                : 'text-[#6b4a2e] hover:bg-[#dfcba6]'
+            }`}
+          >
+            <span>👥</span>
+            <span>Roster</span>
+          </button>
+
+          <button
+            onClick={() => {
+              sounds.playCoin();
+              haptics.light();
               setActiveLedgerTab('decrees');
             }}
-            className={`py-1.5 px-2 rounded-lg transition text-center flex items-center justify-center gap-1 text-[11px] ${
+            className={`py-1.5 px-1.5 rounded-lg transition text-center flex items-center justify-center gap-1 text-[10.5px] ${
               activeLedgerTab === 'decrees'
                 ? 'bg-[#f4ecd8] text-[#442813] shadow font-black border border-[#8c6843]'
                 : 'text-[#6b4a2e] hover:bg-[#dfcba6]'
             }`}
           >
             <span>📜</span>
-            <span>Decrees [T]</span>
+            <span>Decrees</span>
           </button>
 
           <button
@@ -218,7 +245,7 @@ export function SovereignLedger({
               haptics.light();
               setActiveLedgerTab('records');
             }}
-            className={`py-1.5 px-2 rounded-lg transition text-center flex items-center justify-center gap-1 text-[11px] ${
+            className={`py-1.5 px-1.5 rounded-lg transition text-center flex items-center justify-center gap-1 text-[10.5px] ${
               activeLedgerTab === 'records'
                 ? 'bg-[#f4ecd8] text-[#442813] shadow font-black border border-[#8c6843]'
                 : 'text-[#6b4a2e] hover:bg-[#dfcba6]'
@@ -437,6 +464,80 @@ export function SovereignLedger({
                       ) : (
                         <span><strong className="font-bold">Manual Tapping:</strong> Click building directly or use Spacebar to Claim All.</span>
                       )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Guild Workforce Assignment Card */}
+                {isHarvestBuilding && (
+                  <div className={`p-2.5 rounded-xl border space-y-2 transition shadow-sm ${
+                    isUnstaffed
+                      ? 'bg-amber-950/20 border-amber-600/80 text-amber-950'
+                      : 'bg-[#dfcba6] border-[#8c6843]'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs uppercase font-mono font-bold text-[#8c6843]">
+                          Guild Workforce:
+                        </span>
+                        <span className="text-xs font-mono font-black text-[#442813]">
+                          {assignedWorkers.length} / {maxWorkers} Assigned
+                        </span>
+                      </div>
+                      <span className={`text-[9.5px] font-mono font-bold px-2 py-0.5 rounded border ${
+                        isUnstaffed
+                          ? 'bg-amber-800/25 text-amber-950 border-amber-800/60 animate-pulse'
+                          : 'bg-emerald-800/20 text-emerald-950 border-emerald-800/40'
+                      }`}>
+                        {isUnstaffed ? '⚠️ IDLE (UNSTAFFED)' : `⚡ Output: ${(0.6 + 0.4 * assignedWorkers.length).toFixed(1)}x`}
+                      </span>
+                    </div>
+
+                    {isUnstaffed ? (
+                      <p className="text-[10px] font-mono text-amber-900 leading-tight">
+                        Production cycle timer is halted. Assign at least 1 citizen to begin generating yields.
+                      </p>
+                    ) : (
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {assignedWorkers.map(w => (
+                          <span
+                            key={w.id}
+                            className="px-2 py-0.5 rounded-lg bg-[#ebdcc1] border border-[#8c6843]/60 text-[10px] font-mono font-bold text-[#3f2314] flex items-center gap-1 shadow-sm"
+                          >
+                            <span>👤</span>
+                            <span>{w.name}</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        onClick={() => onAssignWorker && onAssignWorker(inspectPlotId)}
+                        disabled={assignedWorkers.length >= maxWorkers}
+                        className={`flex-1 py-1.5 px-2 rounded-xl font-mono text-xs font-bold transition flex items-center justify-center gap-1 shadow ${
+                          assignedWorkers.length < maxWorkers
+                            ? 'bg-gradient-to-r from-amber-800 to-yellow-800 text-amber-100 hover:brightness-105 active:scale-95 border border-amber-600'
+                            : 'bg-stone-400/50 text-stone-600 cursor-not-allowed border border-stone-400'
+                        }`}
+                      >
+                        <span>+</span>
+                        <span>Assign Villager</span>
+                      </button>
+
+                      <button
+                        onClick={() => onUnassignWorker && onUnassignWorker(inspectPlotId)}
+                        disabled={assignedWorkers.length === 0}
+                        className={`py-1.5 px-3 rounded-xl font-mono text-xs font-bold transition flex items-center justify-center gap-1 shadow ${
+                          assignedWorkers.length > 0
+                            ? 'bg-[#ebdcc1] hover:bg-[#dfcba6] text-[#6b4a2e] border border-[#8c6843] active:scale-95'
+                            : 'bg-stone-300/50 text-stone-500 cursor-not-allowed border border-stone-300'
+                        }`}
+                        title="Unassign 1 Worker"
+                      >
+                        <span>−</span>
+                        <span>Unassign</span>
+                      </button>
                     </div>
                   </div>
                 )}
@@ -708,6 +809,133 @@ export function SovereignLedger({
               </div>
             )}
           </>
+        )}
+
+        {/* =========================================================================
+            TAB: VILLAGER ROSTER & WORKFORCE MANAGEMENT
+            ========================================================================= */}
+        {activeLedgerTab === 'roster' && (
+          <div className="space-y-3 animate-in fade-in">
+            {/* Roster Overview Banner */}
+            <div className="bg-[#ebdcc1] p-3 rounded-2xl border border-[#8c6843] space-y-2 shadow-inner">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-black text-[#442813] uppercase tracking-wider flex items-center gap-1.5">
+                    <span>👥</span>
+                    <span>Crown Population Roster</span>
+                  </h3>
+                  <span className="text-[10px] font-mono text-[#6b4a2e]">
+                    {villagers.length} Registered Subjects & Guild Artisans
+                  </span>
+                </div>
+                <span className="px-2 py-0.5 rounded-full bg-[#442813] text-amber-200 text-[10px] font-mono font-bold">
+                  {villagers.filter(v => v.role !== 'Unassigned').length} Assigned
+                </span>
+              </div>
+
+              {/* Citizen Role Summary Chips */}
+              <div className="flex flex-wrap gap-1 pt-1">
+                {Object.entries(ROLE_DEFINITIONS).map(([rKey, rDef]) => {
+                  const cnt = (villagers || []).filter(v => v.role === rKey).length;
+                  if (cnt === 0 && rKey !== 'Unassigned') return null;
+                  return (
+                    <span
+                      key={rKey}
+                      className="px-2 py-0.5 rounded-lg bg-[#dfcba6] border border-[#bfa379] text-[9.5px] font-mono font-bold text-[#442813] flex items-center gap-1 shadow-xs"
+                    >
+                      <span>{rDef.icon}</span>
+                      <span>{rDef.label}:</span>
+                      <span className="text-[#8c6843]">{cnt}</span>
+                    </span>
+                  );
+                })}
+              </div>
+
+              {/* Starvation / Dehydration Warning */}
+              {(stats.isStarving || stats.isDehydrated) && (
+                <div className="bg-red-950/20 p-2 rounded-xl border border-red-800/60 text-red-950 text-[10px] font-mono flex items-center gap-1.5 animate-pulse">
+                  <span>⚠️</span>
+                  <span>
+                    {stats.isStarving && stats.isDehydrated
+                      ? 'Severe Starvation & Dehydration: Productivity heavily degraded!'
+                      : stats.isStarving
+                        ? 'Starvation in the realm: Sustenance depleted!'
+                        : 'Drought in the realm: Water wells dry, productivity debuffed!'}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Villager Card List */}
+            <div className="space-y-2">
+              {villagers.length === 0 ? (
+                <div className="bg-[#ebdcc1] p-4 rounded-2xl border border-[#8c6843] text-center text-xs font-mono text-[#6b4a2e]">
+                  No subjects registered. Expand Keep or recruit troops in Barracks.
+                </div>
+              ) : (
+                villagers.map(v => {
+                  const roleDef = ROLE_DEFINITIONS[v.role] || ROLE_DEFINITIONS.Unassigned;
+                  const assignedPlot = (grid || []).find(p => p.id === v.assignedBuildingId);
+                  const locationText = v.role === 'Soldier'
+                    ? 'Garrison Ramparts'
+                    : v.role === 'Spy'
+                      ? (v.assignedBuildingId ? `Infiltrating Sector ${v.assignedBuildingId}` : 'Foreign Espionage')
+                      : assignedPlot
+                        ? `${BUILDINGS[assignedPlot.buildingId]?.name || 'Citadel Plot'} (${assignedPlot.id})`
+                        : (v.role === 'Unassigned' ? 'Citadel Commons (Idle)' : 'Unassigned Plot');
+
+                  return (
+                    <div
+                      key={v.id}
+                      className="bg-[#ebdcc1] p-2.5 rounded-xl border border-[#bfa379] shadow-sm space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base p-1 rounded-lg bg-[#dfcba6] border border-[#bfa379]">
+                            {roleDef.icon}
+                          </span>
+                          <div>
+                            <span className="font-bold text-xs text-[#442813]">{v.name}</span>
+                            <span className="block text-[9.5px] font-mono text-[#6b4a2e]">
+                              📍 {locationText}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Role Select Dropdown */}
+                        <select
+                          value={v.role || 'Unassigned'}
+                          onChange={(e) => {
+                            const newRole = e.target.value;
+                            triggerHaptic('selection');
+                            sounds.playCoin();
+                            if (newRole === 'Unassigned') {
+                              onUnassignVillager?.(v.id);
+                            } else {
+                              onAssignVillager?.(v.id, newRole);
+                            }
+                          }}
+                          className="bg-[#dfcba6] text-[#442813] text-[10.5px] font-mono font-bold px-2 py-1 rounded-lg border border-[#8c6843] shadow-inner focus:outline-none cursor-pointer"
+                        >
+                          {Object.keys(ROLE_DEFINITIONS).map(rKey => (
+                            <option key={rKey} value={rKey}>
+                              {ROLE_DEFINITIONS[rKey].icon} {rKey}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Morale and status bar */}
+                      <div className="flex items-center justify-between text-[9px] font-mono pt-1 border-t border-[#bfa379]/40 text-[#6b4a2e]">
+                        <span>Morale: <strong className="text-emerald-800">{v.morale || 100}%</strong></span>
+                        <span>Status: <strong className={v.role === 'Unassigned' ? 'text-amber-800' : 'text-emerald-800'}>{v.role === 'Unassigned' ? 'Idle Reserve' : 'Active Duty'}</strong></span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
         )}
 
         {/* =========================================================================

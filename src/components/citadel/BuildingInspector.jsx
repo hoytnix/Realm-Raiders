@@ -37,6 +37,10 @@ export function BuildingInspector({
   onTrainTroops,
   onResearchTechnology,
   onTransmuteFlora,
+  villagers = [],
+  onAssignWorker,
+  onUnassignWorker,
+  onOpenRoster,
   isExpanded: propIsExpanded,
   setIsExpanded: propSetIsExpanded
 }) {
@@ -54,6 +58,12 @@ export function BuildingInspector({
   const isHarvestBuilding = selectedDef?.cycleDuration && selectedDef?.baseYield;
   const hasTroopLogistics = technologies.includes('tech_troop_logistics');
   const isAutomated = hasTroopLogistics && (troops?.total || 0) >= 1 && isHarvestBuilding;
+
+  const inspectPlotId = selectedPlot?.id || selectedBuildingId;
+  const isWorkerBuilding = ['farm', 'granary', 'lumber', 'quarry', 'well'].includes(selectedDef?.id);
+  const assignedWorkers = (villagers || []).filter(v => v.assignedBuildingId === inspectPlotId);
+  const maxWorkers = Math.min(5, (currentLvl || 1) + 1);
+  const isUnstaffed = isWorkerBuilding && assignedWorkers.length === 0;
 
   const isUpgrading = !!selectedPlot?.isUpgrading;
   const upgradeTimeRemaining = selectedPlot?.upgradeTimeRemaining || 0;
@@ -281,6 +291,90 @@ export function BuildingInspector({
                     <div className="flex items-center justify-between text-[10px] font-mono text-[#6b4a2e]">
                       <span>Workforce: {Math.round((1 - (upgradeTimeRemaining / (totalUpgradeTime || 1))) * 100)}% Complete</span>
                       <span className="text-amber-900 font-bold">⚠️ 50% baseline efficiency during masonry</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* GUILD LABOR & WORKER ASSIGNMENT CARD */}
+                {isWorkerBuilding && (
+                  <div className={`p-3 rounded-2xl border-2 shadow-md space-y-2 ${
+                    isUnstaffed
+                      ? 'bg-amber-950/20 border-amber-600/80 text-amber-950'
+                      : 'bg-[#dfcba6] border-[#8c6843]'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs uppercase font-mono font-bold text-[#8c6843]">
+                          Guild Workforce:
+                        </span>
+                        <span className="text-xs font-mono font-black text-[#442813]">
+                          {assignedWorkers.length} / {maxWorkers} Assigned
+                        </span>
+                      </div>
+                      <span className={`text-[9.5px] font-mono font-bold px-2 py-0.5 rounded border ${
+                        isUnstaffed
+                          ? 'bg-amber-800/25 text-amber-950 border-amber-800/60 animate-pulse'
+                          : 'bg-emerald-800/20 text-emerald-950 border-emerald-800/40'
+                      }`}>
+                        {isUnstaffed ? '⚠️ IDLE (UNSTAFFED)' : `⚡ Output: ${(0.6 + 0.4 * assignedWorkers.length).toFixed(1)}x`}
+                      </span>
+                    </div>
+
+                    {isUnstaffed ? (
+                      <p className="text-[10px] font-mono text-amber-900 leading-tight">
+                        Production cycle timer is halted. Assign at least 1 citizen to begin generating yields.
+                      </p>
+                    ) : (
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {assignedWorkers.map(w => (
+                          <span
+                            key={w.id}
+                            className="px-2 py-0.5 rounded-lg bg-[#ebdcc1] border border-[#8c6843]/60 text-[10px] font-mono font-bold text-[#3f2314] flex items-center gap-1 shadow-sm"
+                          >
+                            <span>👤</span>
+                            <span>{w.name}</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        onClick={() => onAssignWorker && onAssignWorker(inspectPlotId)}
+                        disabled={assignedWorkers.length >= maxWorkers}
+                        className={`flex-1 py-1.5 px-2 rounded-xl font-mono text-xs font-bold transition flex items-center justify-center gap-1 shadow ${
+                          assignedWorkers.length < maxWorkers
+                            ? 'bg-gradient-to-r from-amber-800 to-yellow-800 text-amber-100 hover:brightness-105 active:scale-95 border border-amber-600'
+                            : 'bg-stone-400/50 text-stone-600 cursor-not-allowed border border-stone-400'
+                        }`}
+                      >
+                        <span>+</span>
+                        <span>Assign Villager</span>
+                      </button>
+
+                      <button
+                        onClick={() => onUnassignWorker && onUnassignWorker(inspectPlotId)}
+                        disabled={assignedWorkers.length === 0}
+                        className={`py-1.5 px-3 rounded-xl font-mono text-xs font-bold transition flex items-center justify-center gap-1 shadow ${
+                          assignedWorkers.length > 0
+                            ? 'bg-[#ebdcc1] hover:bg-[#dfcba6] text-[#6b4a2e] border border-[#8c6843] active:scale-95'
+                            : 'bg-stone-300/50 text-stone-500 cursor-not-allowed border border-stone-300'
+                        }`}
+                        title="Unassign 1 Worker"
+                      >
+                        <span>−</span>
+                        <span>Unassign</span>
+                      </button>
+
+                      {onOpenRoster && (
+                        <button
+                          onClick={onOpenRoster}
+                          className="py-1.5 px-2.5 rounded-xl bg-[#ebdcc1] hover:bg-[#dfcba6] text-[#3f2314] border border-[#8c6843] text-xs font-mono font-bold transition shadow active:scale-95"
+                          title="Open Royal Citizen Roster"
+                        >
+                          📜 Roster
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}

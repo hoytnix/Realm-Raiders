@@ -25,6 +25,32 @@ export function createDefaultGrid() {
   return grid;
 }
 
+export const VILLAGER_NAMES = [
+  'Aldous the Miller',
+  'Osric the Bold',
+  'Roland Stonehand',
+  'Cedric of the Vale',
+  'Beatrice Weaver',
+  'Isolde Rivers',
+  'Godwin Oakheart',
+  'Elowen Greenleaf',
+  'Dunstan the Smith',
+  'Rowena Fletcher',
+  'Gareth the Stout',
+  'Maeve Far-Strider',
+  'Kendrick Pike',
+  'Anselm Wright',
+  'Hilda of Ironpeak',
+  'Wulfric Ironvein'
+];
+
+export const DEFAULT_VILLAGERS = [
+  { id: 'vil_1', name: 'Aldous the Miller', role: 'Farming', assignedBuildingId: null, morale: 100 },
+  { id: 'vil_2', name: 'Osric the Bold', role: 'Soldier', assignedBuildingId: null, morale: 100 },
+  { id: 'vil_3', name: 'Cedric of the Vale', role: 'Forestry', assignedBuildingId: null, morale: 100 },
+  { id: 'vil_4', name: 'Isolde Rivers', role: 'Waterbearing', assignedBuildingId: null, morale: 100 }
+];
+
 export const DEFAULT_STATE = {
   faction: null,
   territoryTier: 1,
@@ -33,14 +59,16 @@ export const DEFAULT_STATE = {
     maxCapacity: 30,
     sustenanceUpkeepPerDay: 1
   },
+  villagers: DEFAULT_VILLAGERS,
   resources: {
     gold: 60,
     food: 75,
-    water: 75,
+    water: 150,
     wood: 40,
     stone: 20,
     flora: 15
   },
+  waterCap: 300,
   buildings: {
     keep: 1,
     granary: 0,
@@ -63,11 +91,20 @@ export const DEFAULT_STATE = {
     monthName: 'Harvestide (September)',
     year: 26,
     era: 'ADX',
-    hour: 8,
+    hour: 6,
     minute: 0,
     seasonIndex: 2,
     weather: 'autumn_breeze',
     timeSpeed: 1
+  },
+  chronometer: {
+    day: 1,
+    month: 9,
+    monthName: 'Harvestide (September)',
+    year: 26,
+    era: 'ADX',
+    hour: 6,
+    minute: 0
   },
   settings: {
     masterAudio: true,

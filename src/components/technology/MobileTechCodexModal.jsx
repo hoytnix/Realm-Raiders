@@ -75,35 +75,17 @@ export function MobileTechCodexModal({
         onClick={(e) => e.stopPropagation()}
         className="w-full h-full md:max-w-2xl md:h-auto md:max-h-[85vh] bg-gradient-to-b from-[#f6ebd6] via-[#ebdcc1] to-[#dfcba6] border-0 md:border-2 md:border-[#8c6843] md:rounded-3xl shadow-2xl flex flex-col overflow-hidden text-[#442813] font-serif"
       >
-        {/* Ornate Parchment Header (Pinned) */}
-        <div className="px-4 pt-3 pb-3 border-b-2 border-[#8c6843]/60 flex items-center justify-between bg-[#dfcba6]/90 flex-shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[#8c6843]/20 border border-[#8c6843] flex items-center justify-center text-lg shadow-inner">
-              📜
-            </div>
-            <div>
-              <h2 className="text-sm sm:text-base font-black tracking-wide text-[#3f2314] uppercase">
-                ROYAL CODEX & DECREES
-              </h2>
-              <p className="text-[10px] font-mono text-[#6b4a2e]">
-                Crown Technologies & Sovereign Decrees
-              </p>
-            </div>
-          </div>
-
-          {/* Ink-Stamp Close Button (44x44px Touch Target) */}
+        {/* Category Tabs / Horizontal Filter Chips (Flush at top with floating close button) */}
+        <div className="relative flex items-center gap-1.5 px-3 py-2 pr-12 overflow-x-auto scrollbar-none bg-[#e5d4b3]/90 border-b border-[#bfa379]/60 flex-shrink-0">
+          {/* Floating Close Button */}
           <button
             onClick={handleClose}
-            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-2xl bg-[#dfcba6] border-2 border-[#8c6843] flex items-center justify-center text-base font-bold text-[#442813] hover:bg-[#cbb38b] active:scale-95 transition shadow cursor-pointer"
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[#dfcba6] border border-[#8c6843] flex items-center justify-center text-xs font-bold text-[#442813] hover:bg-[#cbb38b] active:scale-95 transition shadow cursor-pointer z-10"
             title="Close Royal Codex"
             aria-label="Close"
           >
             ✕
           </button>
-        </div>
-
-        {/* Category Tabs / Horizontal Filter Chips (Pinned) */}
-        <div className="flex items-center gap-1.5 px-3 py-2 overflow-x-auto scrollbar-none bg-[#e5d4b3]/70 border-b border-[#bfa379]/60 flex-shrink-0">
           {Object.values(TECH_CATEGORIES).map(cat => {
             const isSelected = activeCategory === cat.id;
             return (
