@@ -1,5 +1,5 @@
 import React from 'react';
-import { BUILDINGS } from '../../constants/index.js';
+import { BUILDINGS, getBuildingUpgradeCost } from '../../constants/index.js';
 
 export function BuildingHoverTooltip({
   buildingId,
@@ -16,9 +16,7 @@ export function BuildingHoverTooltip({
 
   const discount = faction?.id === 'humans' ? 0.5 : 1.0;
   const nextLvl = level + 1;
-  const costGold = Math.round((bDef.baseCost?.gold || 0) * Math.pow(bDef.costMult || 1.5, level - 1) * discount);
-  const costWood = Math.round((bDef.baseCost?.wood || 0) * Math.pow(bDef.costMult || 1.5, level - 1) * discount);
-  const costStone = Math.round((bDef.baseCost?.stone || 0) * Math.pow(bDef.costMult || 1.5, level - 1) * discount);
+  const { gold: costGold, wood: costWood, stone: costStone } = getBuildingUpgradeCost(bDef, level, discount);
 
   const canAfford =
     (resources.gold || 0) >= costGold &&

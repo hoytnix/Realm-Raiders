@@ -39,10 +39,11 @@ export function usePlayerStats(gameState) {
     const isDrought = weatherKey === 'heatwave';
     const droughtMultiplier = (currentFaction.element === 'Flora' && isDrought && !hasCanopyGranary) ? 1.10 : 1.0;
 
-    const baseUpkeepFood = (population * 0.35 + (troopCount * 0.65 * droughtMultiplier)) * currentFaction.upkeepMultiplier * (season.multipliers.upkeep || 1.0);
-    const baseUpkeepWater = (population * 0.30 + troopCount * 0.55) * currentFaction.upkeepMultiplier * (season.multipliers.upkeep || 1.0);
+    const isGracePeriod = (gameState.timeState?.year === 26 && gameState.timeState?.month === 9 && (gameState.timeState?.day || 1) <= 5);
+    const baseUpkeepFood = (population * 0.175 + (troopCount * 0.325 * droughtMultiplier)) * currentFaction.upkeepMultiplier * (season.multipliers.upkeep || 1.0);
+    const baseUpkeepWater = (population * 0.15 + troopCount * 0.275) * currentFaction.upkeepMultiplier * (season.multipliers.upkeep || 1.0);
 
-    const starving = (gameState.resources?.food ?? 0) <= 0.1 || (gameState.resources?.water ?? 0) <= 0.1;
+    const starving = !isGracePeriod && ((gameState.resources?.food ?? 0) <= 0.1 || (gameState.resources?.water ?? 0) <= 0.1);
 
     // Calculate labor demand across all constructed structures on the grid
     const totalLaborDemand = grid && Array.isArray(grid) && grid.some(p => p.buildingId)
@@ -103,7 +104,7 @@ export function usePlayerStats(gameState) {
 
     const brambleDefBonus = brambleShieldActive ? 35 : 0;
     const baseAtk = (troopCount * 12 + (keepLvl * 15)) * (1 + currentFaction.raidAttackBonus) * (weather.multipliers.raidAtk || 1.0) * (hasSiegeMunitions ? 1.2 : 1.0);
-    const baseDef = ((totalWatchtowerLvl * 42) + (keepLvl * 26) + (totalBarracksLvl * 25) + brambleDefBonus) * (starving ? 0.5 : 1.0) * (currentFaction.id === 'elves' ? 0.75 : 1.0) * (hasPhalanxDrills ? 1.15 : 1.0);
+    const baseDef = ((totalWatchtowerLvl * 42) + (keepLvl * 26) + (totalBarracksLvl * 25) + brambleDefBonus) * (starving ? 0.9 : 1.0) * (currentFaction.id === 'elves' ? 0.75 : 1.0) * (hasPhalanxDrills ? 1.15 : 1.0);
     const totalGridLevels = grid && Array.isArray(grid)
       ? grid.filter(p => p.buildingId).reduce((sum, p) => sum + (p.level || 1), 0)
       : Object.values(bLevels).reduce((a, b) => a + (b || 0), 0);

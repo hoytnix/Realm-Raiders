@@ -18,7 +18,10 @@ export function MonarchHeader({
   onToggleSpeed,
   onToggleMute,
   onOpenSettings,
-  onRaidGrain
+  onRaidGrain,
+  onForage,
+  canForage,
+  forageCooldownSec
 }) {
   const [isAffinityOpen, setIsAffinityOpen] = useState(false);
 
@@ -48,164 +51,132 @@ export function MonarchHeader({
                     {currentFaction.name}
                   </h1>
                   <span className="px-1.5 py-0.2 rounded bg-emerald-950/60 text-emerald-300 text-[9px] font-mono font-bold border border-emerald-700/50">
-                    🌱 {currentFaction.element || stats.element || 'Flora'}
+                    🌿 {currentFaction.element || 'Flora'}
                   </span>
                 </div>
-                <span className="text-[10px] text-amber-400/90 font-mono block">
-                  ⭐ {stats.overallRating} • Def {Math.round(stats.defensePower)} • Labor {Math.round((stats.laborEfficiency || 1) * 100)}%
-                </span>
+                <div className="text-[10px] text-amber-500/80 font-mono">
+                  Rating: <span className="text-amber-300 font-bold">{stats.rating}</span>
+                </div>
               </div>
             </button>
 
-            {/* Interactive Elemental Status Flyout Popover */}
+            {/* Interactive Elemental Status Flyout */}
             {isAffinityOpen && (
-              <div
-                className="absolute top-full left-0 mt-2 w-80 bg-gradient-to-b from-[#f5ebd6] via-[#ebdcc1] to-[#dfcba6] border-2 border-[#8c6843] rounded-2xl p-3.5 shadow-2xl z-50 text-[#442813] font-serif space-y-2.5 animate-in fade-in slide-in-from-top-2 duration-200"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center justify-between border-b border-[#8c6843]/40 pb-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-lg">🌿</span>
-                    <div>
-                      <h4 className="text-xs font-black text-[#3f2314] uppercase tracking-wide">
-                        Flora Elemental Affinity
-                      </h4>
-                      <span className="text-[9.5px] font-mono text-[#6b4a2e]">Sylvaeth Verdant Surge</span>
-                    </div>
+              <div className="absolute top-full mt-2 left-0 w-80 bg-stone-950/95 border-2 border-emerald-600/70 rounded-2xl p-3 shadow-2xl z-50 text-stone-200 text-xs font-serif backdrop-blur-md animate-in fade-in zoom-in-95 duration-150">
+                <div className="flex items-center justify-between border-b border-emerald-800/50 pb-1.5 mb-2">
+                  <div className="flex items-center gap-1.5 text-emerald-300 font-black text-xs">
+                    <span>🌿</span>
+                    <span>Sylvaeth Flora Affinity</span>
                   </div>
                   <button
                     onClick={() => setIsAffinityOpen(false)}
-                    className="text-xs font-bold text-[#8c6843] hover:text-[#442813] px-1.5 py-0.5 rounded bg-[#dfcba6]"
+                    className="w-5 h-5 rounded-full bg-stone-800 text-stone-400 hover:text-white flex items-center justify-center text-[10px]"
                   >
                     ✕
                   </button>
                 </div>
 
-                {/* Passive Synergies */}
-                <div className="space-y-1.5 text-[10.5px] font-mono">
-                  <div className="bg-[#dfcba6]/70 p-2 rounded-xl border border-[#bfa379]/60 flex items-start gap-2">
-                    <span className="text-sm">🌱</span>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-center">
-                        <span className="font-bold text-[#3f2314]">Verdant Surge</span>
-                        <span className="text-emerald-800 font-bold">+15% Speed</span>
-                      </div>
-                      <p className="text-[9.5px] text-[#6b4a2e]">Base boost to agricultural and timber plots</p>
+                <div className="space-y-2 text-[11px]">
+                  {/* Verdant Surge Passives */}
+                  <div className="bg-emerald-950/40 border border-emerald-800/40 rounded-xl p-2 space-y-1">
+                    <div className="font-bold text-emerald-300">Verdant Surge Passive:</div>
+                    <div className="flex items-center justify-between text-[10.5px]">
+                      <span>• Farm/Mill Base Speed:</span>
+                      <span className="font-mono text-emerald-400 font-bold">+15% Active</span>
                     </div>
-                  </div>
-
-                  <div className={`p-2 rounded-xl border flex items-start gap-2 ${
-                    isWeatherSynergy
-                      ? 'bg-emerald-950/15 border-emerald-600 text-emerald-950'
-                      : 'bg-[#dfcba6]/50 border-[#bfa379]/40 text-[#6b4a2e]'
-                  }`}>
-                    <span className="text-sm">🌧️</span>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-center">
-                        <span className="font-bold">Weather Synergy</span>
-                        <span className={`font-bold ${isWeatherSynergy ? 'text-emerald-800' : 'text-stone-500'}`}>
-                          {isWeatherSynergy ? '+20% Active' : 'Inactive'}
-                        </span>
-                      </div>
-                      <p className="text-[9.5px]">Boosted during gentle rain, overcast, and mist</p>
-                    </div>
-                  </div>
-
-                  <div className={`p-2 rounded-xl border flex items-start gap-2 ${
-                    isSeasonSynergy
-                      ? 'bg-amber-950/15 border-amber-600 text-amber-950'
-                      : 'bg-[#dfcba6]/50 border-[#bfa379]/40 text-[#6b4a2e]'
-                  }`}>
-                    <span className="text-sm">🍂</span>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-center">
-                        <span className="font-bold">Seasonal Crop Caps</span>
-                        <span className={`font-bold ${isSeasonSynergy ? 'text-amber-800' : 'text-stone-500'}`}>
-                          {isSeasonSynergy ? '+25% Cap Active' : 'Inactive'}
-                        </span>
-                      </div>
-                      <p className="text-[9.5px]">Crop storage capacity bonus during Harvestide & Spring</p>
-                    </div>
-                  </div>
-
-                  {/* Soil Fertility Composting */}
-                  <div className="bg-[#dfcba6]/70 p-2 rounded-xl border border-[#bfa379]/60 flex items-start gap-2">
-                    <span className="text-sm">🍄</span>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-center">
-                        <span className="font-bold text-[#3f2314]">Composting Decay</span>
-                        <span className="text-emerald-800 font-bold">
-                          +{Math.round((stats.soilFertilityBonus || 0) * 100)}% Yield
-                        </span>
-                      </div>
-                      <p className="text-[9.5px] text-[#6b4a2e]">5% of excess Flora &gt;90% cap converts daily to permanent farm yield</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Living Bramble Shield Controls */}
-                <div className="bg-[#ebdcc1] p-2 rounded-xl border border-[#8c6843] flex items-center justify-between gap-2">
-                  <div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs font-bold text-[#3f2314]">Living Bramble Shield</span>
-                      <span className={`text-[9px] font-mono px-1 rounded ${brambleShieldActive ? 'bg-emerald-800 text-emerald-100 font-bold' : 'bg-stone-300 text-stone-600'}`}>
-                        {brambleShieldActive ? 'Active' : 'Off'}
+                    <div className="flex items-center justify-between text-[10.5px]">
+                      <span>• Weather Synergy (Rain/Mist):</span>
+                      <span className={`font-mono font-bold ${isWeatherSynergy ? 'text-emerald-300 animate-pulse' : 'text-stone-500'}`}>
+                        {isWeatherSynergy ? '+20% Speed Active' : 'Inactive'}
                       </span>
                     </div>
-                    <span className="text-[9px] font-mono text-[#6b4a2e]">
-                      -40% raid losses • Drain: {stats?.hasBrambleWall ? '1' : '2'} 🌿/hr
-                    </span>
+                    <div className="flex items-center justify-between text-[10.5px]">
+                      <span>• Seasonal Crop Cap (Autumn):</span>
+                      <span className={`font-mono font-bold ${isSeasonSynergy ? 'text-emerald-300' : 'text-stone-500'}`}>
+                        {isSeasonSynergy ? '+25% Cap Boosted' : 'Normal Cap'}
+                      </span>
+                    </div>
+                    {stats?.soilFertilityBonus > 0 && (
+                      <div className="flex items-center justify-between text-[10.5px]">
+                        <span>• Composting Soil Fertility:</span>
+                        <span className="font-mono text-amber-300 font-bold">+{Math.round(stats.soilFertilityBonus * 100)}% Yield</span>
+                      </div>
+                    )}
                   </div>
-                  {onToggleBrambleShield && (
+
+                  {/* Active Flora Actions */}
+                  <div className="space-y-1.5 pt-1">
+                    <button
+                      onClick={() => {
+                        onTriggerVerdantBloom();
+                        setIsAffinityOpen(false);
+                      }}
+                      className="w-full py-1.5 px-2 rounded-xl bg-gradient-to-r from-emerald-800 to-teal-900 border border-emerald-500/50 hover:brightness-110 active:scale-95 text-emerald-100 font-bold text-[11px] flex items-center justify-between shadow transition"
+                    >
+                      <span>🌸 Verdant Bloom (Ripen All)</span>
+                      <span className="font-mono text-emerald-300">75 🌿</span>
+                    </button>
+
                     <button
                       onClick={() => onToggleBrambleShield()}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition shadow ${
+                      className={`w-full py-1.5 px-2 rounded-xl border text-[11px] font-bold flex items-center justify-between transition active:scale-95 ${
                         brambleShieldActive
-                          ? 'bg-emerald-800 hover:bg-emerald-900 text-emerald-100 border border-emerald-600'
-                          : 'bg-stone-800 hover:bg-stone-900 text-amber-100 border border-stone-700'
+                          ? 'bg-emerald-900/60 border-emerald-400 text-emerald-200'
+                          : 'bg-stone-900/80 border-stone-700 text-stone-400 hover:text-stone-200'
                       }`}
                     >
-                      {brambleShieldActive ? 'Disable' : 'Enable'}
+                      <span>🛡️ Living Bramble Shield</span>
+                      <span className="font-mono text-[10px]">
+                        {brambleShieldActive ? 'Active (-40% raid loss)' : 'Toggle (2 🌿/hr)'}
+                      </span>
                     </button>
-                  )}
-                </div>
+                  </div>
 
-                {/* Combat Matchup Matrix */}
-                <div className="border-t border-[#8c6843]/40 pt-2 text-[9.5px] font-mono text-[#5c3e23] flex justify-between items-center">
-                  <span>🪨 vs Stone: <strong className="text-emerald-800">+25% Atk</strong></span>
-                  <span>💧 vs Water: <strong className="text-emerald-800">+15% Def</strong></span>
-                  <span>🔥 vs Flame: <strong className="text-rose-800">-20% Def</strong></span>
+                  {/* Combat Matchup Matrix */}
+                  <div className="bg-stone-900/60 border border-stone-800 rounded-xl p-2 text-[10px] space-y-0.5 text-stone-400">
+                    <div className="font-bold text-stone-300">Elemental Matchup Matrix:</div>
+                    <div className="flex items-center justify-between">
+                      <span>• Flora vs Stone (Dwarves):</span>
+                      <span className="text-emerald-400 font-bold">+25% Atk Bonus</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>• Flora vs Water (Humans):</span>
+                      <span className="text-emerald-400 font-bold">+15% Def Bonus</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>• Flora vs Flame (Orcs):</span>
+                      <span className="text-rose-400 font-bold">-20% Def Vulnerability</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Sustenance Stores */}
-          <div className="flex items-center gap-1.5">
+          <div className="hidden lg:flex items-center gap-1.5">
             <ResourcePill
               icon="🪙"
               amount={resources.gold}
-              cap={stats.caps.gold || 1000}
+              cap={stats.caps.gold}
               color="text-yellow-300"
             />
             <ResourcePill
-              icon="🌾"
+              icon="🍞"
               amount={resources.food}
-              cap={stats.caps.food || 1000}
-              upkeep={stats.upkeep.food}
+              cap={stats.caps.food}
               color="text-amber-300"
+              subtext={`-${Math.round(stats.upkeep.total)}/tick`}
             />
             <ResourcePill
               icon="💧"
               amount={resources.water}
-              cap={stats.caps.water || 1000}
-              upkeep={stats.upkeep.water}
-              color="text-sky-300"
+              cap={stats.caps.water}
+              color="text-blue-300"
             />
           </div>
         </div>
 
-        {/* Center: Astrological Chronometer & Weather Forecast Flyout */}
+        {/* Center: Realm Chronometer & Weather Dial */}
         <div className="flex-shrink-0">
           <RealmChronometerHUD
             timeState={timeState}
@@ -213,25 +184,25 @@ export function MonarchHeader({
           />
         </div>
 
-        {/* Right Flank: Raw Material Stores (Wood, Stone, Flora), Crisis Alert & Audio Toggle */}
+        {/* Right Flank: Raw Materials & Audio Control */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5">
+          <div className="hidden lg:flex items-center gap-1.5">
             <ResourcePill
               icon="🪵"
               amount={resources.wood}
-              cap={stats.caps.wood || 1000}
-              color="text-orange-300"
+              cap={stats.caps.wood}
+              color="text-amber-600"
             />
             <ResourcePill
               icon="🪨"
               amount={resources.stone}
-              cap={stats.caps.stone || 1000}
+              cap={stats.caps.stone}
               color="text-stone-300"
             />
             <ResourcePill
               icon="🌿"
               amount={resources.flora}
-              cap={stats.caps.flora || 1000}
+              cap={stats.caps.flora}
               color="text-emerald-300"
             />
           </div>
@@ -242,6 +213,10 @@ export function MonarchHeader({
             onRaidGrain={onRaidGrain}
             starvationDeaths={starvationDeaths}
             laborEfficiency={stats?.laborEfficiency}
+            onForage={onForage}
+            canForage={canForage}
+            forageCooldownSec={forageCooldownSec}
+            resources={resources}
           />
 
           {/* Sound Mute Toggle */}

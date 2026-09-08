@@ -7,6 +7,7 @@ import {
   MAX_TERRITORY_TIER,
   TROOP_RECRUIT_COST,
   TECHNOLOGIES,
+  getBuildingUpgradeCost,
   sounds
 } from '../../constants/index.js';
 import { haptics } from '../../utils/index.js';
@@ -49,9 +50,9 @@ export function SovereignLedger({
   const isVault = selectedDef?.id === 'vault' || selectedBuildingId === 'vault';
 
   const discount = stats.currentFaction?.id === 'humans' ? 0.5 : 1.0;
-  const costGold = isEmptyPlot ? 0 : Math.round((selectedDef.baseCost?.gold || 0) * Math.pow(selectedDef.costMult || 1.5, currentLvl - 1) * discount);
-  const costWood = isEmptyPlot ? 0 : Math.round((selectedDef.baseCost?.wood || 0) * Math.pow(selectedDef.costMult || 1.5, currentLvl - 1) * discount);
-  const costStone = isEmptyPlot ? 0 : Math.round((selectedDef.baseCost?.stone || 0) * Math.pow(selectedDef.costMult || 1.5, currentLvl - 1) * discount);
+  const { gold: costGold, wood: costWood, stone: costStone } = isEmptyPlot
+    ? { gold: 0, wood: 0, stone: 0 }
+    : getBuildingUpgradeCost(selectedDef, currentLvl, discount);
 
   const canAffordSingle =
     !isEmptyPlot &&
@@ -107,9 +108,7 @@ export function SovereignLedger({
       const bD = BUILDINGS[bType];
       if (bD) {
         const lvl = plot ? (plot.level || 1) : (buildings[id] || 1);
-        const g = Math.round((bD.baseCost?.gold || 0) * Math.pow(bD.costMult || 1.5, lvl - 1) * discount);
-        const w = Math.round((bD.baseCost?.wood || 0) * Math.pow(bD.costMult || 1.5, lvl - 1) * discount);
-        const s = Math.round((bD.baseCost?.stone || 0) * Math.pow(bD.costMult || 1.5, lvl - 1) * discount);
+        const { gold: g, wood: w, stone: s } = getBuildingUpgradeCost(bD, lvl, discount);
         multiTotalGold += g;
         multiTotalWood += w;
         multiTotalStone += s;

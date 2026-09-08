@@ -16,6 +16,7 @@ import {
   MAX_TERRITORY_TIER,
   TROOP_RECRUIT_COST,
   createDefaultGrid,
+  getBuildingUpgradeCost,
   sounds
 } from '../constants/index.js';
 import { haptics } from '../utils/index.js';
@@ -142,6 +143,7 @@ export function useGameState() {
   const [starvationDeaths, setStarvationDeaths] = useState(0);
   const [inkPulseTick, setInkPulseTick] = useState(0);
   const [autoCollectNotice, setAutoCollectNotice] = useState(null);
+  const [lastForageTimestamp, setLastForageTimestamp] = useState(0);
 
   const settings = gameState.settings || DEFAULT_STATE.settings;
   const isMuted = !settings.masterAudio;
@@ -243,30 +245,39 @@ export function useGameState() {
         const seasonKey = SEASON_ORDER[newSeasonIdx];
         const season = SEASONS[seasonKey] || SEASONS.autumn;
 
-        const starvingNow = (prev.resources?.food ?? 0) <= 0.05 || (prev.resources?.water ?? 0) <= 0.05;
+        // Starter Grace Buffer: Prevent famine from triggering during Days 1-5 of Harvestide, 26 ADX
+        const isGracePeriod = (newYear === 26 && newMonth === 9 && newDay <= 5);
+        const starvingNow = !isGracePeriod && ((prev.resources?.food ?? 0) <= 0.05 || (prev.resources?.water ?? 0) <= 0.05);
         if (starvingNow !== isStarving) {
           setIsStarving(starvingNow);
           if (starvingNow) sounds.playFamineAlarm();
         }
 
-        // Calculate troop demographic upkeep with Flora Drought Vulnerability
+        // Calculate troop demographic upkeep with Flora Drought Vulnerability (baseline consumption reduced by 50%)
         const livingTroops = prev.troops?.total ?? 20;
         const hasCanopyGranary = (prev.technologies || []).includes('tech_flora_living_granary');
         const isDrought = currentWeather === 'heatwave';
         const droughtMult = (factionData.element === 'Flora' && isDrought && !hasCanopyGranary) ? 1.10 : 1.0;
-        const troopUpkeep = livingTroops * 0.18 * (prev.troops?.sustenanceUpkeepPerDay || 1) * droughtMult;
+        const troopUpkeep = livingTroops * 0.09 * (prev.troops?.sustenanceUpkeepPerDay || 1) * droughtMult;
 
-        const upkeepFood = (prev.population * 0.35 + livingTroops * 0.45 + troopUpkeep) *
+        const upkeepFood = (prev.population * 0.175 + livingTroops * 0.225 + troopUpkeep) *
           factionData.upkeepMultiplier *
           (season.multipliers.upkeep || 1.0);
 
-        const upkeepWater = (prev.population * 0.30 + livingTroops * 0.40 + troopUpkeep * 0.8) *
+        const upkeepWater = (prev.population * 0.15 + livingTroops * 0.20 + troopUpkeep * 0.8) *
           factionData.upkeepMultiplier *
           (season.multipliers.upkeep || 1.0);
 
         const nextRes = { ...prev.resources };
-        nextRes.food = Math.max(0, nextRes.food - upkeepFood);
-        nextRes.water = Math.max(0, nextRes.water - upkeepWater);
+
+        // Slow hunger ticks to every 25 seconds (25 ticks) to eliminate early-game starvation spirals
+        const nextHungerTick = (prev.hungerTick || 0) + 1;
+        let hungerReset = false;
+        if (nextHungerTick >= 25) {
+          hungerReset = true;
+          nextRes.food = Math.max(0, nextRes.food - upkeepFood);
+          nextRes.water = Math.max(0, nextRes.water - upkeepWater);
+        }
 
         let newBattleLogs = prev.battleLogs || [];
 
@@ -389,9 +400,11 @@ export function useGameState() {
               const wCond = WEATHER_CONDITIONS[currentWeather] || WEATHER_CONDITIONS.autumn_breeze || WEATHER_CONDITIONS.clear;
               const wMult = wCond.multipliers?.[resKey] || 1.0;
               const farmFertilityMult = plot.buildingId === 'farm' ? (1 + nextSoilFertilityBonus) : 1.0;
+              const isAgriOrTimber = plot.buildingId === 'farm' || plot.buildingId === 'granary' || plot.buildingId === 'lumber';
+              const effectiveLabor = isAgriOrTimber ? 1.0 : laborEfficiency;
 
               const totalYield = Math.round(
-                baseVal * (1 + (lvl - 1) * 0.5) * fMult * sMult * wMult * laborEfficiency * farmFertilityMult
+                baseVal * (1 + (lvl - 1) * 0.5) * fMult * sMult * wMult * effectiveLabor * farmFertilityMult
               );
 
               autoYields[resKey] = (autoYields[resKey] || 0) + totalYield;
@@ -452,6 +465,7 @@ export function useGameState() {
           battleLogs: newBattleLogs,
           brambleShieldActive: nextBrambleShieldActive,
           soilFertilityBonus: nextSoilFertilityBonus,
+          hungerTick: hungerReset ? 0 : nextHungerTick,
           timeState: {
             day: newDay,
             month: newMonth,
@@ -544,9 +558,11 @@ export function useGameState() {
     const sMult = season.multipliers[resKey] || 1.0;
     const wMult = weather.multipliers[resKey] || 1.0;
     const farmFertilityMult = bId === 'farm' ? (1 + (gameState.soilFertilityBonus || 0)) : 1.0;
+    const isAgriOrTimber = bId === 'farm' || bId === 'granary' || bId === 'lumber';
+    const effectiveLabor = isAgriOrTimber ? 1.0 : laborEfficiency;
 
     const totalYield = Math.round(
-      baseVal * (1 + (lvl - 1) * 0.5) * fMult * sMult * wMult * laborEfficiency * farmFertilityMult
+      baseVal * (1 + (lvl - 1) * 0.5) * fMult * sMult * wMult * effectiveLabor * farmFertilityMult
     );
 
     setGameState(prev => {
@@ -602,9 +618,11 @@ export function useGameState() {
         const sMult = season.multipliers[resKey] || 1.0;
         const wMult = weather.multipliers[resKey] || 1.0;
         const farmFertilityMult = plot.buildingId === 'farm' ? (1 + (gameState.soilFertilityBonus || 0)) : 1.0;
+        const isAgriOrTimber = plot.buildingId === 'farm' || plot.buildingId === 'granary' || plot.buildingId === 'lumber';
+        const effectiveLabor = isAgriOrTimber ? 1.0 : laborEfficiency;
 
         const totalYield = Math.round(
-          baseVal * (1 + (lvl - 1) * 0.5) * fMult * sMult * wMult * laborEfficiency * farmFertilityMult
+          baseVal * (1 + (lvl - 1) * 0.5) * fMult * sMult * wMult * effectiveLabor * farmFertilityMult
         );
 
         accumulatedYields[resKey] = (accumulatedYields[resKey] || 0) + totalYield;
@@ -644,9 +662,7 @@ export function useGameState() {
 
     const currentLvl = targetPlot ? (targetPlot.level || 1) : (gameState.buildings[bId] || 1);
     const discount = currentFaction.id === 'humans' ? 0.5 : 1.0;
-    const costGold = Math.round(bDef.baseCost.gold * Math.pow(bDef.costMult, currentLvl - 1) * discount);
-    const costWood = Math.round(bDef.baseCost.wood * Math.pow(bDef.costMult, currentLvl - 1) * discount);
-    const costStone = Math.round(bDef.baseCost.stone * Math.pow(bDef.costMult, currentLvl - 1) * discount);
+    const { gold: costGold, wood: costWood, stone: costStone } = getBuildingUpgradeCost(bDef, currentLvl, discount);
 
     if (
       gameState.resources.gold < costGold ||
@@ -738,9 +754,13 @@ export function useGameState() {
         [buildingType]: Math.max(1, prev.buildings[buildingType] || 1)
       };
 
+      const isInstantHarvest = ['farm', 'granary', 'lumber', 'quarry'].includes(buildingType);
+      const initialProgress = isInstantHarvest ? (bDef.cycleDuration || 20) : 0;
+
       const newHarvestTimers = {
         ...prev.harvestTimers,
-        [plotId]: 0
+        [plotId]: initialProgress,
+        [buildingType]: initialProgress
       };
 
       let newTroops = prev.troops ? { ...prev.troops } : { total: 20, maxCapacity: 30, sustenanceUpkeepPerDay: 1 };
@@ -833,6 +853,14 @@ export function useGameState() {
 
   // Recruit troops at Barracks
   const trainTroops = (count = 1) => {
+    // Halt recruitment while famine is active
+    const isGracePeriod = (gameState.timeState?.year === 26 && gameState.timeState?.month === 9 && (gameState.timeState?.day || 1) <= 5);
+    const isFamineActive = !isGracePeriod && (gameState.resources?.food || 0) <= 0.05;
+    if (isFamineActive) {
+      sounds.playFamineAlarm();
+      return false;
+    }
+
     const barracksLvl = gameState.buildings?.barracks || 0;
     if (barracksLvl < 1) {
       sounds.playFamineAlarm();
@@ -1052,7 +1080,7 @@ export function useGameState() {
         const farmFertilityMult = plot.buildingId === 'farm' ? (1 + (prev.soilFertilityBonus || 0)) : 1.0;
 
         const totalYield = Math.round(
-          baseVal * (1 + (lvl - 1) * 0.5) * fMult * sMult * wMult * laborEfficiency * farmFertilityMult
+          baseVal * (1 + (lvl - 1) * 0.5) * fMult * sMult * wMult * 1.0 * farmFertilityMult
         );
 
         const cap = storageCaps[resKey] || 1000;
@@ -1159,6 +1187,63 @@ export function useGameState() {
     return true;
   };
 
+  // Emergency "Forage Wilds" Decree: Exchange 25 Flora or 20 Gold for +60 Sustenance (60s cooldown, available when Sustenance < 30)
+  const forageEmergencyRations = () => {
+    const now = Date.now();
+    if (now - lastForageTimestamp < 60000) {
+      sounds.playFamineAlarm();
+      return false;
+    }
+
+    if ((gameState.resources?.food || 0) >= 30) {
+      return false;
+    }
+
+    const hasFlora = (gameState.resources?.flora || 0) >= 25;
+    const hasGold = (gameState.resources?.gold || 0) >= 20;
+
+    if (!hasFlora && !hasGold) {
+      sounds.playFamineAlarm();
+      return false;
+    }
+
+    const payWithFlora = hasFlora;
+    const deductedCostText = payWithFlora ? '25 Flora' : '20 Gold';
+
+    sounds.playHarvest();
+    haptics.harvest();
+
+    setGameState(prev => {
+      const storageCaps = calculateResourceCaps(prev.buildings, prev.grid);
+      const foodCap = storageCaps.food || 1000;
+
+      const forageLog = {
+        id: `log-forage-${now}`,
+        title: 'Emergency Rations Foraged',
+        text: `Scouts foraged the outer wilds, securing +60 Sustenance in exchange for ${deductedCostText}. Famine held at bay.`,
+        type: 'win',
+        timestamp: now
+      };
+
+      const updatedRes = { ...prev.resources };
+      if (payWithFlora) {
+        updatedRes.flora = Math.max(0, (updatedRes.flora || 0) - 25);
+      } else {
+        updatedRes.gold = Math.max(0, (updatedRes.gold || 0) - 20);
+      }
+      updatedRes.food = Math.min(foodCap, (updatedRes.food || 0) + 60);
+
+      return {
+        ...prev,
+        resources: updatedRes,
+        battleLogs: [forageLog, ...(prev.battleLogs || [])]
+      };
+    });
+
+    setLastForageTimestamp(now);
+    return true;
+  };
+
   const handleBulkUpgradeBuildings = (buildingIds = [], currentFaction, onTriggerDecreeStamp) => {
     if (!buildingIds || buildingIds.length === 0 || !currentFaction) return false;
 
@@ -1175,9 +1260,7 @@ export function useGameState() {
       const bDef = BUILDINGS[bId];
       if (bDef) {
         const currentLvl = plot ? (plot.level || 1) : (gameState.buildings[bId] || 1);
-        const g = Math.round(bDef.baseCost.gold * Math.pow(bDef.costMult, currentLvl - 1) * discount);
-        const w = Math.round(bDef.baseCost.wood * Math.pow(bDef.costMult, currentLvl - 1) * discount);
-        const s = Math.round(bDef.baseCost.stone * Math.pow(bDef.costMult, currentLvl - 1) * discount);
+        const { gold: g, wood: w, stone: s } = getBuildingUpgradeCost(bDef, currentLvl, discount);
         totalGold += g;
         totalWood += w;
         totalStone += s;
@@ -1272,6 +1355,12 @@ export function useGameState() {
     setGameState(prev => ({ ...prev, faction: factionId }));
   };
 
+  const forageCooldownSec = Math.max(0, Math.ceil((60000 - (Date.now() - lastForageTimestamp)) / 1000));
+  const canForage =
+    (gameState.resources?.food || 0) < 30 &&
+    forageCooldownSec === 0 &&
+    ((gameState.resources?.flora || 0) >= 25 || (gameState.resources?.gold || 0) >= 20);
+
   return {
     gameState,
     setGameState,
@@ -1300,6 +1389,9 @@ export function useGameState() {
     triggerVerdantBloom,
     toggleBrambleShield,
     transmuteFlora,
+    forageEmergencyRations,
+    canForage,
+    forageCooldownSec,
     constructBuilding,
     expandTerritory,
     trainTroops,

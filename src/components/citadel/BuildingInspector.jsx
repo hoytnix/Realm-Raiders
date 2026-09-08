@@ -47,9 +47,9 @@ export function BuildingInspector({
 
   const canAffordLogistics =
     !hasTroopLogistics &&
-    currentLvl >= 2 &&
-    (resources.gold || 0) >= 150 &&
-    (resources.food || 0) >= 100;
+    currentLvl >= 1 &&
+    (resources.gold || 0) >= 40 &&
+    (resources.food || 0) >= 30;
 
   const toggleExpand = () => {
     haptics.light();
@@ -277,11 +277,11 @@ export function BuildingInspector({
                     {!hasTroopLogistics && (
                       <div className="flex items-center justify-between pt-1">
                         <div className="flex items-center gap-1.5 text-[10px] font-mono">
-                          <span className={`px-1.5 py-0.5 rounded border ${(resources.gold || 0) >= 150 ? 'bg-yellow-900/10 border-yellow-800 text-yellow-900' : 'bg-red-900/10 border-red-800 text-red-900 font-bold'}`}>
-                            🪙 150
+                          <span className={`px-1.5 py-0.5 rounded border ${(resources.gold || 0) >= 40 ? 'bg-yellow-900/10 border-yellow-800 text-yellow-900' : 'bg-red-900/10 border-red-800 text-red-900 font-bold'}`}>
+                            🪙 40
                           </span>
-                          <span className={`px-1.5 py-0.5 rounded border ${(resources.food || 0) >= 100 ? 'bg-orange-900/10 border-orange-800 text-orange-900' : 'bg-red-900/10 border-red-800 text-red-900 font-bold'}`}>
-                            🌾 100
+                          <span className={`px-1.5 py-0.5 rounded border ${(resources.food || 0) >= 30 ? 'bg-orange-900/10 border-orange-800 text-orange-900' : 'bg-red-900/10 border-red-800 text-red-900 font-bold'}`}>
+                            🌾 30
                           </span>
                         </div>
                         <button
@@ -518,7 +518,7 @@ export function BuildingInspector({
                     {hasTroopLogistics && <span className="text-emerald-800 font-bold text-[10px]">✓ Active</span>}
                   </div>
                   <div className="text-[9px] font-mono text-[#6b4a2e]">
-                    {hasTroopLogistics ? 'Garrison foraging active' : '🪙150 🌾100 • Req Keep T2'}
+                    {hasTroopLogistics ? 'Garrison foraging active' : '🪙40 🌾30 • Req Keep T1'}
                   </div>
                 </div>
                 {hasTroopLogistics ? (

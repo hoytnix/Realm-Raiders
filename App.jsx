@@ -13,7 +13,8 @@ import {
   sounds,
   ISO_W,
   ISO_H,
-  gridToParchmentIso
+  gridToParchmentIso,
+  getBuildingUpgradeCost
 } from './src/constants/index.js';
 
 import {
@@ -135,6 +136,9 @@ export default function App() {
     triggerVerdantBloom,
     toggleBrambleShield,
     transmuteFlora,
+    forageEmergencyRations,
+    canForage,
+    forageCooldownSec,
     setGameState
   } = useGameState();
 
@@ -321,9 +325,9 @@ export default function App() {
   const selectedDef = selectedPlot?.buildingId ? (BUILDINGS[selectedPlot.buildingId] || BUILDINGS.keep) : (isEmptyPlot ? EMPTY_PLOT : (BUILDINGS[selectedBuildingId] || BUILDINGS.keep));
   const currentLvl = selectedPlot ? (selectedPlot.buildingId ? (selectedPlot.level || 1) : 0) : (isEmptyPlot ? 0 : (gameState.buildings[selectedBuildingId] || 1));
   const discount = currentFaction?.id === 'humans' ? 0.5 : 1.0;
-  const costGold = isEmptyPlot ? 0 : Math.round((selectedDef.baseCost?.gold || 0) * Math.pow(selectedDef.costMult || 1.5, currentLvl - 1) * discount);
-  const costWood = isEmptyPlot ? 0 : Math.round((selectedDef.baseCost?.wood || 0) * Math.pow(selectedDef.costMult || 1.5, currentLvl - 1) * discount);
-  const costStone = isEmptyPlot ? 0 : Math.round((selectedDef.baseCost?.stone || 0) * Math.pow(selectedDef.costMult || 1.5, currentLvl - 1) * discount);
+  const { gold: costGold, wood: costWood, stone: costStone } = isEmptyPlot
+    ? { gold: 0, wood: 0, stone: 0 }
+    : getBuildingUpgradeCost(selectedDef, currentLvl, discount);
   const canUpgradeSelected =
     !isEmptyPlot &&
     gameState.resources.gold >= costGold &&
@@ -396,6 +400,9 @@ export default function App() {
         onToggleMute={() => setIsMuted(!isMuted)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onRaidGrain={() => setDeskView('war')}
+        onForage={forageEmergencyRations}
+        canForage={canForage}
+        forageCooldownSec={forageCooldownSec}
       />
 
       {/* LAYER 2B: MOBILE FLOATING HUD (< md Zero-Bar Architecture) */}
@@ -421,6 +428,9 @@ export default function App() {
           setDeskView(prev => (prev === 'menu' ? 'citadel' : 'menu'));
         }}
         onRaidGrain={() => setDeskView('war')}
+        onForage={forageEmergencyRations}
+        canForage={canForage}
+        forageCooldownSec={forageCooldownSec}
       />
 
       {/* LAYER 3: THE OAK WAR TABLE & THE LIVING PARCHMENT */}

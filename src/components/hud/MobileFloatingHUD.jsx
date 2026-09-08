@@ -28,7 +28,10 @@ export function MobileFloatingHUD({
   onOpenTech,
   onToggleSpeed,
   onToggleMenu,
-  onRaidGrain
+  onRaidGrain,
+  onForage,
+  canForage,
+  forageCooldownSec
 }) {
   const [isAffinityOpen, setIsAffinityOpen] = React.useState(false);
 
@@ -207,6 +210,10 @@ export function MobileFloatingHUD({
                   onRaidGrain={onRaidGrain}
                   starvationDeaths={starvationDeaths}
                   laborEfficiency={stats?.laborEfficiency}
+                  onForage={onForage}
+                  canForage={canForage}
+                  forageCooldownSec={forageCooldownSec}
+                  resources={resources}
                 />
               </div>
             )}

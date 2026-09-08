@@ -9,6 +9,7 @@ export function createDefaultGrid() {
     'plot-0-1': 'granary',
     'plot-2-1': 'well',
     'plot-0-2': 'lumber',
+    'plot-1-2': 'farm',
     'plot-2-2': 'quarry',
     'plot-1-3': 'greenhouse',
     'plot-3-1': 'vault',
@@ -41,12 +42,12 @@ export const DEFAULT_STATE = {
     sustenanceUpkeepPerDay: 1
   },
   resources: {
-    food: 220,
-    water: 220,
-    wood: 260,
-    stone: 210,
-    flora: 90,
-    gold: 320
+    gold: 400,
+    food: 450,
+    water: 350,
+    wood: 250,
+    stone: 150,
+    flora: 120
   },
   buildings: {
     keep: 1,
@@ -57,18 +58,21 @@ export const DEFAULT_STATE = {
     greenhouse: 1,
     vault: 1,
     watchtower: 1,
-    farm: 0,
+    farm: 1,
     barracks: 0
   },
   grid: createDefaultGrid(),
   harvestTimers: {
-    granary: 0,
-    farm: 0,
+    granary: 20,
+    farm: 20,
     well: 0,
-    lumber: 0,
+    lumber: 20,
     quarry: 0,
     greenhouse: 0,
-    vault: 0
+    vault: 0,
+    'plot-1-2': 20,
+    'plot-0-2': 20,
+    'plot-0-1': 20
   },
   timeState: {
     day: 1,

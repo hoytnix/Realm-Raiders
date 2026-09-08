@@ -2,7 +2,16 @@ import React, { useState } from 'react';
 import { sounds } from '../../constants/index.js';
 import { haptics } from '../../utils/index.js';
 
-export function FamineWarning({ isStarving, onRaidGrain, starvationDeaths = 0, laborEfficiency = 0.5 }) {
+export function FamineWarning({
+  isStarving,
+  onRaidGrain,
+  starvationDeaths = 0,
+  laborEfficiency = 0.5,
+  onForage = null,
+  canForage = false,
+  forageCooldownSec = 0,
+  resources = {}
+}) {
   const [modalOpen, setModalOpen] = useState(false);
 
   if (!isStarving) return null;
@@ -16,6 +25,24 @@ export function FamineWarning({ isStarving, onRaidGrain, starvationDeaths = 0, l
       <div className="hidden md:flex bg-red-950/90 border-2 border-red-600 text-red-200 px-3 py-1 rounded-xl text-xs font-bold shadow-[0_0_20px_rgba(220,38,38,0.4)] items-center gap-2 animate-pulse">
         <span>⚠️</span>
         <span>FAMINE ACTIVE: Troops Starving {deathsLabel} • Realm Labor at {laborPct}%</span>
+        {onForage && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onForage();
+            }}
+            disabled={!canForage}
+            className={`ml-2 px-2.5 py-0.5 rounded-lg text-xs font-black transition flex items-center gap-1 ${
+              canForage
+                ? 'bg-amber-500 hover:bg-amber-400 text-stone-950 shadow active:scale-95 cursor-pointer'
+                : 'bg-stone-800 text-stone-400 cursor-not-allowed opacity-60'
+            }`}
+            title={forageCooldownSec > 0 ? `Forage on cooldown: ${forageCooldownSec}s` : 'Forage Wilds (+60 Sustenance for 25 Flora / 20 Gold)'}
+          >
+            <span>🌾</span>
+            <span>{forageCooldownSec > 0 ? `Forage (${forageCooldownSec}s)` : 'Emergency Forage (+60)'}</span>
+          </button>
+        )}
       </div>
 
       {/* Mobile Compact Crisis Pill */}
@@ -59,24 +86,43 @@ export function FamineWarning({ isStarving, onRaidGrain, starvationDeaths = 0, l
               <div>• Harvest yields scale proportionally with living laborers</div>
             </div>
 
-            <div className="flex gap-2 pt-1">
-              {onRaidGrain && (
+            <div className="flex flex-col gap-2 pt-1">
+              {onForage && (
                 <button
                   onClick={() => {
-                    setModalOpen(false);
-                    onRaidGrain();
+                    const success = onForage();
+                    if (success) setModalOpen(false);
                   }}
-                  className="flex-1 py-2 rounded-xl bg-gradient-to-r from-red-800 to-rose-900 text-amber-100 font-black text-xs shadow hover:brightness-110 active:scale-95 transition"
+                  disabled={!canForage}
+                  className={`w-full py-2 rounded-xl font-black text-xs shadow transition flex items-center justify-center gap-1.5 ${
+                    canForage
+                      ? 'bg-gradient-to-r from-amber-600 to-yellow-600 hover:brightness-110 text-stone-950 active:scale-95 cursor-pointer'
+                      : 'bg-stone-700/50 text-stone-500 cursor-not-allowed'
+                  }`}
                 >
-                  ⚔️ Raid for Grain
+                  <span>🌾</span>
+                  <span>{forageCooldownSec > 0 ? `Forage Wilds (${forageCooldownSec}s)` : '🌾 Emergency Forage (+60)'}</span>
                 </button>
               )}
-              <button
-                onClick={() => setModalOpen(false)}
-                className="px-3 py-2 rounded-xl bg-[#cbb38b] hover:bg-[#bfa379] text-[#442813] font-bold text-xs shadow transition"
-              >
-                Dismiss
-              </button>
+              <div className="flex gap-2">
+                {onRaidGrain && (
+                  <button
+                    onClick={() => {
+                      setModalOpen(false);
+                      onRaidGrain();
+                    }}
+                    className="flex-1 py-2 rounded-xl bg-gradient-to-r from-red-800 to-rose-900 text-amber-100 font-black text-xs shadow hover:brightness-110 active:scale-95 transition"
+                  >
+                    ⚔️ Raid for Grain
+                  </button>
+                )}
+                <button
+                  onClick={() => setModalOpen(false)}
+                  className="px-3 py-2 rounded-xl bg-[#cbb38b] hover:bg-[#bfa379] text-[#442813] font-bold text-xs shadow transition"
+                >
+                  Dismiss
+                </button>
+              </div>
             </div>
           </div>
         </div>

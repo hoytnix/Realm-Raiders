@@ -133,8 +133,27 @@
       - Mobile Floating HUD: Compact `🌱 Flora` pill opening full slide-up status sheet, "Surge Growth (75 🌿)" CTA button, and Flora resource pill.
       - Citadel Cartography Canvas: Floating desktop controls for instant "Claim All", "Surge Growth (75 🌿)", and Living Bramble Shield status/toggle.
 
+  - **Realm Economy, Construction Costs, Production Cycles & Famine Mechanics Rebalance**:
+    - **Famine Mechanics & Consumption Rate Overhaul (`useGameState.js`, `usePlayerStats.js`, `FamineWarning.jsx`)**:
+      - Starter Grace Buffer: Protected the realm from famine during the first 5 in-game days (Days 1–5 of Harvestide, 26 ADX), giving sovereign rulers time to establish early infrastructure.
+      - Tuned Upkeep: Paced hunger consumption ticks from continuous 1000ms drains to every 25 seconds (`hungerTick >= 25`), reducing baseline consumption rates by 50% (`population * 0.175 + troopCount * 0.325`).
+      - Famine Death Spiral Elimination: Removed the 50% agricultural & timber harvest cut during famine (`effectiveLabor = 1.0` for Farms, Granaries, and Mills), allowing players to actively farm and harvest their way out of food deficits. Famine now restricts new troop recruitment and imposes a mild -10% raid defense debuff instead of crippling production.
+      - Emergency "Forage Wilds" Decree: Implemented `forageEmergencyRations` available when Sustenance < 30 (60s cooldown), exchanging 25 Flora or 20 Gold for +60 Sustenance. Wired CTAs directly into desktop `FamineWarning` alert banner and mobile interactive crisis dropdown modal.
+    - **Accelerated Production Cycles & Higher Yields (`buildings.js`, `useGameState.js`)**:
+      - Fast Cycles: Grain Farm & Timber Mill (60s -> 20s), Deep Well & Herbalist (90s -> 25s), Stone Quarry (120s -> 35s), Granary (60s -> 20s), Greenhouse (60s -> 25s).
+      - Boosted Yields: Grain Farm (55 food), Lumber Mill (45 wood), Stone Quarry (30 stone), Deep Well (50 water), Granary (55 food), Greenhouse (35 flora).
+      - Instant First Harvest: Newly constructed Farms, Granaries, Mills, and Quarries initialize their harvest timer to cycle duration for immediate harvesting upon completion.
+    - **Lowered Foundation & Upgrade Costs (`buildings.js`, `SovereignLedger.jsx`, `ParchmentCitadelMap.jsx`, `BuildingHoverTooltip.jsx`, `App.jsx`)**:
+      - Foundation Costs: Farm (35 Gold, 15 Wood), Lumber Mill (30 Gold, 10 Stone), Deep Well (40 Gold, 20 Wood), Stone Quarry (50 Gold, 30 Wood), Granary (40 Gold, 25 Wood, 10 Stone), Greenhouse (40 Gold, 25 Wood, 15 Stone).
+      - Tier 1 -> Tier 2 Upgrade Discount: Created and exported `getBuildingUpgradeCost(bDef, currentLvl, discount)` applying a 40% material reduction (`tierFactor: 0.6`) for T1 -> T2 upgrades, synchronized across `SovereignLedger`, `BuildingInspector`, `ParchmentCitadelMap`, `BuildingHoverTooltip`, and `App.jsx`.
+    - **Boosted Initial Starter Chest & Citadel Layout (`initialState.js`)**:
+      - Starter Chest: Gold 400, Food 450, Water 350, Wood 250, Stone 150, Flora 120.
+      - Starting Grid: Pre-built Tier 1 Farm (`plot-1-2`) and Tier 1 Lumber Mill (`plot-0-2`) adjacent to Royal Keep (`plot-1-1`), initialized ready to harvest immediately.
+    - **Early-Game Access to Troop Auto-Collection (`technology.js`, `BuildingInspector.jsx`, `ParchmentWarCouncil.jsx`)**:
+      - Reduced `tech_troop_logistics` requirements from Keep Tier 2 (150 Gold, 100 Sustenance) to Keep Tier 1, 40 Gold, 30 Sustenance, and 10s duration.
+
 ## Active Focus & Next Steps
-- Continue balance calibration across Water, Flame, and Stone unique elemental active sinks and decree expansions.
+- Continue strategic balancing across Water, Flame, and Stone unique elemental active sinks and decree expansions.
 - Explore procedural ambient audio additions (rain drops, howling wind, crackling embers).
 
 

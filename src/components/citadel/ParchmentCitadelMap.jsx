@@ -1,5 +1,5 @@
 import React from 'react';
-import { BUILDINGS, EMPTY_PLOT, WEATHER_CONDITIONS } from '../../constants/index.js';
+import { BUILDINGS, EMPTY_PLOT, WEATHER_CONDITIONS, getBuildingUpgradeCost } from '../../constants/index.js';
 import { CitadelSvgGrid } from './CitadelSvgGrid.jsx';
 import { BuildingInspector } from './BuildingInspector.jsx';
 import { SovereignLedger } from './SovereignLedger.jsx';
@@ -45,9 +45,9 @@ export function ParchmentCitadelMap({
   const currentLvl = selectedPlot ? (selectedPlot.buildingId ? (selectedPlot.level || 1) : 0) : (isEmptyPlot ? 0 : (buildings[selectedBuildingId] || 1));
   const discount = faction?.id === 'humans' ? 0.5 : 1.0;
 
-  const costGold = isEmptyPlot ? 0 : Math.round((selectedDef.baseCost?.gold || 0) * Math.pow(selectedDef.costMult || 1.5, currentLvl - 1) * discount);
-  const costWood = isEmptyPlot ? 0 : Math.round((selectedDef.baseCost?.wood || 0) * Math.pow(selectedDef.costMult || 1.5, currentLvl - 1) * discount);
-  const costStone = isEmptyPlot ? 0 : Math.round((selectedDef.baseCost?.stone || 0) * Math.pow(selectedDef.costMult || 1.5, currentLvl - 1) * discount);
+  const { gold: costGold, wood: costWood, stone: costStone } = isEmptyPlot
+    ? { gold: 0, wood: 0, stone: 0 }
+    : getBuildingUpgradeCost(selectedDef, currentLvl, discount);
 
   const canAfford =
     !isEmptyPlot &&

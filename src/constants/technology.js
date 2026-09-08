@@ -18,12 +18,12 @@ export const TECHNOLOGIES = {
     inkSymbol: '🛡️',
     description: 'Dispatches standing garrison levies across the citadel perimeter to systematically reap completed yields from Farms, Mills, Quarries, and Mints without manual monarch intervention.',
     benefit: 'Idle garrison troops automatically harvest completed citadel yields.',
-    duration: 15,
+    duration: 10,
     requirements: {
-      keepTier: 2,
+      keepTier: 1,
       cost: {
-        gold: 150,
-        food: 100,
+        gold: 40,
+        food: 30,
         wood: 0,
         stone: 0
       }

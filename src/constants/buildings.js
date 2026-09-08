@@ -23,9 +23,9 @@ export const BUILDINGS = {
     tag: 'Ration Silo',
     description: 'Cultivates grain crops and stores bread flour. Sustains realm population and standing garrison.',
     gx: 0, gy: 1,
-    baseCost: { gold: 50, wood: 60, stone: 20 },
+    baseCost: { gold: 40, wood: 25, stone: 10 },
     costMult: 1.45,
-    cycleDuration: 12,
+    cycleDuration: 20,
     baseYield: { food: 55 },
     baseCapacity: 1200,
     baseHp: 280,
@@ -40,10 +40,10 @@ export const BUILDINGS = {
     tag: 'Agriculture',
     description: 'Expansive rye and barley acreage yielding regular harvests to sustain the citadel workforce.',
     gx: 2, gy: 3,
-    baseCost: { gold: 40, wood: 45, stone: 20 },
+    baseCost: { gold: 35, wood: 15, stone: 0 },
     costMult: 1.4,
-    cycleDuration: 10,
-    baseYield: { food: 45 },
+    cycleDuration: 20,
+    baseYield: { food: 55 },
     baseCapacity: 800,
     baseHp: 220,
     laborRequired: 3,
@@ -57,7 +57,7 @@ export const BUILDINGS = {
     tag: 'Military Quarters',
     description: 'Houses royal levies and trains valiant footmen to bolster defense and labor force.',
     gx: 3, gy: 2,
-    baseCost: { gold: 90, wood: 100, stone: 70 },
+    baseCost: { gold: 75, wood: 60, stone: 50 },
     costMult: 1.5,
     defense: 25,
     troopCapacity: 20,
@@ -73,9 +73,9 @@ export const BUILDINGS = {
     tag: 'Aquifer',
     description: 'Pumps fresh spring aquifer water essential to ward off severe dehydration and mutinous unrest.',
     gx: 2, gy: 1,
-    baseCost: { gold: 45, wood: 40, stone: 40 },
+    baseCost: { gold: 40, wood: 20, stone: 0 },
     costMult: 1.42,
-    cycleDuration: 10,
+    cycleDuration: 25,
     baseYield: { water: 50 },
     baseCapacity: 1200,
     baseHp: 260,
@@ -90,10 +90,10 @@ export const BUILDINGS = {
     tag: 'Forester',
     description: 'Harvests sturdy timber used for siege engines, scaffolding, and perimeter palisades.',
     gx: 0, gy: 2,
-    baseCost: { gold: 40, wood: 20, stone: 50 },
+    baseCost: { gold: 30, wood: 0, stone: 10 },
     costMult: 1.4,
-    cycleDuration: 15,
-    baseYield: { wood: 60 },
+    cycleDuration: 20,
+    baseYield: { wood: 45 },
     baseCapacity: 1500,
     baseHp: 250,
     laborRequired: 4,
@@ -107,10 +107,10 @@ export const BUILDINGS = {
     tag: 'Masonry',
     description: 'Chisels granite blocks to reinforce battlements and withstand enemy catapult bombardments.',
     gx: 2, gy: 2,
-    baseCost: { gold: 60, wood: 50, stone: 30 },
+    baseCost: { gold: 50, wood: 30, stone: 0 },
     costMult: 1.45,
-    cycleDuration: 18,
-    baseYield: { stone: 60 },
+    cycleDuration: 35,
+    baseYield: { stone: 30 },
     baseCapacity: 1500,
     baseHp: 320,
     laborRequired: 5,
@@ -124,9 +124,9 @@ export const BUILDINGS = {
     tag: 'Alchemist',
     description: 'Nurtures moonlit flora used for alchemical healing salves, magical wards, and raid enhancements.',
     gx: 1, gy: 3,
-    baseCost: { gold: 75, wood: 60, stone: 40 },
+    baseCost: { gold: 40, wood: 25, stone: 15 },
     costMult: 1.5,
-    cycleDuration: 14,
+    cycleDuration: 25,
     baseYield: { flora: 35 },
     baseCapacity: 800,
     baseHp: 220,
@@ -259,4 +259,16 @@ export function calculateResourceCaps(buildings = {}, grid = null) {
     gold: (BUILDINGS.vault?.baseCapacity || 2000) * (buildings.vault || 1)
   };
 }
+
+export function getBuildingUpgradeCost(bDef, currentLvl = 1, discount = 1.0) {
+  if (!bDef || !bDef.baseCost) return { gold: 0, wood: 0, stone: 0 };
+  // Tier 1 -> Tier 2 upgrade material requirements reduced by 40% (tierFactor 0.6)
+  const tierFactor = currentLvl === 1 ? 0.6 : Math.pow(bDef.costMult || 1.5, currentLvl - 1);
+  return {
+    gold: Math.round((bDef.baseCost.gold || 0) * tierFactor * discount),
+    wood: Math.round((bDef.baseCost.wood || 0) * tierFactor * discount),
+    stone: Math.round((bDef.baseCost.stone || 0) * tierFactor * discount)
+  };
+}
+
 

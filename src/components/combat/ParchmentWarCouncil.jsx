@@ -20,9 +20,9 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
   const keepTier = state.buildings?.keep || 1;
   const canAffordLogistics =
     !hasTroopLogistics &&
-    keepTier >= 2 &&
-    (state.resources?.gold || 0) >= 150 &&
-    (state.resources?.food || 0) >= 100;
+    keepTier >= 1 &&
+    (state.resources?.gold || 0) >= 40 &&
+    (state.resources?.food || 0) >= 30;
 
   const handleRefresh = () => {
     sounds.playCoin();
@@ -312,7 +312,7 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
                     : 'bg-stone-400 text-stone-600 cursor-not-allowed'
                 }`}
               >
-                Seal (🪙150 🌾100)
+                Seal (🪙40 🌾30)
               </button>
             )}
           </div>
@@ -472,8 +472,8 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
             </div>
           ) : (
             <div className="flex items-center gap-2 w-full justify-end">
-              <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${(state.resources?.gold || 0) >= 150 ? 'bg-yellow-900/10 text-yellow-900' : 'bg-red-900/10 text-red-900'}`}>
-                🪙 150 🌾 100
+              <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${(state.resources?.gold || 0) >= 40 ? 'bg-yellow-900/10 text-yellow-900' : 'bg-red-900/10 text-red-900'}`}>
+                🪙 40 🌾 30
               </span>
               <button
                 onClick={() => onResearchTechnology && onResearchTechnology('tech_troop_logistics')}
