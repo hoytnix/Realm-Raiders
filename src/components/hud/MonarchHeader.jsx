@@ -11,44 +11,51 @@ export function MonarchHeader({
   isMuted,
   isStarving,
   onToggleSpeed,
-  onToggleMute
+  onToggleMute,
+  onRaidGrain
 }) {
   return (
-    <header className="relative z-20 w-full px-4 sm:px-8 pt-3 flex flex-wrap items-center justify-between gap-2">
-      {/* Monarch Title, Realm Rating & Astrological Chronometer */}
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-        <div className="bg-stone-900/90 border border-amber-600/40 rounded-2xl px-3 py-1.5 shadow-lg backdrop-blur flex items-center gap-2">
-          <span className="text-xl">{currentFaction.sigil}</span>
+    <header className="relative z-20 w-full px-2 sm:px-6 pt-2 sm:pt-3 flex flex-col md:flex-row md:flex-wrap items-center justify-between gap-2">
+      {/* Row 1: Monarch Badge, Astrological Chronometer, Crisis Pill & Sound Controls */}
+      <div className="w-full md:w-auto flex items-center justify-between gap-1.5 sm:gap-3">
+        {/* Monarch Title & Rating */}
+        <div className="bg-stone-900/90 border border-amber-600/40 rounded-2xl px-2.5 sm:px-3 py-1 sm:py-1.5 shadow-lg backdrop-blur flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+          <span className="text-base sm:text-xl">{currentFaction.sigil}</span>
           <div>
-            <h1 className="text-xs sm:text-sm font-black tracking-wider text-amber-200">
+            <h1 className="text-[11px] sm:text-sm font-black tracking-wider text-amber-200 line-clamp-1">
               {currentFaction.name}
             </h1>
-            <span className="text-[10px] text-amber-500/80 font-mono block">
-              Rating {stats.overallRating} ⭐ • Def {Math.round(stats.defensePower)}
+            <span className="text-[9px] sm:text-[10px] text-amber-500/80 font-mono block">
+              ⭐ {stats.overallRating} <span className="hidden sm:inline">• Def {Math.round(stats.defensePower)}</span>
             </span>
           </div>
         </div>
 
-        {/* Astrological Chronometer & Weather Dial */}
-        <RealmChronometerHUD
-          timeState={timeState}
-          onToggleSpeed={onToggleSpeed}
-        />
+        {/* Astrological Chronometer */}
+        <div className="flex items-center gap-1.5">
+          <RealmChronometerHUD
+            timeState={timeState}
+            onToggleSpeed={onToggleSpeed}
+          />
 
-        <button
-          onClick={onToggleMute}
-          className="w-8 h-8 rounded-xl bg-stone-900/80 border border-amber-700/40 text-amber-400 hover:text-amber-200 flex items-center justify-center text-xs shadow transition active:scale-95"
-          title="Toggle Synthesizer Sound"
-        >
-          {isMuted ? '🔇' : '🔊'}
-        </button>
+          {/* Mobile Famine Crisis Pill */}
+          <FamineWarning isStarving={isStarving} onRaidGrain={onRaidGrain} />
+
+          {/* Sound Mute Toggle */}
+          <button
+            onClick={onToggleMute}
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-stone-900/80 border border-amber-700/40 text-amber-400 hover:text-amber-200 flex items-center justify-center text-xs shadow transition active:scale-95 flex-shrink-0"
+            title="Toggle Synthesizer Sound"
+          >
+            {isMuted ? '🔇' : '🔊'}
+          </button>
+        </div>
       </div>
 
-      {/* Famine Warning Inscription */}
-      <FamineWarning isStarving={isStarving} />
-
-      {/* Compact Gilded Resource HUD */}
-      <ResourceBar resources={resources} stats={stats} />
+      {/* Row 2 on mobile / Right column on desktop: Resource Ticker */}
+      <div className="w-full md:w-auto flex items-center justify-between md:justify-end gap-2 overflow-hidden">
+        <ResourceBar resources={resources} stats={stats} />
+      </div>
     </header>
   );
 }

@@ -7,6 +7,7 @@ export function ParchmentCitadelMap({
   buildings,
   harvestTimers,
   onHarvest,
+  onHarvestAll,
   selectedBuildingId,
   onSelectBuilding,
   onUpgradeBuilding,
@@ -32,6 +33,12 @@ export function ParchmentCitadelMap({
     resources.stone >= costStone;
 
   const weatherCond = WEATHER_CONDITIONS[timeState?.weather || 'clear'] || WEATHER_CONDITIONS.clear;
+
+  // Calculate ready harvests
+  const readyCount = Object.keys(BUILDINGS).filter(bId => {
+    const bDef = BUILDINGS[bId];
+    return bDef && bDef.cycleDuration && (harvestTimers[bId] || 0) >= bDef.cycleDuration;
+  }).length;
 
   return (
     <div className="flex-1 flex flex-col h-full relative">
@@ -59,7 +66,19 @@ export function ParchmentCitadelMap({
         )}
       </div>
 
-      {/* The 2.5D Isometric SVG Living Ink Canvas */}
+      {/* Floating "Claim All" Action Seal Button when crops are ready */}
+      {readyCount > 0 && onHarvestAll && (
+        <button
+          onClick={() => onHarvestAll(stats.caps, faction)}
+          className="absolute top-2 left-2 z-20 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-800 to-green-700 hover:brightness-110 active:scale-95 border-2 border-emerald-400 text-emerald-100 text-xs font-mono font-black shadow-2xl flex items-center gap-1.5 animate-bounce transition"
+          title="Claim all ripe yields immediately"
+        >
+          <span className="text-base">🌾</span>
+          <span>Claim All ({readyCount})</span>
+        </button>
+      )}
+
+      {/* The 2.5D Isometric SVG Living Ink Canvas with pinch-zoom/pan/sweep */}
       <CitadelSvgGrid
         buildings={buildings}
         harvestTimers={harvestTimers}
@@ -71,7 +90,7 @@ export function ParchmentCitadelMap({
         onHoverUpgrade={onHoverUpgrade}
       />
 
-      {/* Diegetic Inspection Banner & Wax Seal Decree Button */}
+      {/* Diegetic Inspection Banner / Collapsible Bottom Sheet */}
       <BuildingInspector
         selectedDef={selectedDef}
         currentLvl={currentLvl}

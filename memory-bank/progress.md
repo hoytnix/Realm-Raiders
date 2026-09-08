@@ -28,6 +28,17 @@
   - [x] Added `vite.config.js`, `tailwind.config.js`, `postcss.config.js`.
   - [x] Added `netlify.toml` and `public/_redirects` for Netlify static SPA hosting and route redirects.
   - [x] Migrated project to `pnpm` exclusively, configured build approvals, and updated `GEMINI.md`.
+- [x] **Mobile-First Tactical Viewport Enhancements (375px+ Portrait)**:
+  - [x] Edge-to-Edge Parchment layout collapsing ambient armrests & desk padding below 768px.
+  - [x] Swipeable & expandable 48px peek bottom sheet for `BuildingInspector`.
+  - [x] Native 2-finger pinch-to-zoom (0.8x-2.5x) and 1-finger pan with floating "Recenter Citadel" compass button in `CitadelSvgGrid`.
+  - [x] 2-row mobile HUD with condensed chronometer (`D{day} • {HH}:{MM}`) and horizontally scrollable resource ticker.
+  - [x] Ergonomic thumb-zone bottom navigation bar (`MobileBottomNav`) with context-sensitive FAB.
+  - [x] Gestural "Sweep-to-Harvest" drag-and-collect and floating "Claim All" seal button.
+  - [x] Gyroscope parallax support via `DeviceOrientationEvent` in `useDeskTilt`.
+  - [x] Web Vibration API tactile feedback (`haptics.light`, `haptics.harvest`, `haptics.heavy`).
+  - [x] Compact crisis pill & interactive dropdown modal for famine alerts.
+  - [x] Full-screen slide-up parchment folios with safe-area insets and 48px+ touch targets.
 
 ## Planned / In Progress
 - [ ] Additional sound synthesizers (ambient wind, rain, blizzard noise nodes).

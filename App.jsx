@@ -26,7 +26,8 @@ import {
 } from './src/components/common/index.js';
 
 import {
-  MonarchHeader
+  MonarchHeader,
+  MobileBottomNav
 } from './src/components/hud/index.js';
 
 import {
@@ -89,6 +90,7 @@ export default function App() {
     inkPulseTick,
     handleToggleSpeed,
     handleHarvestBuilding,
+    handleHarvestAll,
     handleIssueRoyalDecree,
     recordRaidVictory,
     handleDoubleRaidSpoils,
@@ -199,10 +201,28 @@ export default function App() {
     timeSpeed: 1
   };
 
+  const readyHarvestsCount = Object.keys(BUILDINGS).filter(bId => {
+    const bDef = BUILDINGS[bId];
+    return bDef && bDef.cycleDuration && (gameState.harvestTimers[bId] || 0) >= bDef.cycleDuration;
+  }).length;
+
+  const selectedDef = BUILDINGS[selectedBuildingId] || BUILDINGS.keep;
+  const currentLvl = gameState.buildings[selectedBuildingId] || 1;
+  const discount = currentFaction?.id === 'humans' ? 0.5 : 1.0;
+  const costGold = Math.round(selectedDef.baseCost.gold * Math.pow(selectedDef.costMult, currentLvl - 1) * discount);
+  const costWood = Math.round(selectedDef.baseCost.wood * Math.pow(selectedDef.costMult, currentLvl - 1) * discount);
+  const costStone = Math.round(selectedDef.baseCost.stone * Math.pow(selectedDef.costMult, currentLvl - 1) * discount);
+  const canUpgradeSelected =
+    gameState.resources.gold >= costGold &&
+    gameState.resources.wood >= costWood &&
+    gameState.resources.stone >= costStone;
+
+  const hasUnavengedFeuds = gameState.revengeLedger.some(r => !r.revenged);
+
   return (
     <div
       onMouseMove={handlePointerMove}
-      className={`relative w-full h-screen overflow-hidden bg-stone-950 font-serif select-none flex flex-col justify-between ${
+      className={`relative w-full h-[100dvh] overflow-hidden bg-stone-950 font-serif select-none flex flex-col justify-between ${
         screenShake ? 'animate-bounce' : ''
       }`}
     >
@@ -233,6 +253,7 @@ export default function App() {
         isStarving={isStarving}
         onToggleSpeed={handleToggleSpeed}
         onToggleMute={() => setIsMuted(!isMuted)}
+        onRaidGrain={() => setDeskView('war')}
       />
 
       {/* LAYER 3: THE OAK WAR TABLE & THE LIVING PARCHMENT */}
@@ -250,6 +271,7 @@ export default function App() {
             buildings={gameState.buildings}
             harvestTimers={gameState.harvestTimers}
             onHarvest={onHarvest}
+            onHarvestAll={handleHarvestAll}
             selectedBuildingId={selectedBuildingId}
             onSelectBuilding={setSelectedBuildingId}
             onUpgradeBuilding={onUpgradeBuilding}
@@ -293,11 +315,24 @@ export default function App() {
         )}
       </DeskSurface>
 
-      {/* LAYER 4: LOWER FOREGROUND (The Royal Throne & Monarch Hands) */}
+      {/* LAYER 4: LOWER FOREGROUND (The Royal Throne & Monarch Hands - Desktop only) */}
       <ThroneArmrests
         tilt={tilt}
         currentFaction={currentFaction}
         setDeskView={setDeskView}
+      />
+
+      {/* LAYER 5: ERGONOMIC THUMB-ZONE BOTTOM NAVIGATION (Mobile only) */}
+      <MobileBottomNav
+        deskView={deskView}
+        setDeskView={setDeskView}
+        hasUnavengedFeuds={hasUnavengedFeuds}
+        readyHarvestsCount={readyHarvestsCount}
+        canUpgradeSelected={canUpgradeSelected}
+        selectedBuildingName={selectedDef.name}
+        onHarvestAll={() => handleHarvestAll(stats.caps, currentFaction)}
+        onUpgradeSelected={(e) => onUpgradeBuilding(selectedBuildingId, e)}
+        onTriggerStamp={(e) => triggerWaxSplat(e?.clientX || window.innerWidth / 2, e?.clientY || window.innerHeight / 2)}
       />
 
       {/* REWARDED VIDEO AD GATE SIMULATOR */}

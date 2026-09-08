@@ -10,6 +10,7 @@ import {
   WEATHER_POOL,
   sounds
 } from '../constants/index.js';
+import { haptics } from '../utils/index.js';
 
 export function useGameState() {
   const [gameState, setGameState] = useState(() => {
@@ -176,6 +177,7 @@ export function useGameState() {
     const weather = WEATHER_CONDITIONS[gameState.timeState?.weather || 'clear'] || WEATHER_CONDITIONS.clear;
 
     sounds.playCoin();
+    haptics.harvest();
     const lvl = gameState.buildings[bId] || 1;
     const starvingPenalty = isStarving ? 0.5 : 1.0;
 
@@ -205,6 +207,60 @@ export function useGameState() {
     });
   };
 
+  const handleHarvestAll = (caps, currentFaction) => {
+    if (!currentFaction) return 0;
+
+    const season = SEASONS[SEASON_ORDER[gameState.timeState?.seasonIndex || 0]] || SEASONS.spring;
+    const weather = WEATHER_CONDITIONS[gameState.timeState?.weather || 'clear'] || WEATHER_CONDITIONS.clear;
+    const starvingPenalty = isStarving ? 0.5 : 1.0;
+
+    let harvestedCount = 0;
+    const accumulatedYields = {};
+    const resetTimers = { ...gameState.harvestTimers };
+
+    Object.keys(BUILDINGS).forEach(bId => {
+      const bDef = BUILDINGS[bId];
+      if (!bDef || !bDef.baseYield || !bDef.cycleDuration) return;
+
+      const currentProgress = gameState.harvestTimers[bId] || 0;
+      if (currentProgress >= bDef.cycleDuration) {
+        harvestedCount++;
+        const lvl = gameState.buildings[bId] || 1;
+        const [resKey, baseVal] = Object.entries(bDef.baseYield)[0];
+        const fMult = currentFaction.productionMultipliers[resKey] || 1.0;
+        const sMult = season.multipliers[resKey] || 1.0;
+        const wMult = weather.multipliers[resKey] || 1.0;
+
+        const totalYield = Math.round(
+          baseVal * (1 + (lvl - 1) * 0.5) * fMult * sMult * wMult * starvingPenalty
+        );
+
+        accumulatedYields[resKey] = (accumulatedYields[resKey] || 0) + totalYield;
+        resetTimers[bId] = 0;
+      }
+    });
+
+    if (harvestedCount === 0) return 0;
+
+    sounds.playCoin();
+    haptics.harvest();
+
+    setGameState(prev => {
+      const updatedRes = { ...prev.resources };
+      Object.entries(accumulatedYields).forEach(([resKey, amt]) => {
+        const cap = caps[resKey] || 1000;
+        updatedRes[resKey] = Math.min(cap, (prev.resources[resKey] || 0) + amt);
+      });
+      return {
+        ...prev,
+        resources: updatedRes,
+        harvestTimers: resetTimers
+      };
+    });
+
+    return harvestedCount;
+  };
+
   const handleIssueRoyalDecree = (bId, currentFaction, onTriggerDecreeStamp) => {
     const bDef = BUILDINGS[bId];
     if (!bDef || !currentFaction) return;
@@ -226,6 +282,7 @@ export function useGameState() {
 
     // Trigger visual stamping feedback and sound
     sounds.playWaxSealThud();
+    haptics.heavy();
     if (onTriggerDecreeStamp) onTriggerDecreeStamp();
 
     setTimeout(() => {
@@ -250,6 +307,7 @@ export function useGameState() {
   };
 
   const recordRaidVictory = (rival, newLoot, caps) => {
+    haptics.harvest();
     setGameState(prev => ({
       ...prev,
       totalRaidsWon: prev.totalRaidsWon + 1,
@@ -275,6 +333,7 @@ export function useGameState() {
   };
 
   const handleDoubleRaidSpoils = (doubledLoot, caps) => {
+    haptics.harvest();
     setGameState(prev => ({
       ...prev,
       resources: {
@@ -295,6 +354,7 @@ export function useGameState() {
 
   const selectFaction = (factionId) => {
     sounds.playWaxSealThud();
+    haptics.heavy();
     setGameState(prev => ({ ...prev, faction: factionId }));
   };
 
@@ -307,6 +367,7 @@ export function useGameState() {
     inkPulseTick,
     handleToggleSpeed,
     handleHarvestBuilding,
+    handleHarvestAll,
     handleIssueRoyalDecree,
     recordRaidVictory,
     handleDoubleRaidSpoils,

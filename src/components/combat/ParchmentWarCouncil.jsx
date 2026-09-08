@@ -1,33 +1,45 @@
 import React, { useState } from 'react';
 import { FACTIONS, sounds } from '../../constants/index.js';
-import { generateRivals } from '../../utils/rivals.js';
+import { generateRivals, haptics } from '../../utils/index.js';
 
 export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBloodFeud }) {
   const [rivals, setRivals] = useState(() => generateRivals(stats.overallRating));
 
   const handleRefresh = () => {
     sounds.playCoin();
+    haptics.light();
     setRivals(generateRivals(stats.overallRating));
   };
 
+  const handleRaidClick = (rival) => {
+    haptics.heavy();
+    onLaunchRaid(rival);
+  };
+
+  const handleFeudClick = (record) => {
+    haptics.heavy();
+    onDeclareBloodFeud(record);
+  };
+
   return (
-    <div className="flex-1 p-3 sm:p-5 overflow-y-auto space-y-4">
+    <div className="flex-1 p-3 sm:p-5 overflow-y-auto space-y-4 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-5">
+      {/* War Council Header */}
       <div className="flex items-center justify-between border-b-2 border-[#bfa379]/60 pb-2">
         <div>
           <h2 className="text-sm sm:text-base font-black text-[#442813] flex items-center gap-1.5">
             <span>⚔️ Scouted Rival Strongholds (±7% Rating)</span>
           </h2>
           <p className="text-[11px] text-[#6b4a2e]">
-            Intercepted cartography pins targets holding exposed unbanked stores vulnerable to catapult bombardments.
+            Intercepted cartography pins targets holding exposed unbanked stores vulnerable to catapult strikes.
           </p>
         </div>
 
         <button
           onClick={handleRefresh}
-          className="px-2.5 py-1 rounded-lg bg-[#ddcca8] hover:bg-[#d0bc93] text-[#442813] text-xs font-bold border border-[#8c6843] flex items-center gap-1 transition"
+          className="min-h-[44px] px-3 py-1.5 rounded-xl bg-[#ddcca8] hover:bg-[#d0bc93] active:scale-95 text-[#442813] text-xs font-bold border border-[#8c6843] flex items-center gap-1.5 transition flex-shrink-0"
         >
           <span>🔄</span>
-          <span>Scout Targets</span>
+          <span className="hidden sm:inline">Scout Targets</span>
         </button>
       </div>
 
@@ -70,8 +82,8 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
               </div>
 
               <button
-                onClick={() => onLaunchRaid(rival)}
-                className="mt-3 w-full py-2 px-3 rounded-xl bg-gradient-to-r from-red-800 to-rose-900 hover:brightness-110 active:scale-95 text-amber-100 font-black text-xs shadow transition flex items-center justify-center gap-1.5"
+                onClick={() => handleRaidClick(rival)}
+                className="mt-3 w-full min-h-[48px] py-2.5 px-3 rounded-xl bg-gradient-to-r from-red-800 to-rose-900 hover:brightness-110 active:scale-95 text-amber-100 font-black text-xs shadow transition flex items-center justify-center gap-1.5"
               >
                 <span>📺</span>
                 <span>March Vanguard (Watch Ad)</span>
@@ -90,7 +102,7 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
           {state.revengeLedger.map(record => (
             <div
               key={record.id}
-              className={`p-2.5 rounded-xl border flex items-center justify-between ${
+              className={`p-3 rounded-xl border flex items-center justify-between gap-2 ${
                 record.revenged
                   ? 'bg-[#e4d4b3]/60 border-stone-400 opacity-60'
                   : 'bg-[#ebdcc1] border-red-800/80 shadow-sm'
@@ -110,8 +122,8 @@ export function ParchmentWarCouncil({ stats, state, onLaunchRaid, onDeclareBlood
                 <span className="text-[10px] font-mono text-[#6b4a2e] font-bold">Avenged ✓</span>
               ) : (
                 <button
-                  onClick={() => onDeclareBloodFeud(record)}
-                  className="px-2.5 py-1 rounded-lg bg-red-800 hover:bg-red-700 text-rose-100 text-xs font-bold shadow transition"
+                  onClick={() => handleFeudClick(record)}
+                  className="min-h-[44px] px-3 py-1.5 rounded-xl bg-red-800 hover:bg-red-700 active:scale-95 text-rose-100 text-xs font-bold shadow transition"
                 >
                   Declare Blood Feud 🗡️
                 </button>

@@ -32,3 +32,12 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #8c6843;
 }
+
+/* Hide scrollbar for clean horizontal tickers */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

@@ -4,7 +4,7 @@ import { sounds } from '../../constants/index.js';
 export function ThroneArmrests({ tilt, currentFaction, setDeskView }) {
   return (
     <footer
-      className="relative z-30 pointer-events-none w-full flex items-end justify-between px-2 sm:px-8 pb-1 transition-transform duration-200 ease-out"
+      className="hidden md:flex relative z-30 pointer-events-none w-full items-end justify-between px-2 sm:px-8 pb-1 transition-transform duration-200 ease-out"
       style={{
         transform: `translate(${tilt.x * 12}px, ${tilt.y * 8}px)`
       }}

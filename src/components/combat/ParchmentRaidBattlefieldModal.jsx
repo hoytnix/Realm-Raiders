@@ -1,5 +1,6 @@
 import React from 'react';
 import { ISO_W, ISO_H, gridToParchmentIso } from '../../constants/index.js';
+import { haptics } from '../../utils/index.js';
 
 export function ParchmentRaidBattlefieldModal({ raid, onStrike, onDoubleLoot, onClose }) {
   const { rival, strikesLeft, targetedBuildings, lootGained, isFinished, doubled } = raid;
@@ -12,29 +13,52 @@ export function ParchmentRaidBattlefieldModal({ raid, onStrike, onDoubleLoot, on
     { key: 'watchtower', name: 'Tower', gx: 2, gy: 0, icon: '🏹' }
   ];
 
+  const handleStrikeTarget = (targetKey) => {
+    if (strikesLeft > 0) {
+      haptics.heavy();
+      onStrike(targetKey);
+    }
+  };
+
+  const handleReturn = () => {
+    haptics.light();
+    onClose();
+  };
+
   return (
-    <div className="fixed inset-0 bg-stone-950/90 backdrop-blur-md z-50 flex items-center justify-center p-3">
-      <div className="bg-[#ebdcc1] border-4 border-[#8c6843] rounded-3xl max-w-2xl w-full p-4 sm:p-5 shadow-2xl flex flex-col space-y-3 text-stone-900">
+    <div className="fixed inset-0 bg-stone-950/95 backdrop-blur-md z-50 flex items-center justify-center p-0 sm:p-3">
+      <div className="bg-[#ebdcc1] border-0 sm:border-4 border-[#8c6843] rounded-none sm:rounded-3xl max-w-2xl w-full h-full sm:h-auto p-4 sm:p-5 shadow-2xl flex flex-col justify-between space-y-3 text-stone-900 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] overflow-y-auto">
+        {/* Sticky Header with Ammo & Return */}
         <div className="flex items-center justify-between border-b-2 border-[#bfa379] pb-2">
           <div>
-            <h3 className="text-base font-black text-[#442813]">
+            <h3 className="text-sm sm:text-base font-black text-[#442813]">
               Catapult Siege: {rival.name}
             </h3>
             <span className="text-[10px] text-[#6b4a2e]">
-              Tap target structures to expend your 3 heavy stone munitions.
+              Tap target fortifications to fire heavy stone munitions.
             </span>
           </div>
 
-          <div className="px-3 py-1 rounded-xl bg-red-950 text-red-200 font-mono text-xs font-bold flex items-center gap-1.5">
-            <span>Ammo:</span>
-            <span>{'💣 '.repeat(strikesLeft)}</span>
-            {strikesLeft === 0 && <span className="text-red-400">EXPENDED</span>}
+          <div className="flex items-center gap-2">
+            <div className="px-2.5 py-1 rounded-xl bg-red-950 text-red-200 font-mono text-xs font-bold flex items-center gap-1">
+              <span>Munitions:</span>
+              <span>{'💣 '.repeat(strikesLeft)}</span>
+              {strikesLeft === 0 && <span className="text-red-400">0</span>}
+            </div>
+            {isFinished && (
+              <button
+                onClick={handleReturn}
+                className="sm:hidden min-h-[44px] min-w-[44px] px-3 py-1 bg-stone-900 text-stone-200 rounded-xl font-bold text-xs"
+              >
+                ✕
+              </button>
+            )}
           </div>
         </div>
 
         {/* 2.5D Raid SVG Map */}
-        <div className="w-full h-64 sm:h-72 bg-[#dfcba6] rounded-2xl border-2 border-[#8c6843] flex items-center justify-center relative overflow-hidden">
-          <svg viewBox="0 0 540 320" className="w-full h-full max-w-lg">
+        <div className="w-full flex-1 sm:h-72 min-h-[240px] bg-[#dfcba6] rounded-2xl border-2 border-[#8c6843] flex items-center justify-center relative overflow-hidden shadow-inner">
+          <svg viewBox="0 0 540 320" className="w-full h-full max-w-lg select-none">
             {/* Grid */}
             {[0, 1, 2, 3, 4].map(gx =>
               [0, 1, 2, 3, 4].map(gy => {
@@ -66,8 +90,8 @@ export function ParchmentRaidBattlefieldModal({ raid, onStrike, onDoubleLoot, on
               return (
                 <g
                   key={t.key}
-                  onClick={() => strikesLeft > 0 && onStrike(t.key)}
-                  className={`cursor-pointer ${strikesLeft > 0 ? 'hover:opacity-80' : ''}`}
+                  onClick={() => handleStrikeTarget(t.key)}
+                  className={`cursor-pointer ${strikesLeft > 0 ? 'hover:opacity-80 active:scale-95' : ''}`}
                 >
                   <polygon
                     points={`
@@ -95,8 +119,8 @@ export function ParchmentRaidBattlefieldModal({ raid, onStrike, onDoubleLoot, on
                     points={`
                       ${x},${y - ISO_H / 3 - height}
                       ${x + ISO_W / 2.5},${y - height}
-                      ${x},${y + ISO_H / 3 - height}
-                      ${x - ISO_W / 2.5},${y - height}
+                      ${x + ISO_W / 2.5},${y}
+                      ${x},${y + ISO_H / 3}
                     `}
                     fill={isDestroyed ? '#450a0a' : '#ca8a04'}
                     stroke="#3f2314"
@@ -128,7 +152,7 @@ export function ParchmentRaidBattlefieldModal({ raid, onStrike, onDoubleLoot, on
         </div>
 
         {/* Live Loot Tallies */}
-        <div className="bg-[#ebdcc1] border-2 border-[#8c6843] p-2.5 rounded-xl flex items-center justify-between text-xs font-mono font-bold">
+        <div className="bg-[#ebdcc1] border-2 border-[#8c6843] p-2.5 rounded-xl flex items-center justify-between text-xs font-mono font-bold shadow-sm">
           <span>Plundered Spoils:</span>
           <div className="flex gap-2">
             <span className="text-yellow-800">🪙 {lootGained.gold}</span>
@@ -138,18 +162,21 @@ export function ParchmentRaidBattlefieldModal({ raid, onStrike, onDoubleLoot, on
         </div>
 
         {isFinished && (
-          <div className="flex items-center gap-2 pt-1">
+          <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
             {!doubled && (
               <button
-                onClick={onDoubleLoot}
-                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-500 hover:brightness-110 text-stone-950 font-black text-xs shadow"
+                onClick={() => {
+                  haptics.harvest();
+                  onDoubleLoot();
+                }}
+                className="w-full sm:flex-1 min-h-[48px] py-3 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-500 hover:brightness-110 active:scale-95 text-stone-950 font-black text-xs shadow-lg"
               >
                 Double Loot (Watch Ad) ✨
               </button>
             )}
             <button
-              onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-900 text-stone-200 font-black text-xs shadow"
+              onClick={handleReturn}
+              className="w-full sm:flex-1 min-h-[48px] py-3 rounded-xl bg-stone-800 hover:bg-stone-900 active:scale-95 text-stone-200 font-black text-xs shadow-lg"
             >
               Return to Throne
             </button>

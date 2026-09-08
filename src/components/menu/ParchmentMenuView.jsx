@@ -1,4 +1,5 @@
 import React from 'react';
+import { haptics } from '../../utils/index.js';
 
 export function ParchmentMenuView({
   currentFaction,
@@ -10,6 +11,18 @@ export function ParchmentMenuView({
   onResetSave
 }) {
   const pendingBloodFeuds = state.revengeLedger.filter(r => !r.revenged).length;
+
+  const handleNavClick = (dest) => {
+    haptics.light();
+    onNavigate(dest);
+  };
+
+  const handleReset = () => {
+    haptics.heavy();
+    if (window.confirm('Are you certain you wish to abdicate the throne and reset all archives?')) {
+      onResetSave();
+    }
+  };
 
   const menuSections = [
     {
@@ -46,7 +59,7 @@ export function ParchmentMenuView({
   ];
 
   return (
-    <div className="flex-1 p-3 sm:p-5 overflow-y-auto space-y-4 text-stone-900">
+    <div className="flex-1 p-3 sm:p-5 overflow-y-auto space-y-4 text-stone-900 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-5">
       {/* Menu Header */}
       <div className="border-b-2 border-[#bfa379]/80 pb-2.5 flex flex-wrap items-center justify-between gap-2">
         <div>
@@ -60,8 +73,8 @@ export function ParchmentMenuView({
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => onNavigate('citadel')}
-            className="px-2.5 py-1 rounded-lg bg-[#ddcca8] hover:bg-[#d0bc93] text-[#442813] text-xs font-bold border border-[#8c6843] flex items-center gap-1 transition"
+            onClick={() => handleNavClick('citadel')}
+            className="min-h-[44px] px-3 py-1.5 rounded-xl bg-[#ddcca8] hover:bg-[#d0bc93] active:scale-95 text-[#442813] text-xs font-bold border border-[#8c6843] flex items-center gap-1.5 transition"
           >
             <span>🏰</span>
             <span>Return to Map</span>
@@ -74,8 +87,8 @@ export function ParchmentMenuView({
         {menuSections.map(sec => (
           <div
             key={sec.id}
-            onClick={() => onNavigate(sec.id)}
-            className={`p-3.5 rounded-2xl border-2 ${sec.accentColor} shadow-md flex flex-col justify-between cursor-pointer hover:scale-[1.02] transition-transform group`}
+            onClick={() => handleNavClick(sec.id)}
+            className={`p-3.5 rounded-2xl border-2 ${sec.accentColor} shadow-md flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-95 transition-transform group`}
           >
             <div>
               <div className="flex items-start justify-between">
@@ -99,8 +112,8 @@ export function ParchmentMenuView({
             </div>
 
             <button
-              onClick={(e) => { e.stopPropagation(); onNavigate(sec.id); }}
-              className="mt-3 w-full py-1.5 px-2.5 rounded-xl bg-[#6b4724] group-hover:bg-[#523315] text-amber-100 text-xs font-bold transition flex items-center justify-center gap-1 shadow-sm"
+              onClick={(e) => { e.stopPropagation(); handleNavClick(sec.id); }}
+              className="mt-3 w-full min-h-[44px] py-2 px-2.5 rounded-xl bg-[#6b4724] group-hover:bg-[#523315] text-amber-100 text-xs font-bold transition flex items-center justify-center gap-1 shadow-sm"
             >
               {sec.actionLabel}
             </button>
@@ -180,8 +193,8 @@ export function ParchmentMenuView({
       <div className="border-t-2 border-[#bfa379]/60 pt-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <button
-            onClick={onToggleMute}
-            className="px-3 py-1.5 rounded-xl bg-[#ddcca8] hover:bg-[#d0bc93] text-[#442813] text-xs font-bold border border-[#8c6843] flex items-center gap-1.5 shadow-sm transition"
+            onClick={() => { haptics.light(); onToggleMute(); }}
+            className="min-h-[44px] px-3.5 py-2 rounded-xl bg-[#ddcca8] hover:bg-[#d0bc93] active:scale-95 text-[#442813] text-xs font-bold border border-[#8c6843] flex items-center gap-1.5 shadow-sm transition"
           >
             <span>{isMuted ? '🔇' : '🔊'}</span>
             <span>{isMuted ? 'Synthesizer Muted' : 'Audio Active'}</span>
@@ -189,8 +202,8 @@ export function ParchmentMenuView({
         </div>
 
         <button
-          onClick={onResetSave}
-          className="px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-900 text-rose-300 text-xs font-bold shadow transition flex items-center gap-1.5"
+          onClick={handleReset}
+          className="min-h-[44px] px-3.5 py-2 rounded-xl bg-stone-800 hover:bg-stone-900 active:scale-95 text-rose-300 text-xs font-bold shadow transition flex items-center gap-1.5"
         >
           <span>⚠️</span>
           <span>Reset Citadel & Allegiance</span>
