@@ -68,6 +68,22 @@ export function useGameState() {
         }
         if (!parsed.grid || !Array.isArray(parsed.grid)) {
           parsed.grid = createDefaultGrid();
+        } else {
+          parsed.grid = parsed.grid.map(plot => {
+            if (plot.buildingId && (plot.level === undefined || plot.level === null)) {
+              return {
+                ...plot,
+                level: (parsed.buildings && parsed.buildings[plot.buildingId]) || 1
+              };
+            }
+            if (!plot.buildingId && (plot.level === undefined || plot.level === null)) {
+              return {
+                ...plot,
+                level: 0
+              };
+            }
+            return plot;
+          });
         }
         if (!parsed.buildings) {
           parsed.buildings = { ...DEFAULT_STATE.buildings };
@@ -242,22 +258,27 @@ export function useGameState() {
         const hasTroopLogistics = (prev.technologies || []).includes('tech_troop_logistics');
         const canAutoCollect = hasTroopLogistics && nextTroops.total >= 1;
         const laborEfficiency = getLaborEfficiency(prev);
-        const storageCaps = calculateResourceCaps(prev.buildings);
+        const storageCaps = calculateResourceCaps(prev.buildings, prev.grid);
 
         const updatedTimers = { ...prev.harvestTimers };
         const autoYields = {};
         let autoHarvestCount = 0;
 
-        Object.keys(updatedTimers).forEach(bId => {
-          const bDef = BUILDINGS[bId];
+        const plotsToHarvest = prev.grid && Array.isArray(prev.grid) && prev.grid.some(p => p.buildingId)
+          ? prev.grid.filter(p => p.buildingId)
+          : Object.keys(BUILDINGS).map(bId => ({ id: bId, buildingId: bId, level: prev.buildings[bId] || 1 }));
+
+        plotsToHarvest.forEach(plot => {
+          const bDef = BUILDINGS[plot.buildingId];
           if (bDef && bDef.cycleDuration && bDef.baseYield) {
-            const currentVal = updatedTimers[bId] || 0;
+            const timerKey = plot.id;
+            const currentVal = updatedTimers[timerKey] ?? updatedTimers[plot.buildingId] ?? 0;
             const nextVal = currentVal + (1 * speed);
 
             if (canAutoCollect && nextVal >= bDef.cycleDuration) {
               // Troop Quartermaster / Garrison automatically collects completed harvest!
               autoHarvestCount++;
-              const lvl = prev.buildings[bId] || 1;
+              const lvl = plot.level || 1;
               const [resKey, baseVal] = Object.entries(bDef.baseYield)[0];
               const fMult = factionData.productionMultipliers?.[resKey] || 1.0;
               const sMult = season.multipliers?.[resKey] || 1.0;
@@ -269,9 +290,12 @@ export function useGameState() {
               );
 
               autoYields[resKey] = (autoYields[resKey] || 0) + totalYield;
-              updatedTimers[bId] = 0; // Harvest cycle harvested and restarted
+              updatedTimers[timerKey] = 0; // Harvest cycle harvested and restarted
+              if (updatedTimers[plot.buildingId] !== undefined) {
+                updatedTimers[plot.buildingId] = 0;
+              }
             } else {
-              updatedTimers[bId] = Math.min(bDef.cycleDuration, nextVal);
+              updatedTimers[timerKey] = Math.min(bDef.cycleDuration, nextVal);
             }
           }
         });
@@ -340,23 +364,31 @@ export function useGameState() {
 
   // Helper to compute labor efficiency for harvests
   const getLaborEfficiency = (state) => {
-    const bLevels = state.buildings || {};
-    const totalLaborDemand = Object.entries(bLevels).reduce((sum, [bId, lvl]) => {
-      if (!lvl || lvl <= 0) return sum;
-      const bDef = BUILDINGS[bId];
-      return bDef ? sum + (bDef.laborRequired || 2) : sum;
-    }, 0);
+    const totalLaborDemand = state.grid && Array.isArray(state.grid) && state.grid.some(p => p.buildingId)
+      ? state.grid.reduce((sum, plot) => {
+          if (!plot.buildingId) return sum;
+          const bDef = BUILDINGS[plot.buildingId];
+          return bDef ? sum + (bDef.laborRequired || 2) : sum;
+        }, 0)
+      : Object.entries(state.buildings || {}).reduce((sum, [bId, lvl]) => {
+          if (!lvl || lvl <= 0) return sum;
+          const bDef = BUILDINGS[bId];
+          return bDef ? sum + (bDef.laborRequired || 2) : sum;
+        }, 0);
 
     const livingTroops = state.troops?.total ?? 20;
     const rawEfficiency = livingTroops / Math.max(1, totalLaborDemand);
     return isNaN(rawEfficiency) ? 0.08 : Math.max(0.08, Math.min(1.0, rawEfficiency));
   };
 
-  const handleHarvestBuilding = (bId, caps, currentFaction) => {
+  const handleHarvestBuilding = (targetId, caps, currentFaction) => {
+    const targetPlot = (gameState.grid || []).find(p => p.id === targetId || p.buildingId === targetId);
+    const bId = targetPlot ? targetPlot.buildingId : targetId;
     const bDef = BUILDINGS[bId];
     if (!bDef || !bDef.baseYield || !currentFaction) return;
 
-    const currentProgress = gameState.harvestTimers[bId] || 0;
+    const timerKey = targetPlot ? targetPlot.id : bId;
+    const currentProgress = gameState.harvestTimers[timerKey] ?? gameState.harvestTimers[bId] ?? 0;
     if (currentProgress < bDef.cycleDuration) return; // not ready
 
     const season = SEASONS[SEASON_ORDER[gameState.timeState?.seasonIndex || 0]] || SEASONS.spring;
@@ -364,7 +396,7 @@ export function useGameState() {
 
     sounds.playCoin();
     haptics.harvest();
-    const lvl = gameState.buildings[bId] || 1;
+    const lvl = targetPlot ? (targetPlot.level || 1) : (gameState.buildings[bId] || 1);
     const laborEfficiency = getLaborEfficiency(gameState);
 
     const [resKey, baseVal] = Object.entries(bDef.baseYield)[0];
@@ -387,7 +419,8 @@ export function useGameState() {
         },
         harvestTimers: {
           ...prev.harvestTimers,
-          [bId]: 0
+          [timerKey]: 0,
+          ...(targetPlot?.buildingId ? { [targetPlot.buildingId]: 0 } : {})
         }
       };
     });
@@ -404,14 +437,19 @@ export function useGameState() {
     const accumulatedYields = {};
     const resetTimers = { ...gameState.harvestTimers };
 
-    Object.keys(BUILDINGS).forEach(bId => {
-      const bDef = BUILDINGS[bId];
+    const plotsToHarvest = gameState.grid && Array.isArray(gameState.grid) && gameState.grid.some(p => p.buildingId)
+      ? gameState.grid.filter(p => p.buildingId)
+      : Object.keys(BUILDINGS).map(bId => ({ id: bId, buildingId: bId, level: gameState.buildings[bId] || 1 }));
+
+    plotsToHarvest.forEach(plot => {
+      const bDef = BUILDINGS[plot.buildingId];
       if (!bDef || !bDef.baseYield || !bDef.cycleDuration) return;
 
-      const currentProgress = gameState.harvestTimers[bId] || 0;
+      const timerKey = plot.id;
+      const currentProgress = gameState.harvestTimers[timerKey] ?? gameState.harvestTimers[plot.buildingId] ?? 0;
       if (currentProgress >= bDef.cycleDuration) {
         harvestedCount++;
-        const lvl = gameState.buildings[bId] || 1;
+        const lvl = plot.level || 1;
         const [resKey, baseVal] = Object.entries(bDef.baseYield)[0];
         const fMult = currentFaction.productionMultipliers[resKey] || 1.0;
         const sMult = season.multipliers[resKey] || 1.0;
@@ -422,7 +460,10 @@ export function useGameState() {
         );
 
         accumulatedYields[resKey] = (accumulatedYields[resKey] || 0) + totalYield;
-        resetTimers[bId] = 0;
+        resetTimers[timerKey] = 0;
+        if (plot.buildingId) {
+          resetTimers[plot.buildingId] = 0;
+        }
       }
     });
 
@@ -447,11 +488,13 @@ export function useGameState() {
     return harvestedCount;
   };
 
-  const handleIssueRoyalDecree = (bId, currentFaction, onTriggerDecreeStamp) => {
+  const handleIssueRoyalDecree = (targetId, currentFaction, onTriggerDecreeStamp) => {
+    const targetPlot = (gameState.grid || []).find(p => p.id === targetId || p.buildingId === targetId);
+    const bId = targetPlot ? targetPlot.buildingId : targetId;
     const bDef = BUILDINGS[bId];
     if (!bDef || !currentFaction) return;
 
-    const currentLvl = gameState.buildings[bId] || 1;
+    const currentLvl = targetPlot ? (targetPlot.level || 1) : (gameState.buildings[bId] || 1);
     const discount = currentFaction.id === 'humans' ? 0.5 : 1.0;
     const costGold = Math.round(bDef.baseCost.gold * Math.pow(bDef.costMult, currentLvl - 1) * discount);
     const costWood = Math.round(bDef.baseCost.wood * Math.pow(bDef.costMult, currentLvl - 1) * discount);
@@ -481,6 +524,18 @@ export function useGameState() {
         nextTroops.maxCapacity += (bDef.troopCapacity || 20);
       }
 
+      const nextLvl = currentLvl + 1;
+      let nextGrid = prev.grid;
+      let nextBuildings = { ...prev.buildings };
+
+      if (targetPlot && prev.grid) {
+        nextGrid = prev.grid.map(p => p.id === targetPlot.id ? { ...p, level: nextLvl } : p);
+        const maxOfThisType = Math.max(...nextGrid.filter(p => p.buildingId === bId).map(p => p.level || 1));
+        nextBuildings[bId] = maxOfThisType;
+      } else {
+        nextBuildings[bId] = nextLvl;
+      }
+
       return {
         ...prev,
         resources: {
@@ -489,10 +544,8 @@ export function useGameState() {
           wood: prev.resources.wood - costWood,
           stone: prev.resources.stone - costStone
         },
-        buildings: {
-          ...prev.buildings,
-          [bId]: currentLvl + 1
-        },
+        grid: nextGrid,
+        buildings: nextBuildings,
         troops: nextTroops,
         population: prev.population + (bId === 'granary' || bId === 'keep' || bId === 'farm' ? 3 : 1),
         garrison: prev.garrison + (bId === 'watchtower' || bId === 'keep' || bId === 'barracks' ? 2 : 0)
@@ -527,19 +580,19 @@ export function useGameState() {
     setGameState(prev => {
       const newGrid = (prev.grid || []).map(plot => {
         if (plot.id === plotId) {
-          return { ...plot, buildingId: buildingType };
+          return { ...plot, buildingId: buildingType, level: 1 };
         }
         return plot;
       });
 
       const newBuildings = {
         ...prev.buildings,
-        [buildingType]: (prev.buildings[buildingType] || 0) + 1
+        [buildingType]: Math.max(1, prev.buildings[buildingType] || 1)
       };
 
       const newHarvestTimers = {
         ...prev.harvestTimers,
-        [buildingType]: prev.harvestTimers[buildingType] || 0
+        [plotId]: 0
       };
 
       let newTroops = prev.troops ? { ...prev.troops } : { total: 20, maxCapacity: 30, sustenanceUpkeepPerDay: 1 };
@@ -792,13 +845,21 @@ export function useGameState() {
     let totalWood = 0;
     let totalStone = 0;
 
-    buildingIds.forEach(bId => {
+    const upgradeList = [];
+
+    buildingIds.forEach(id => {
+      const plot = (gameState.grid || []).find(p => p.id === id || p.buildingId === id);
+      const bId = plot ? plot.buildingId : id;
       const bDef = BUILDINGS[bId];
       if (bDef) {
-        const currentLvl = gameState.buildings[bId] || 1;
-        totalGold += Math.round(bDef.baseCost.gold * Math.pow(bDef.costMult, currentLvl - 1) * discount);
-        totalWood += Math.round(bDef.baseCost.wood * Math.pow(bDef.costMult, currentLvl - 1) * discount);
-        totalStone += Math.round(bDef.baseCost.stone * Math.pow(bDef.costMult, currentLvl - 1) * discount);
+        const currentLvl = plot ? (plot.level || 1) : (gameState.buildings[bId] || 1);
+        const g = Math.round(bDef.baseCost.gold * Math.pow(bDef.costMult, currentLvl - 1) * discount);
+        const w = Math.round(bDef.baseCost.wood * Math.pow(bDef.costMult, currentLvl - 1) * discount);
+        const s = Math.round(bDef.baseCost.stone * Math.pow(bDef.costMult, currentLvl - 1) * discount);
+        totalGold += g;
+        totalWood += w;
+        totalStone += s;
+        upgradeList.push({ id, plotId: plot ? plot.id : null, bId, bDef, currentLvl });
       }
     });
 
@@ -820,14 +881,35 @@ export function useGameState() {
     }, 350);
 
     setGameState(prev => {
+      let nextGrid = prev.grid;
       const nextBuildings = { ...prev.buildings };
       let popGain = 0;
       let garGain = 0;
 
-      buildingIds.forEach(bId => {
-        nextBuildings[bId] = (nextBuildings[bId] || 1) + 1;
-        popGain += (bId === 'granary' || bId === 'keep' || bId === 'farm' ? 3 : 1);
-        garGain += (bId === 'watchtower' || bId === 'keep' || bId === 'barracks' ? 2 : 0);
+      if (prev.grid && Array.isArray(prev.grid)) {
+        nextGrid = prev.grid.map(plot => {
+          const item = upgradeList.find(u => u.plotId === plot.id || (u.id === plot.id));
+          if (item) {
+            return { ...plot, level: (plot.level || 1) + 1 };
+          }
+          return plot;
+        });
+
+        // Recalculate max building tiers
+        Object.keys(BUILDINGS).forEach(bKey => {
+          const plotsOfType = nextGrid.filter(p => p.buildingId === bKey);
+          if (plotsOfType.length > 0) {
+            nextBuildings[bKey] = Math.max(...plotsOfType.map(p => p.level || 1));
+          }
+        });
+      }
+
+      upgradeList.forEach(item => {
+        if (!nextGrid) {
+          nextBuildings[item.bId] = (nextBuildings[item.bId] || 1) + 1;
+        }
+        popGain += (item.bId === 'granary' || item.bId === 'keep' || item.bId === 'farm' ? 3 : 1);
+        garGain += (item.bId === 'watchtower' || item.bId === 'keep' || item.bId === 'barracks' ? 2 : 0);
       });
 
       const bulkLog = {
@@ -846,6 +928,7 @@ export function useGameState() {
           wood: Math.max(0, prev.resources.wood - totalWood),
           stone: Math.max(0, prev.resources.stone - totalStone)
         },
+        grid: nextGrid,
         buildings: nextBuildings,
         population: prev.population + popGain,
         garrison: (prev.garrison || 0) + garGain,

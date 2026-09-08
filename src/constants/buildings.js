@@ -194,7 +194,59 @@ export const TROOP_RECRUIT_COST = {
   food: 10
 };
 
-export function calculateResourceCaps(buildings = {}) {
+export function calculateResourceCaps(buildings = {}, grid = null) {
+  if (grid && Array.isArray(grid)) {
+    let foodGranaryCap = 0;
+    let foodFarmCap = 0;
+    let waterCap = 0;
+    let woodCap = 0;
+    let stoneCap = 0;
+    let floraCap = 0;
+    let goldCap = 0;
+
+    let hasGranary = false;
+    let hasWell = false;
+    let hasLumber = false;
+    let hasQuarry = false;
+    let hasGreenhouse = false;
+    let hasVault = false;
+
+    grid.forEach(plot => {
+      if (!plot.buildingId) return;
+      const lvl = plot.level || 1;
+      if (plot.buildingId === 'granary') {
+        foodGranaryCap += (BUILDINGS.granary?.baseCapacity || 1200) * lvl;
+        hasGranary = true;
+      } else if (plot.buildingId === 'farm') {
+        foodFarmCap += (BUILDINGS.farm?.baseCapacity || 800) * lvl;
+      } else if (plot.buildingId === 'well') {
+        waterCap += (BUILDINGS.well?.baseCapacity || 1200) * lvl;
+        hasWell = true;
+      } else if (plot.buildingId === 'lumber') {
+        woodCap += (BUILDINGS.lumber?.baseCapacity || 1500) * lvl;
+        hasLumber = true;
+      } else if (plot.buildingId === 'quarry') {
+        stoneCap += (BUILDINGS.quarry?.baseCapacity || 1500) * lvl;
+        hasQuarry = true;
+      } else if (plot.buildingId === 'greenhouse') {
+        floraCap += (BUILDINGS.greenhouse?.baseCapacity || 800) * lvl;
+        hasGreenhouse = true;
+      } else if (plot.buildingId === 'vault') {
+        goldCap += (BUILDINGS.vault?.baseCapacity || 2000) * lvl;
+        hasVault = true;
+      }
+    });
+
+    return {
+      food: Math.max(1000, foodGranaryCap + foodFarmCap),
+      water: Math.max(1000, hasWell ? waterCap : (BUILDINGS.well?.baseCapacity || 1200) * (buildings.well || 1)),
+      wood: Math.max(1000, hasLumber ? woodCap : (BUILDINGS.lumber?.baseCapacity || 1500) * (buildings.lumber || 1)),
+      stone: Math.max(1000, hasQuarry ? stoneCap : (BUILDINGS.quarry?.baseCapacity || 1500) * (buildings.quarry || 1)),
+      flora: Math.max(500, hasGreenhouse ? floraCap : (BUILDINGS.greenhouse?.baseCapacity || 800) * (buildings.greenhouse || 1)),
+      gold: Math.max(1500, hasVault ? goldCap : (BUILDINGS.vault?.baseCapacity || 2000) * (buildings.vault || 1))
+    };
+  }
+
   const foodGranaryCap = (BUILDINGS.granary?.baseCapacity || 1200) * (buildings.granary || 1);
   const foodFarmCap = (BUILDINGS.farm?.baseCapacity || 800) * (buildings.farm || 0);
 

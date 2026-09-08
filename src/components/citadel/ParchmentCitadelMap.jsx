@@ -35,9 +35,10 @@ export function ParchmentCitadelMap({
   setActiveLedgerTab,
   battleLogs = []
 }) {
-  const isEmptyPlot = selectedBuildingId?.startsWith('plot-');
-  const selectedDef = isEmptyPlot ? EMPTY_PLOT : (BUILDINGS[selectedBuildingId] || BUILDINGS.keep);
-  const currentLvl = isEmptyPlot ? 0 : (buildings[selectedBuildingId] || 1);
+  const selectedPlot = (grid || []).find(p => p.id === selectedBuildingId || p.buildingId === selectedBuildingId);
+  const isEmptyPlot = selectedPlot ? !selectedPlot.buildingId : (selectedBuildingId?.startsWith('plot-') || false);
+  const selectedDef = selectedPlot?.buildingId ? (BUILDINGS[selectedPlot.buildingId] || BUILDINGS.keep) : (isEmptyPlot ? EMPTY_PLOT : (BUILDINGS[selectedBuildingId] || BUILDINGS.keep));
+  const currentLvl = selectedPlot ? (selectedPlot.buildingId ? (selectedPlot.level || 1) : 0) : (isEmptyPlot ? 0 : (buildings[selectedBuildingId] || 1));
   const discount = faction?.id === 'humans' ? 0.5 : 1.0;
 
   const costGold = isEmptyPlot ? 0 : Math.round((selectedDef.baseCost?.gold || 0) * Math.pow(selectedDef.costMult || 1.5, currentLvl - 1) * discount);
@@ -53,10 +54,18 @@ export function ParchmentCitadelMap({
   const weatherCond = WEATHER_CONDITIONS[timeState?.weather || 'clear'] || WEATHER_CONDITIONS.clear;
 
   // Calculate ready harvests
-  const readyCount = Object.keys(BUILDINGS).filter(bId => {
-    const bDef = BUILDINGS[bId];
-    return bDef && bDef.cycleDuration && (harvestTimers[bId] || 0) >= bDef.cycleDuration;
-  }).length;
+  const readyCount = (grid && Array.isArray(grid) && grid.some(p => p.buildingId))
+    ? grid.filter(p => {
+        if (!p.buildingId) return false;
+        const bDef = BUILDINGS[p.buildingId];
+        if (!bDef || !bDef.cycleDuration) return false;
+        const prog = harvestTimers[p.id] ?? harvestTimers[p.buildingId] ?? 0;
+        return prog >= bDef.cycleDuration;
+      }).length
+    : Object.keys(BUILDINGS).filter(bId => {
+        const bDef = BUILDINGS[bId];
+        return bDef && bDef.cycleDuration && (harvestTimers[bId] || 0) >= bDef.cycleDuration;
+      }).length;
 
   return (
     <div className="flex-1 flex flex-col md:flex-row h-full w-full relative overflow-hidden">
@@ -165,6 +174,7 @@ export function ParchmentCitadelMap({
           selectedBuildingId={selectedBuildingId}
           multiSelectedIds={multiSelectedIds}
           onClearMultiSelect={onClearMultiSelect}
+          grid={grid}
           buildings={buildings}
           resources={resources}
           troops={troops}

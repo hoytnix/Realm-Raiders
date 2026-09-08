@@ -19,11 +19,13 @@ export function createDefaultGrid() {
   for (let gx = 0; gx < 6; gx++) {
     for (let gy = 0; gy < 6; gy++) {
       const id = `plot-${gx}-${gy}`;
+      const buildingId = INITIAL_PLOT_BUILDINGS[id] || null;
       grid.push({
         id,
         gx,
         gy,
-        buildingId: INITIAL_PLOT_BUILDINGS[id] || null
+        buildingId,
+        level: buildingId ? 1 : 0
       });
     }
   }

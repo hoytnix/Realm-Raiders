@@ -36,9 +36,9 @@ export function BuildingInspector({
   const [recruitCount, setRecruitCount] = useState(5);
   const touchStartY = useRef(0);
 
-  const isEmptyPlot = selectedBuildingId?.startsWith('plot-') || selectedDef?.type === 'plot';
-  const isKeep = selectedBuildingId === 'keep';
-  const isBarracks = selectedBuildingId === 'barracks';
+  const isEmptyPlot = selectedDef?.type === 'plot' || selectedDef?.id === 'empty_plot';
+  const isKeep = selectedDef?.id === 'keep' || selectedBuildingId === 'keep';
+  const isBarracks = selectedDef?.id === 'barracks' || selectedBuildingId === 'barracks';
   const isHarvestBuilding = selectedDef?.cycleDuration && selectedDef?.baseYield;
   const hasTroopLogistics = technologies.includes('tech_troop_logistics');
   const isAutomated = hasTroopLogistics && (troops?.total || 0) >= 1 && isHarvestBuilding;

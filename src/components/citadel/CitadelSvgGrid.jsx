@@ -491,13 +491,13 @@ export function CitadelSvgGrid({
           const b = BUILDINGS[plot.buildingId];
           if (!b) return null;
 
-          const level = buildings[b.id] || 1;
-          const isSelected = selectedBuildingId === b.id;
+          const level = plot.level || (buildings && buildings[b.id]) || 1;
+          const isSelected = selectedBuildingId === plot.id || selectedBuildingId === b.id;
           const height = 24 + level * 7;
 
           // Harvest calculation
           const cycleDur = b.cycleDuration || 0;
-          const timerVal = harvestTimers[b.id] || 0;
+          const timerVal = harvestTimers[plot.id] ?? harvestTimers[b.id] ?? 0;
           const progressRatio = cycleDur > 0 ? Math.min(1, timerVal / cycleDur) : 0;
           const isReadyToHarvest = cycleDur > 0 && progressRatio >= 1;
           const hasTroopLogistics = (technologies || []).includes('tech_troop_logistics');
@@ -506,24 +506,25 @@ export function CitadelSvgGrid({
           return (
             <g
               key={plot.id}
-              data-building-id={b.id}
+              data-building-id={plot.id}
+              data-building-type={b.id}
               data-harvest-ready={isReadyToHarvest ? 'true' : 'false'}
               onClick={() => {
                 if (isReadyToHarvest) {
                   haptics.harvest();
-                  onHarvest(b.id);
+                  onHarvest(plot.id);
                 } else {
                   sounds.playCoin();
                   haptics.light();
-                  onSelectBuilding(b.id);
+                  onSelectBuilding(plot.id);
                 }
               }}
               onMouseEnter={(e) => {
                 if (isSelected && canAfford) onHoverUpgrade?.(true);
-                setHoveredBuilding({ id: b.id, x: e.clientX, y: e.clientY });
+                setHoveredBuilding({ id: b.id, plotId: plot.id, level, x: e.clientX, y: e.clientY });
               }}
               onMouseMove={(e) => {
-                setHoveredBuilding(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : { id: b.id, x: e.clientX, y: e.clientY });
+                setHoveredBuilding(prev => prev ? { ...prev, plotId: plot.id, level, x: e.clientX, y: e.clientY } : { id: b.id, plotId: plot.id, level, x: e.clientX, y: e.clientY });
               }}
               onMouseLeave={() => {
                 onHoverUpgrade?.(false);
@@ -532,7 +533,7 @@ export function CitadelSvgGrid({
               className="cursor-pointer group"
             >
               {/* Multi-Selection Glowing Halo */}
-              {multiSelectedIds && multiSelectedIds.includes(b.id) && (
+              {multiSelectedIds && (multiSelectedIds.includes(plot.id) || multiSelectedIds.includes(b.id)) && (
                 <ellipse
                   cx={x}
                   cy={y}
@@ -679,7 +680,7 @@ export function CitadelSvgGrid({
       {hoveredBuilding && (
         <BuildingHoverTooltip
           buildingId={hoveredBuilding.id}
-          level={buildings[hoveredBuilding.id] || 1}
+          level={hoveredBuilding.level || buildings[hoveredBuilding.id] || 1}
           resources={resources}
           technologies={technologies}
           troops={troops || { total: 20 }}

@@ -264,14 +264,23 @@ export default function App() {
     timeSpeed: 1
   };
 
-  const readyHarvestsCount = Object.keys(BUILDINGS).filter(bId => {
-    const bDef = BUILDINGS[bId];
-    return bDef && bDef.cycleDuration && (gameState.harvestTimers[bId] || 0) >= bDef.cycleDuration;
-  }).length;
+  const readyHarvestsCount = (gameState.grid && Array.isArray(gameState.grid) && gameState.grid.some(p => p.buildingId))
+    ? gameState.grid.filter(p => {
+        if (!p.buildingId) return false;
+        const bDef = BUILDINGS[p.buildingId];
+        if (!bDef || !bDef.cycleDuration) return false;
+        const prog = gameState.harvestTimers[p.id] ?? gameState.harvestTimers[p.buildingId] ?? 0;
+        return prog >= bDef.cycleDuration;
+      }).length
+    : Object.keys(BUILDINGS).filter(bId => {
+        const bDef = BUILDINGS[bId];
+        return bDef && bDef.cycleDuration && (gameState.harvestTimers[bId] || 0) >= bDef.cycleDuration;
+      }).length;
 
-  const isEmptyPlot = selectedBuildingId?.startsWith('plot-');
-  const selectedDef = isEmptyPlot ? EMPTY_PLOT : (BUILDINGS[selectedBuildingId] || BUILDINGS.keep);
-  const currentLvl = isEmptyPlot ? 0 : (gameState.buildings[selectedBuildingId] || 1);
+  const selectedPlot = (gameState.grid || []).find(p => p.id === selectedBuildingId || p.buildingId === selectedBuildingId);
+  const isEmptyPlot = selectedPlot ? !selectedPlot.buildingId : (selectedBuildingId?.startsWith('plot-') || false);
+  const selectedDef = selectedPlot?.buildingId ? (BUILDINGS[selectedPlot.buildingId] || BUILDINGS.keep) : (isEmptyPlot ? EMPTY_PLOT : (BUILDINGS[selectedBuildingId] || BUILDINGS.keep));
+  const currentLvl = selectedPlot ? (selectedPlot.buildingId ? (selectedPlot.level || 1) : 0) : (isEmptyPlot ? 0 : (gameState.buildings[selectedBuildingId] || 1));
   const discount = currentFaction?.id === 'humans' ? 0.5 : 1.0;
   const costGold = isEmptyPlot ? 0 : Math.round((selectedDef.baseCost?.gold || 0) * Math.pow(selectedDef.costMult || 1.5, currentLvl - 1) * discount);
   const costWood = isEmptyPlot ? 0 : Math.round((selectedDef.baseCost?.wood || 0) * Math.pow(selectedDef.costMult || 1.5, currentLvl - 1) * discount);

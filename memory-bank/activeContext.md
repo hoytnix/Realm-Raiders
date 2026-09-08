@@ -75,8 +75,13 @@
       - Implemented `ParchmentSettingsModal.jsx` supporting Master Audio toggle, Atmospheric Castle Ambient sound (with procedural sine/triangle wind drone loop `startAmbient`/`stopAmbient` and volume slider), Sound Effects (SFX) toggle and volume slider with live sound testing buttons (Coin, Seal, Steel), and Web Vibration API tactile haptics toggle.
       - Integrated settings schema into `DEFAULT_STATE` and `useGameState` with automatic LocalStorage persistence and synchronization.
 
+  - **Per-Plot Building Tier Isolation & Tier 1 Initial Erection Fix**:
+    - **Foundation & Data Model (`initialState.js`, `buildings.js`, `usePlayerStats.js`)**: Isolated building levels per plot in `gameState.grid` with schema `{ id, gx, gy, buildingId, level }`. Newly erected structures strictly initialize at Tier 1 (`level: 1`), leaving existing structures of the same type at their current tiers. Storage caps (`calculateResourceCaps`), labor demand, troop capacity, and overall realm ratings calculate dynamically across individual grid plots.
+    - **Construction & Upgrade Logic (`useGameState.js`)**: `constructBuilding` sets `level: 1` for newly erected structures and maintains `prev.buildings[buildingType]` at its peak tier instead of incrementing globally. `handleIssueRoyalDecree` accepts plot IDs, resolving the specific plot's level and incrementing only that instance. `handleHarvestBuilding`, `handleHarvestAll`, and simulation tick loops evaluate harvests and timers per plot.
+    - **UI & Interaction Binding (`CitadelSvgGrid.jsx`, `ParchmentCitadelMap.jsx`, `SovereignLedger.jsx`, `BuildingInspector.jsx`, `App.jsx`)**: Updated plot click handlers to pass `plot.id`, resolved `selectedPlot` to accurately distinguish between empty foundations (`level: 0`) and constructed structures (`level: plot.level`), and ensured Inspector/Ledger actions (upgrade costs, keep annexation, barracks muster) dynamically reflect individual structure levels.
+
 ## Active Focus & Next Steps
-- Validate Netlify deployment build pipeline.
 - Continue fine-tuning asymmetric balance across factions under multi-building bulk decree progressions.
 - Explore ambient weather synthesizer soundscapes (rain, wind howling, blizzard hums).
+
 

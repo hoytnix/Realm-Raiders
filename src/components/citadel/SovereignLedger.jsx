@@ -15,6 +15,7 @@ export function SovereignLedger({
   selectedBuildingId = 'keep',
   multiSelectedIds = [],
   onClearMultiSelect,
+  grid = null,
   buildings = {},
   resources = {},
   troops = { total: 20, maxCapacity: 30 },
@@ -36,9 +37,10 @@ export function SovereignLedger({
   const [recruitCount, setRecruitCount] = useState(5);
 
   const isMultiSelect = multiSelectedIds && multiSelectedIds.length > 1;
-  const isEmptyPlot = selectedBuildingId?.startsWith('plot-');
-  const selectedDef = isEmptyPlot ? EMPTY_PLOT : (BUILDINGS[selectedBuildingId] || BUILDINGS.keep);
-  const currentLvl = isEmptyPlot ? 0 : (buildings[selectedBuildingId] || 1);
+  const selectedPlot = (grid || []).find(p => p.id === selectedBuildingId || p.buildingId === selectedBuildingId);
+  const isEmptyPlot = selectedPlot ? !selectedPlot.buildingId : (selectedBuildingId?.startsWith('plot-') || false);
+  const selectedDef = selectedPlot?.buildingId ? (BUILDINGS[selectedPlot.buildingId] || BUILDINGS.keep) : (isEmptyPlot ? EMPTY_PLOT : (BUILDINGS[selectedBuildingId] || BUILDINGS.keep));
+  const currentLvl = selectedPlot ? (selectedPlot.buildingId ? (selectedPlot.level || 1) : 0) : (isEmptyPlot ? 0 : (buildings[selectedBuildingId] || 1));
 
   const hasTroopLogistics = (technologies || []).includes('tech_troop_logistics');
   const isHarvestBuilding = selectedDef?.cycleDuration && selectedDef?.baseYield;
@@ -74,9 +76,11 @@ export function SovereignLedger({
   // Territory expansion
   const nextTierIndex = territoryTier < MAX_TERRITORY_TIER ? territoryTier + 1 : null;
   const nextTierDef = nextTierIndex ? TERRITORY_TIERS[nextTierIndex] : null;
+  const keepPlot = (grid || []).find(p => p.buildingId === 'keep');
+  const keepLvl = keepPlot?.level || buildings.keep || 1;
   const canAnnexTerritory =
     nextTierDef &&
-    (buildings.keep || 1) >= nextTierDef.keepLevelReq &&
+    keepLvl >= nextTierDef.keepLevelReq &&
     (resources.gold || 0) >= nextTierDef.cost.gold &&
     (resources.wood || 0) >= nextTierDef.cost.wood &&
     (resources.stone || 0) >= nextTierDef.cost.stone;
@@ -84,7 +88,7 @@ export function SovereignLedger({
   // Logistics decree
   const canAffordLogistics =
     !hasTroopLogistics &&
-    (buildings.keep || 1) >= 2 &&
+    keepLvl >= 2 &&
     (resources.gold || 0) >= 150 &&
     (resources.food || 0) >= 100;
 
@@ -95,17 +99,19 @@ export function SovereignLedger({
   const multiBuildingsList = [];
 
   if (isMultiSelect) {
-    multiSelectedIds.forEach(bId => {
-      const bD = BUILDINGS[bId];
+    multiSelectedIds.forEach(id => {
+      const plot = (grid || []).find(p => p.id === id || p.buildingId === id);
+      const bType = plot ? plot.buildingId : id;
+      const bD = BUILDINGS[bType];
       if (bD) {
-        const lvl = buildings[bId] || 1;
+        const lvl = plot ? (plot.level || 1) : (buildings[id] || 1);
         const g = Math.round((bD.baseCost?.gold || 0) * Math.pow(bD.costMult || 1.5, lvl - 1) * discount);
         const w = Math.round((bD.baseCost?.wood || 0) * Math.pow(bD.costMult || 1.5, lvl - 1) * discount);
         const s = Math.round((bD.baseCost?.stone || 0) * Math.pow(bD.costMult || 1.5, lvl - 1) * discount);
         multiTotalGold += g;
         multiTotalWood += w;
         multiTotalStone += s;
-        multiBuildingsList.push({ id: bId, def: bD, lvl });
+        multiBuildingsList.push({ id, def: bD, lvl });
       }
     });
   }
@@ -384,7 +390,7 @@ export function SovereignLedger({
                 )}
 
                 {/* Keep Annexation Decree */}
-                {selectedBuildingId === 'keep' && nextTierDef && (
+                {(selectedDef?.id === 'keep' || selectedBuildingId === 'keep') && nextTierDef && (
                   <div className="bg-[#dfcba6] p-2.5 rounded-xl border border-amber-800/40 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-xs text-[#442813]">Annex {nextTierDef.name}</span>
@@ -415,7 +421,7 @@ export function SovereignLedger({
                 )}
 
                 {/* Barracks Recruitment */}
-                {selectedBuildingId === 'barracks' && (
+                {(selectedDef?.id === 'barracks' || selectedBuildingId === 'barracks') && (
                   <div className="bg-[#dfcba6] p-2.5 rounded-xl border border-[#bfa379] space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-xs text-[#442813]">Mustering Levy ({troops.total}/{maxTroopCap})</span>

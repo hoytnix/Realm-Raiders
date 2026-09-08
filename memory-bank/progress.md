@@ -81,6 +81,11 @@
   - [x] Multi-channel procedural audio synthesis in `SoundController` (master, sfx, castle ambient wind drone).
   - [x] Dedicated diegetic `ParchmentSettingsModal` with audio sliders, sample tests, and vibration toggle.
   - [x] Realm Settings card and settings modal trigger integrated into `ParchmentMenuView`.
+- [x] **Per-Plot Building Tier Isolation & Tier 1 Initial Erection**:
+  - [x] Foundation grid schema tracking individual structure levels per plot (`{ id, gx, gy, buildingId, level }`).
+  - [x] Newly erected structures strictly initialize at Tier 1 (`level: 1`), keeping OG structures at their existing tiers.
+  - [x] Storage caps, labor demand, troop capacities, and vault protections dynamically calculated across grid structures.
+  - [x] Per-plot upgrade decrees, harvests, and hover tooltip inspections.
 
 ## Planned / In Progress
 - [ ] Additional weather sound synthesizers (rain, thunder, blizzard noise nodes).
