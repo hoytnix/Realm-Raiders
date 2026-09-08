@@ -28,6 +28,13 @@
       "description": "Implements Provocation Index, telegraphed warhorns, combinatorial extortion tribute, and demoralization",
       "appliedAt": "2026-09-08T15:26:52.621Z",
       "sha256": "9c985659db1045be8fec6f374c9a0b15aac35170b9cbaae2ccf93012deb42c58"
+    },
+    {
+      "id": "005_war_tab_surrounding_kingdoms",
+      "file": "005_war_tab_surrounding_kingdoms.mjs",
+      "description": "Replaces mock retaliation missives and procedural war targets with the 3 surrounding map kingdoms",
+      "appliedAt": "2026-09-08T15:31:24.705Z",
+      "sha256": "44839dec78c864815f60c2f70b69cbe895e4e14a36ce45e2f132498ab5eafe28"
     }
   ]
 }

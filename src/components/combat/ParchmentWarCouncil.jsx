@@ -14,11 +14,18 @@ export function ParchmentWarCouncil({
 }) {
   const [warCouncilTab, setWarCouncilTab] = React.useState('campaigns');
   const [rivals, setRivals] = useState(() => {
-    if (gameState && Array.isArray(gameState.rivalSettlements) && gameState.rivalSettlements.length > 0) {
-      return gameState.rivalSettlements;
+    const settlements = gameState?.rivalSettlements || state?.rivalSettlements;
+    if (Array.isArray(settlements) && settlements.length > 0) {
+      return settlements;
     }
     return generateRivals(stats?.overallRating || 100);
   });
+  React.useEffect(() => {
+    const settlements = gameState?.rivalSettlements || state?.rivalSettlements;
+    if (Array.isArray(settlements) && settlements.length > 0) {
+      setRivals(settlements);
+    }
+  }, [gameState?.rivalSettlements, state?.rivalSettlements]);
   const [selectedRivalId, setSelectedRivalId] = useState(() => rivals[0]?.id || null);
   const [isInfused, setIsInfused] = useState(false);
   React.useEffect(() => {
@@ -105,7 +112,14 @@ export function ParchmentWarCouncil({
                         <span className="text-[9px] uppercase tracking-wider text-[#6b4a2e]">
                           {rFaction.name} • Def {rival.defensePower}
                         </span>
-                      </div>
+                      <div className="flex items-center gap-1.5 mt-0.5 text-[9px] font-mono">
+              {rival.gridX !== undefined && rival.gridY !== undefined ? <span className="text-[#8c6239] bg-[#ebdcc1] px-1 py-0.2 rounded border border-[#c4a482]/60">
+                  Pos: [{rival.gridX}, {rival.gridY}]
+                </span> : null}
+              <span className={rival.discovered ? 'text-emerald-800 font-bold' : 'text-stone-600 italic'}>
+                {rival.discovered ? '👁️ Surveyed' : '🌫️ Veiled in Fog'}
+              </span>
+            </div>;</div>
                     </div>
                     <div className="text-right">
                       <span className="text-xs font-mono font-bold text-amber-900 block">⭐ {rival.rating}</span>
@@ -348,7 +362,14 @@ export function ParchmentWarCouncil({
                     <span className="text-[10px] font-mono font-bold text-amber-800">
                       ⭐ {rival.rating}
                     </span>
-                  </div>
+                  <div className="flex items-center gap-1.5 mt-0.5 text-[9px] font-mono">
+              {rival.gridX !== undefined && rival.gridY !== undefined ? <span className="text-[#8c6239] bg-[#ebdcc1] px-1 py-0.2 rounded border border-[#c4a482]/60">
+                  Pos: [{rival.gridX}, {rival.gridY}]
+                </span> : null}
+              <span className={rival.discovered ? 'text-emerald-800 font-bold' : 'text-stone-600 italic'}>
+                {rival.discovered ? '👁️ Surveyed' : '🌫️ Veiled in Fog'}
+              </span>
+            </div>;</div>
                   <span className="text-[9px] uppercase tracking-wider text-[#6b4a2e] block mt-0.5">
                     {rivalFaction.badge} • Def {rival.defensePower}
                   </span>
