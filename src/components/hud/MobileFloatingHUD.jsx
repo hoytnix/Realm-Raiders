@@ -49,84 +49,86 @@ export function MobileFloatingHUD({
   return (
     <>
       {/* =========================================================================
-          FLOATING TOP-LEFT CHRONOMETER & RESOURCE CLUSTER (< md only)
+          FLOATING TOP-LEFT CHRONOMETER & RESOURCE CLUSTER (< md only, Citadel page only)
           ========================================================================= */}
-      <div className="fixed top-2.5 left-2.5 z-30 pointer-events-none md:hidden flex flex-col gap-1 max-w-[calc(100vw-68px)]">
-        {/* Upper Row: Condensed Chronometer Badge */}
-        <div className="pointer-events-auto flex items-center gap-1.5 bg-stone-950/85 backdrop-blur-md border border-amber-600/50 rounded-2xl px-2.5 py-1 text-amber-200 shadow-[0_4px_14px_rgba(0,0,0,0.7)] self-start">
-          <span className="text-xs">{isNight ? '🌙' : '☀️'}</span>
-          <span className="text-[11px] font-mono font-bold whitespace-nowrap tracking-tight">
-            {dayOrdinal} {shortMonth}, {yearDisplay} {eraDisplay} • {formattedTime} {weather.icon}
-          </span>
-          <button
-            onClick={handleSpeedTap}
-            className="ml-0.5 px-1.5 py-0.5 rounded bg-amber-900/60 hover:bg-amber-800/80 active:scale-95 border border-amber-600/50 text-[10px] font-mono font-bold text-amber-300 transition"
-            title="Cycle Simulation Speed (1x / 2x / 5x)"
-          >
-            {timeState?.timeSpeed || 1}x
-          </button>
-        </div>
-
-        {/* Lower Row: Tight Cluster of Resource Pills + Famine Warning */}
-        <div className="pointer-events-auto flex items-center gap-1 overflow-x-auto max-w-full pb-0.5 scrollbar-none">
-          {/* Gold */}
-          <div
-            className="px-2 py-0.5 rounded-lg bg-stone-950/85 backdrop-blur-md border border-amber-700/50 flex items-center gap-1 text-[10.5px] font-mono shadow-md flex-shrink-0"
-            title={`Gold: ${Math.floor(resources?.gold || 0)} / ${stats?.caps?.gold || 1000}`}
-          >
-            <span>🪙</span>
-            <span className="font-bold text-yellow-300">{formatCompactNumber(resources?.gold || 0)}</span>
+      {deskView === 'citadel' && (
+        <div className="fixed top-2.5 left-2.5 z-30 pointer-events-none md:hidden flex flex-col gap-1 max-w-[calc(100vw-68px)] animate-in fade-in duration-200">
+          {/* Upper Row: Condensed Chronometer Badge */}
+          <div className="pointer-events-auto flex items-center gap-1.5 bg-stone-950/85 backdrop-blur-md border border-amber-600/50 rounded-2xl px-2.5 py-1 text-amber-200 shadow-[0_4px_14px_rgba(0,0,0,0.7)] self-start">
+            <span className="text-xs">{isNight ? '🌙' : '☀️'}</span>
+            <span className="text-[11px] font-mono font-bold whitespace-nowrap tracking-tight">
+              {dayOrdinal} {shortMonth}, {yearDisplay} {eraDisplay} • {formattedTime} {weather.icon}
+            </span>
+            <button
+              onClick={handleSpeedTap}
+              className="ml-0.5 px-1.5 py-0.5 rounded bg-amber-900/60 hover:bg-amber-800/80 active:scale-95 border border-amber-600/50 text-[10px] font-mono font-bold text-amber-300 transition"
+              title="Cycle Simulation Speed (1x / 2x / 5x)"
+            >
+              {timeState?.timeSpeed || 1}x
+            </button>
           </div>
 
-          {/* Food */}
-          <div
-            className="px-2 py-0.5 rounded-lg bg-stone-950/85 backdrop-blur-md border border-amber-700/50 flex items-center gap-1 text-[10.5px] font-mono shadow-md flex-shrink-0"
-            title={`Food: ${Math.floor(resources?.food || 0)} / ${stats?.caps?.food || 1000}`}
-          >
-            <span>🌾</span>
-            <span className="font-bold text-amber-300">{formatCompactNumber(resources?.food || 0)}</span>
-          </div>
-
-          {/* Water */}
-          <div
-            className="px-2 py-0.5 rounded-lg bg-stone-950/85 backdrop-blur-md border border-amber-700/50 flex items-center gap-1 text-[10.5px] font-mono shadow-md flex-shrink-0"
-            title={`Water: ${Math.floor(resources?.water || 0)} / ${stats?.caps?.water || 1000}`}
-          >
-            <span>💧</span>
-            <span className="font-bold text-sky-300">{formatCompactNumber(resources?.water || 0)}</span>
-          </div>
-
-          {/* Wood */}
-          <div
-            className="px-2 py-0.5 rounded-lg bg-stone-950/85 backdrop-blur-md border border-amber-700/50 flex items-center gap-1 text-[10.5px] font-mono shadow-md flex-shrink-0"
-            title={`Wood: ${Math.floor(resources?.wood || 0)} / ${stats?.caps?.wood || 1000}`}
-          >
-            <span>🪵</span>
-            <span className="font-bold text-orange-300">{formatCompactNumber(resources?.wood || 0)}</span>
-          </div>
-
-          {/* Stone */}
-          <div
-            className="px-2 py-0.5 rounded-lg bg-stone-950/85 backdrop-blur-md border border-amber-700/50 flex items-center gap-1 text-[10.5px] font-mono shadow-md flex-shrink-0"
-            title={`Stone: ${Math.floor(resources?.stone || 0)} / ${stats?.caps?.stone || 1000}`}
-          >
-            <span>🪨</span>
-            <span className="font-bold text-stone-300">{formatCompactNumber(resources?.stone || 0)}</span>
-          </div>
-
-          {/* Compact Famine Alert Pill if Starving */}
-          {isStarving && (
-            <div className="flex-shrink-0">
-              <FamineWarning
-                isStarving={isStarving}
-                onRaidGrain={onRaidGrain}
-                starvationDeaths={starvationDeaths}
-                laborEfficiency={stats?.laborEfficiency}
-              />
+          {/* Lower Row: Tight Cluster of Resource Pills + Famine Warning */}
+          <div className="pointer-events-auto flex items-center gap-1 overflow-x-auto max-w-full pb-0.5 scrollbar-none">
+            {/* Gold */}
+            <div
+              className="px-2 py-0.5 rounded-lg bg-stone-950/85 backdrop-blur-md border border-amber-700/50 flex items-center gap-1 text-[10.5px] font-mono shadow-md flex-shrink-0"
+              title={`Gold: ${Math.floor(resources?.gold || 0)} / ${stats?.caps?.gold || 1000}`}
+            >
+              <span>🪙</span>
+              <span className="font-bold text-yellow-300">{formatCompactNumber(resources?.gold || 0)}</span>
             </div>
-          )}
+
+            {/* Food */}
+            <div
+              className="px-2 py-0.5 rounded-lg bg-stone-950/85 backdrop-blur-md border border-amber-700/50 flex items-center gap-1 text-[10.5px] font-mono shadow-md flex-shrink-0"
+              title={`Food: ${Math.floor(resources?.food || 0)} / ${stats?.caps?.food || 1000}`}
+            >
+              <span>🌾</span>
+              <span className="font-bold text-amber-300">{formatCompactNumber(resources?.food || 0)}</span>
+            </div>
+
+            {/* Water */}
+            <div
+              className="px-2 py-0.5 rounded-lg bg-stone-950/85 backdrop-blur-md border border-amber-700/50 flex items-center gap-1 text-[10.5px] font-mono shadow-md flex-shrink-0"
+              title={`Water: ${Math.floor(resources?.water || 0)} / ${stats?.caps?.water || 1000}`}
+            >
+              <span>💧</span>
+              <span className="font-bold text-sky-300">{formatCompactNumber(resources?.water || 0)}</span>
+            </div>
+
+            {/* Wood */}
+            <div
+              className="px-2 py-0.5 rounded-lg bg-stone-950/85 backdrop-blur-md border border-amber-700/50 flex items-center gap-1 text-[10.5px] font-mono shadow-md flex-shrink-0"
+              title={`Wood: ${Math.floor(resources?.wood || 0)} / ${stats?.caps?.wood || 1000}`}
+            >
+              <span>🪵</span>
+              <span className="font-bold text-orange-300">{formatCompactNumber(resources?.wood || 0)}</span>
+            </div>
+
+            {/* Stone */}
+            <div
+              className="px-2 py-0.5 rounded-lg bg-stone-950/85 backdrop-blur-md border border-amber-700/50 flex items-center gap-1 text-[10.5px] font-mono shadow-md flex-shrink-0"
+              title={`Stone: ${Math.floor(resources?.stone || 0)} / ${stats?.caps?.stone || 1000}`}
+            >
+              <span>🪨</span>
+              <span className="font-bold text-stone-300">{formatCompactNumber(resources?.stone || 0)}</span>
+            </div>
+
+            {/* Compact Famine Alert Pill if Starving */}
+            {isStarving && (
+              <div className="flex-shrink-0">
+                <FamineWarning
+                  isStarving={isStarving}
+                  onRaidGrain={onRaidGrain}
+                  starvationDeaths={starvationDeaths}
+                  laborEfficiency={stats?.laborEfficiency}
+                />
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* =========================================================================
           FLOATING TOP-RIGHT HAMBURGER BUTTON (Icon-only diegetic seal trigger)
