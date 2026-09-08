@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /* eslint-disable */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -14,24 +15,111 @@ const traverse = traversePkg.default || traversePkg;
 const generate = generatePkg.default || generatePkg;
 const template = templatePkg.default || templatePkg;
 
+// ============================================================================
+// 1. CONFIGURATION & RUNTIME DEFAULTS (Patchiest Model Layer)
+// ============================================================================
 const PROJECT_ROOT = process.cwd();
-const PATCHES_DIR = path.join(PROJECT_ROOT, 'patches');
-const REGISTRY_FILE = path.join(PROJECT_ROOT, '.ast-patches.json');
+const CONFIG_FILE = path.join(PROJECT_ROOT, '.patchiestrc.json');
 
-const PARSER_CONFIG = {
-  sourceType: 'module',
-  plugins: ['jsx', 'typescript'],
+const DEFAULT_CONFIG = {
+  patchesDir: 'patches',
+  registryFile: '.ast-patches.json',
+  snapshotDir: '.ast-snapshots',
+  verificationSteps: [
+    { name: 'lint', cmd: 'pnpm lint' },
+    { name: 'typecheck', cmd: 'pnpm typecheck' },
+    { name: 'build', cmd: 'pnpm build' },
+  ],
+  parserConfig: {
+    sourceType: 'module',
+    plugins: ['jsx', 'typescript', 'decorators-legacy', 'classProperties'],
+  },
+  ignoreSegments: ['node_modules', '.git', 'dist', '.cache', '.ast-snapshots', 'coverage'],
 };
 
+function loadConfig() {
+  if (fs.existsSync(CONFIG_FILE)) {
+    try {
+      const userConfig = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+      return { ...DEFAULT_CONFIG, ...userConfig };
+    } catch (e) {
+      console.warn(`[WARN] Failed to parse .patchiestrc.json. Falling back to defaults.`);
+    }
+  }
+  return DEFAULT_CONFIG;
+}
+
+const CONFIG = loadConfig();
+const PATCHES_DIR = path.join(PROJECT_ROOT, CONFIG.patchesDir);
+const REGISTRY_FILE = path.join(PROJECT_ROOT, CONFIG.registryFile);
+const SNAPSHOTS_DIR = path.join(PROJECT_ROOT, CONFIG.snapshotDir);
+
 // ============================================================================
-// AST Utility Toolkit (Injected into Patch Transformers)
+// 2. EXTENDED AST HELPER TOOLKIT (Patchiest Helpers Layer)
 // ============================================================================
 export const astHelpers = {
   t,
   template,
   traverse,
   generate,
-  parse: (code) => parse(code, PARSER_CONFIG),
+  parse: (code) => parse(code, CONFIG.parserConfig),
+
+  ensureImport(ast, { source, imported = null, local = null, isDefault = false, isNamespace = false }) {
+    let importDecl = ast.program.body.find(
+      (node) => t.isImportDeclaration(node) && node.source.value === source
+    );
+
+    const localName = local || imported;
+
+    if (!importDecl) {
+      let specifiers = [];
+      if (isDefault) {
+        specifiers.push(t.importDefaultSpecifier(t.identifier(localName)));
+      } else if (isNamespace) {
+        specifiers.push(t.importNamespaceSpecifier(t.identifier(localName)));
+      } else if (imported) {
+        specifiers.push(t.importSpecifier(t.identifier(localName), t.identifier(imported)));
+      }
+      importDecl = t.importDeclaration(specifiers, t.stringLiteral(source));
+      ast.program.body.unshift(importDecl);
+      return;
+    }
+
+    if (isDefault) {
+      const hasDefault = importDecl.specifiers.some((s) => t.isImportDefaultSpecifier(s));
+      if (!hasDefault) {
+        importDecl.specifiers.unshift(t.importDefaultSpecifier(t.identifier(localName)));
+      }
+    } else if (isNamespace) {
+      const hasNamespace = importDecl.specifiers.some((s) => t.isImportNamespaceSpecifier(s));
+      if (!hasNamespace) {
+        importDecl.specifiers.push(t.importNamespaceSpecifier(t.identifier(localName)));
+      }
+    } else if (imported) {
+      const exists = importDecl.specifiers.some(
+        (s) => t.isImportSpecifier(s) && s.imported.name === imported
+      );
+      if (!exists) {
+        importDecl.specifiers.push(
+          t.importSpecifier(t.identifier(localName), t.identifier(imported))
+        );
+      }
+    }
+  },
+
+  removeImport(ast, source, importedName = null) {
+    ast.program.body = ast.program.body.filter((node) => {
+      if (!t.isImportDeclaration(node) || node.source.value !== source) return true;
+      if (!importedName) return false; // Remove entire declaration
+
+      node.specifiers = node.specifiers.filter((s) => {
+        if (t.isImportSpecifier(s) && s.imported.name === importedName) return false;
+        if (t.isImportDefaultSpecifier(s) && s.local.name === importedName) return false;
+        return true;
+      });
+      return node.specifiers.length > 0;
+    });
+  },
 
   ensureObjectPatternProp(pattern, propName, defaultValue = null) {
     if (!t.isObjectPattern(pattern)) return;
@@ -59,17 +147,34 @@ export const astHelpers = {
       (a) => t.isJSXAttribute(a) && a.name?.name === attrName
     );
     if (!exists) {
-      openingElement.attributes.push(
-        t.jsxAttribute(
-          t.jsxIdentifier(attrName),
-          t.jsxExpressionContainer(valueExpression)
-        )
-      );
+      const attrValue = t.isStringLiteral(valueExpression)
+        ? valueExpression
+        : t.jsxExpressionContainer(valueExpression);
+      openingElement.attributes.push(t.jsxAttribute(t.jsxIdentifier(attrName), attrValue));
     }
   },
 
+  removeJSXAttribute(openingElement, attrName) {
+    openingElement.attributes = openingElement.attributes.filter(
+      (a) => !(t.isJSXAttribute(a) && a.name?.name === attrName)
+    );
+  },
+
+  findJSXElements(ast, tagName) {
+    const elements = [];
+    traverse(ast, {
+      JSXOpeningElement(path) {
+        if (path.node.name.name === tagName) {
+          elements.push(path);
+        }
+      },
+    });
+    return elements;
+  },
+
   injectHookReturnProp(functionDeclaration, propName) {
-    const returnStmt = functionDeclaration.body.body.find((n) => t.isReturnStatement(n));
+    const body = functionDeclaration.body?.body || [];
+    const returnStmt = body.find((n) => t.isReturnStatement(n));
     if (returnStmt && t.isObjectExpression(returnStmt.argument)) {
       const exists = returnStmt.argument.properties.some(
         (p) => t.isObjectProperty(p) && p.key?.name === propName
@@ -81,29 +186,46 @@ export const astHelpers = {
       }
     }
   },
+
+  insertStatement(astBody, statement, position = 'end', targetMatchFn = null) {
+    if (position === 'start') {
+      astBody.unshift(statement);
+    } else if (position === 'end') {
+      astBody.push(statement);
+    } else if (targetMatchFn && typeof targetMatchFn === 'function') {
+      const index = astBody.findIndex(targetMatchFn);
+      if (index !== -1) {
+        const insertIdx = position === 'before' ? index : index + 1;
+        astBody.splice(insertIdx, 0, statement);
+      } else {
+        astBody.push(statement);
+      }
+    }
+  },
 };
 
 // ============================================================================
-// Patch Registry & Ledger Management
+// 3. REGISTRY & LEDGER SYSTEM (Patchiest Registry Layer)
 // ============================================================================
+function computeFileHash(filePath) {
+  if (!fs.existsSync(filePath)) return null;
+  const buffer = fs.readFileSync(filePath);
+  return crypto.createHash('sha256').update(buffer).digest('hex');
+}
+
 function getRegistry() {
   if (!fs.existsSync(REGISTRY_FILE)) {
-    return { version: 1, applied: [] };
+    return { schemaVersion: 2, applied: [] };
   }
   try {
     return JSON.parse(fs.readFileSync(REGISTRY_FILE, 'utf8'));
   } catch (e) {
-    return { version: 1, applied: [] };
+    return { schemaVersion: 2, applied: [] };
   }
 }
 
 function saveRegistry(registry) {
   fs.writeFileSync(REGISTRY_FILE, JSON.stringify(registry, null, 2) + '\n', 'utf8');
-}
-
-function computeFileHash(filePath) {
-  const fileBuffer = fs.readFileSync(filePath);
-  return crypto.createHash('sha256').update(fileBuffer).digest('hex');
 }
 
 async function loadPatches() {
@@ -133,32 +255,104 @@ async function loadPatches() {
 }
 
 // ============================================================================
-// Sandbox & Transformation Runner
+// 4. SNAPSHOT & ROLLBACK SUBSYSTEM
+// ============================================================================
+function createSnapshot(patchId, relativeFiles) {
+  const snapshotTimestamp = Date.now();
+  const snapshotPath = path.join(SNAPSHOTS_DIR, `${patchId}_${snapshotTimestamp}`);
+  fs.mkdirSync(snapshotPath, { recursive: true });
+
+  const manifest = { patchId, timestamp: snapshotTimestamp, files: [] };
+
+  for (const rel of relativeFiles) {
+    const src = path.join(PROJECT_ROOT, rel);
+    if (fs.existsSync(src)) {
+      const dest = path.join(snapshotPath, rel);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.copyFileSync(src, dest);
+      manifest.files.push({ relativePath: rel, originalHash: computeFileHash(src) });
+    }
+  }
+
+  fs.writeFileSync(path.join(snapshotPath, 'manifest.json'), JSON.stringify(manifest, null, 2));
+  return snapshotPath;
+}
+
+function restoreSnapshot(patchId) {
+  if (!fs.existsSync(SNAPSHOTS_DIR)) return false;
+
+  const entries = fs.readdirSync(SNAPSHOTS_DIR)
+    .filter((d) => d.startsWith(`${patchId}_`))
+    .sort()
+    .reverse();
+
+  if (entries.length === 0) return false;
+
+  const targetSnapshot = path.join(SNAPSHOTS_DIR, entries[0]);
+  const manifest = JSON.parse(fs.readFileSync(path.join(targetSnapshot, 'manifest.json'), 'utf8'));
+
+  for (const fileInfo of manifest.files) {
+    const src = path.join(targetSnapshot, fileInfo.relativePath);
+    const dest = path.join(PROJECT_ROOT, fileInfo.relativePath);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.copyFileSync(src, dest);
+    console.log(`  ↺ Restored: ${fileInfo.relativePath}`);
+  }
+
+  return true;
+}
+
+// ============================================================================
+// 5. ENGINE & VERIFICATION PIPELINE (Patchiest Core Engine)
 // ============================================================================
 function transformFileInSandbox(sandboxDir, relativeFilePath, transformFn) {
   const fullPath = path.join(sandboxDir, relativeFilePath);
   if (!fs.existsSync(fullPath)) {
-    console.warn(`[WARN] Target file not found: ${relativeFilePath}`);
-    return;
+    throw new Error(`Target file does not exist: ${relativeFilePath}`);
   }
 
   const code = fs.readFileSync(fullPath, 'utf8');
-  const ast = parse(code, PARSER_CONFIG);
+  const ast = parse(code, CONFIG.parserConfig);
 
   transformFn(ast, { ...astHelpers, code });
 
   const output = generate(ast, { retainLines: false, compact: false }, code);
   fs.writeFileSync(fullPath, output.code, 'utf8');
-  console.log(`  -> Applied transform to ${relativeFilePath}`);
+  console.log(`  ✓ Transformed: ${relativeFilePath}`);
+}
+
+function verifySandboxEnvironment(sandboxDir, verificationSteps) {
+  for (const step of verificationSteps) {
+    console.log(`\n[VERIFY] Executing '${step.name}' via \`${step.cmd}\`...`);
+    try {
+      execSync(step.cmd, {
+        cwd: sandboxDir,
+        stdio: 'inherit',
+        env: { ...process.env, CI: 'true', NODE_ENV: 'test' },
+      });
+      console.log(`[PASS] ${step.name} succeeded.`);
+    } catch (e) {
+      throw new Error(`Verification step '${step.name}' failed.`);
+    }
+  }
 }
 
 async function runEngine(options = {}) {
-  const { dryRun = false, force = false, targetPatchId = null } = options;
+  const {
+    dryRun = false,
+    force = false,
+    targetPatchId = null,
+    skipVerify = false,
+    verifyOnly = false,
+  } = options;
+
   const registry = getRegistry();
   const allPatches = await loadPatches();
 
-  if (allPatches.length === 0) {
-    console.log('[INFO] No patch files found in ./patches directory.');
+  if (verifyOnly) {
+    console.log('[VERIFY ONLY] Executing verification pipeline on current repository state...');
+    verifySandboxEnvironment(PROJECT_ROOT, CONFIG.verificationSteps);
+    console.log('[VERIFY PASS] Workspace verified with 0 errors.');
     return;
   }
 
@@ -169,18 +363,18 @@ async function runEngine(options = {}) {
   });
 
   if (pendingPatches.length === 0) {
-    console.log('[INFO] All patches are up-to-date. Nothing to apply.');
+    console.log('[INFO] No pending patches to apply.');
     return;
   }
 
-  console.log(`\n[PATCH ENGINE] Found ${pendingPatches.length} pending patch(es):`);
-  pendingPatches.forEach((p) => console.log(`  - [${p.id}] ${p.description}`));
+  console.log(`\n[PATCHIEST] Preparing execution pipeline for ${pendingPatches.length} patch(es):`);
+  pendingPatches.forEach((p) => console.log(`  • [${p.id}] ${p.description}`));
 
-  // Initialize Isolated Sandbox
-  const sandboxDir = fs.mkdtempSync(path.join(os.tmpdir(), 'realm-raiders-sandbox-'));
-  console.log(`\n[SANDBOX] Initialized staging environment at: ${sandboxDir}`);
+  const sandboxDir = fs.mkdtempSync(path.join(os.tmpdir(), 'patchiest-sandbox-'));
+  console.log(`\n[SANDBOX] Isolation space provisioned: ${sandboxDir}`);
 
-  const touchedRelativeFiles = new Set();
+  const touchedFiles = new Set();
+  const patchFileMap = new Map();
 
   try {
     fs.cpSync(PROJECT_ROOT, sandboxDir, {
@@ -188,60 +382,46 @@ async function runEngine(options = {}) {
       filter: (src) => {
         const rel = path.relative(PROJECT_ROOT, src);
         if (!rel) return true;
-        const rootSegment = rel.split(path.sep)[0];
-        return !['node_modules', '.git', 'dist', '.cache'].includes(rootSegment);
+        const firstSegment = rel.split(path.sep)[0];
+        return !CONFIG.ignoreSegments.includes(firstSegment);
       },
     });
 
     const srcNodeModules = path.join(PROJECT_ROOT, 'node_modules');
     const targetNodeModules = path.join(sandboxDir, 'node_modules');
     if (fs.existsSync(srcNodeModules)) {
-      fs.symlinkSync(srcNodeModules, targetNodeModules, 'junction');
+      const symlinkType = os.platform() === 'win32' ? 'junction' : 'dir';
+      fs.symlinkSync(srcNodeModules, targetNodeModules, symlinkType);
     }
 
-    // Sequentially apply patches in the sandbox
     for (const patch of pendingPatches) {
       console.log(`\n[APPLYING] ${patch.id} (${patch.file})...`);
+      const patchTouched = [];
       for (const [relPath, transformFn] of Object.entries(patch.transforms)) {
         transformFileInSandbox(sandboxDir, relPath, transformFn);
-        touchedRelativeFiles.add(relPath);
+        touchedFiles.add(relPath);
+        patchTouched.push(relPath);
       }
+      patchFileMap.set(patch.id, patchTouched);
     }
 
-    // Step 1: Sandbox Lint Verification
-    console.log('\n[VERIFY] Executing `pnpm lint` in sandbox...');
-    try {
-      execSync('pnpm lint', {
-        cwd: sandboxDir,
-        stdio: 'inherit',
-        env: { ...process.env, CI: 'true' },
-      });
-      console.log('[VERIFY PASS] `pnpm lint` passed with 0 errors.');
-    } catch (e) {
-      console.error('\n[VERIFY FAIL] Sandbox failed `pnpm lint`. Aborting all patches.');
-      process.exit(1);
-    }
-
-    // Step 2: Sandbox Build Verification
-    console.log('\n[VERIFY] Executing `pnpm build` in sandbox...');
-    try {
-      execSync('pnpm build', {
-        cwd: sandboxDir,
-        stdio: 'inherit',
-        env: { ...process.env, CI: 'true' },
-      });
-      console.log('[VERIFY PASS] `pnpm build` completed successfully.');
-    } catch (e) {
-      console.error('\n[VERIFY FAIL] Sandbox failed `pnpm build`. Aborting all patches.');
-      process.exit(1);
-    }
-
-    // Step 3: Atomic Flush to Workspace
-    if (dryRun) {
-      console.log('\n[DRY RUN COMPLETE] All checks passed. Source workspace left untouched.');
+    if (!skipVerify) {
+      verifySandboxEnvironment(sandboxDir, CONFIG.verificationSteps);
     } else {
-      console.log('\n[COMMIT] Flushing verified files to project workspace...');
-      for (const relFile of touchedRelativeFiles) {
+      console.log('\n[SKIP] Verification steps bypassed via flags.');
+    }
+
+    if (dryRun) {
+      console.log('\n[DRY RUN] All AST mutations and verifications passed. No changes written.');
+    } else {
+      console.log('\n[ATOMIC COMMIT] Writing verified AST modifications to workspace...');
+
+      for (const patch of pendingPatches) {
+        const files = patchFileMap.get(patch.id) || [];
+        createSnapshot(patch.id, files);
+      }
+
+      for (const relFile of touchedFiles) {
         const srcPath = path.join(sandboxDir, relFile);
         const destPath = path.join(PROJECT_ROOT, relFile);
         fs.mkdirSync(path.dirname(destPath), { recursive: true });
@@ -249,60 +429,106 @@ async function runEngine(options = {}) {
         console.log(`  ✓ Written: ${relFile}`);
       }
 
-      // Record to Ledger
       for (const patch of pendingPatches) {
-        const idx = registry.applied.findIndex((a) => a.id === patch.id);
+        const existingIdx = registry.applied.findIndex((a) => a.id === patch.id);
         const record = {
           id: patch.id,
           file: patch.file,
           description: patch.description,
           appliedAt: new Date().toISOString(),
           sha256: patch.sha256,
+          modifiedFiles: patchFileMap.get(patch.id) || [],
         };
-        if (idx >= 0) {
-          registry.applied[idx] = record;
+
+        if (existingIdx >= 0) {
+          registry.applied[existingIdx] = record;
         } else {
           registry.applied.push(record);
         }
       }
+
       saveRegistry(registry);
-      console.log(`  ✓ Updated registry ledger (.ast-patches.json)`);
-      console.log('\n=== All patches successfully verified and applied! ===\n');
+      console.log(`  ✓ Updated synchronization ledger (${CONFIG.registryFile})`);
+      console.log('\n=== Execution Completed Successfully ===\n');
     }
+  } catch (error) {
+    console.error(`\n[EXECUTION HALTED] ${error.message}`);
+    process.exit(1);
   } finally {
     try {
       fs.rmSync(sandboxDir, { recursive: true, force: true });
-      console.log('[SANDBOX] Cleaned up temporary staging directory.');
+      console.log('[SANDBOX] Ephemeral sandbox cleaned.');
     } catch (e) {}
   }
 }
 
 // ============================================================================
-// CLI Command Surface
+// 6. ROLLBACK HANDLER
+// ============================================================================
+async function runRollback(targetPatchId = null) {
+  const registry = getRegistry();
+
+  if (registry.applied.length === 0) {
+    console.log('[INFO] No applied patches found in ledger to roll back.');
+    return;
+  }
+
+  let patchToRevert;
+  if (targetPatchId) {
+    patchToRevert = registry.applied.find((p) => p.id === targetPatchId);
+    if (!patchToRevert) {
+      console.error(`[ERROR] Patch '${targetPatchId}' is not recorded as applied.`);
+      process.exit(1);
+    }
+  } else {
+    patchToRevert = registry.applied[registry.applied.length - 1];
+  }
+
+  console.log(`\n[ROLLBACK] Reverting patch [${patchToRevert.id}]...`);
+  const success = restoreSnapshot(patchToRevert.id);
+
+  if (!success) {
+    console.error(`[ERROR] Could not find snapshot to restore patch '${patchToRevert.id}'.`);
+    process.exit(1);
+  }
+
+  registry.applied = registry.applied.filter((p) => p.id !== patchToRevert.id);
+  saveRegistry(registry);
+
+  console.log(`  ✓ Unregistered from ledger (${CONFIG.registryFile})`);
+  console.log(`\n[ROLLBACK COMPLETE] Successfully reverted ${patchToRevert.id}.\n`);
+}
+
+// ============================================================================
+// 7. CLI COMMAND SURFACE (Patchiest Dispatcher)
 // ============================================================================
 async function printStatus() {
   const registry = getRegistry();
   const allPatches = await loadPatches();
 
-  console.log('\n=================== Realm Raiders AST Patches ===================');
+  console.log('\n========================= Patchiest Registry Status =========================');
   if (allPatches.length === 0) {
-    console.log('No patches found in ./patches\n');
+    console.log('No patches discovered in patches directory.\n');
     return;
   }
 
   allPatches.forEach((patch) => {
     const appliedEntry = registry.applied.find((a) => a.id === patch.id);
-    const status = appliedEntry
-      ? `[APPLIED: ${appliedEntry.appliedAt.split('T')[0]}]`
-      : '[PENDING]';
-    console.log(`${status.padEnd(23)} ${patch.id} - ${patch.description}`);
+    let status = '[PENDING]';
+
+    if (appliedEntry) {
+      const isDrifted = appliedEntry.sha256 !== patch.sha256;
+      status = isDrifted ? '[DRIFT DETECTED]' : `[APPLIED: ${appliedEntry.appliedAt.split('T')[0]}]`;
+    }
+
+    console.log(`${status.padEnd(25)} ${patch.id.padEnd(20)} ${patch.description}`);
   });
-  console.log('=================================================================\n');
+  console.log('=============================================================================\n');
 }
 
-function createNewPatch(name) {
+function createNewPatch(name, templateType = 'default') {
   if (!name) {
-    console.error('[ERROR] Please specify a patch name: node apply-ast-patches.mjs new <name>');
+    console.error('[ERROR] Patch name required: node patchiest.mjs new <name> [--template <type>]');
     process.exit(1);
   }
 
@@ -316,45 +542,79 @@ function createNewPatch(name) {
   const fileName = `${prefix}_${safeName}.mjs`;
   const targetPath = path.join(PATCHES_DIR, fileName);
 
+  let templateBody = '';
+  if (templateType === 'jsx') {
+    templateBody = `export const transforms = {
+  'src/Component.tsx': (ast, { ensureImport, ensureJSXAttribute, findJSXElements }) => {
+    // 1. Ensure dependent imports
+    ensureImport(ast, { source: 'clsx', imported: 'clsx', isDefault: true });
+
+    // 2. Locate opening elements and guarantee attributes
+    const elements = findJSXElements(ast, 'button');
+    elements.forEach((elemPath) => {
+      ensureJSXAttribute(elemPath.node, 'data-patched', astHelpers.t.stringLiteral('true'));
+    });
+  },
+};`;
+  } else {
+    templateBody = `export const transforms = {
+  // 'src/index.ts': (ast, { t, template, traverse, ensureImport }) => {
+  //   ensureImport(ast, { source: '@/config', imported: 'APP_CONFIG' });
+  // },
+};`;
+  }
+
   const boilerplate = `/* eslint-disable */
 export const id = '${prefix}_${safeName}';
-export const description = 'Describe your AST transformation here';
+export const description = 'AST migration for ${safeName}';
 
-export const transforms = {
-  // 'src/components/MyComponent.jsx': (ast, { t, template, traverse, ensureObjectPatternProp }) => {
-  //   traverse(ast, {
-  //     JSXElement(path) {
-  //       // your transformation logic
-  //     }
-  //   });
-  // },
-};
+${templateBody}
 `;
 
   fs.writeFileSync(targetPath, boilerplate, 'utf8');
-  console.log(`[CREATED] New patch generated at: patches/${fileName}`);
+  console.log(`[GENERATED] Patch created: ${path.relative(PROJECT_ROOT, targetPath)}`);
 }
 
 async function main() {
   const args = process.argv.slice(2);
-  const command = args[0];
+  const command = args[0] || 'apply';
 
-  if (command === 'status') {
-    await printStatus();
-    return;
+  switch (command) {
+    case 'status':
+      await printStatus();
+      break;
+
+    case 'new': {
+      const name = args[1];
+      const templateIdx = args.indexOf('--template');
+      const templateType = templateIdx !== -1 ? args[templateIdx + 1] : 'default';
+      createNewPatch(name, templateType);
+      break;
+    }
+
+    case 'rollback': {
+      const patchIdx = args.indexOf('--patch');
+      const targetId = patchIdx !== -1 ? args[patchIdx + 1] : null;
+      await runRollback(targetId);
+      break;
+    }
+
+    case 'verify':
+      await runEngine({ verifyOnly: true });
+      break;
+
+    case 'apply':
+    default: {
+      const dryRun = args.includes('--dry-run');
+      const force = args.includes('--force');
+      const skipVerify = args.includes('--skip-verify');
+      const targetIndex = args.indexOf('--patch');
+      const targetPatchId = targetIndex !== -1 ? args[targetIndex + 1] : null;
+
+      await runEngine({ dryRun, force, targetPatchId, skipVerify });
+      break;
+    }
   }
-
-  if (command === 'new') {
-    createNewPatch(args[1]);
-    return;
-  }
-
-  const dryRun = args.includes('--dry-run');
-  const force = args.includes('--force');
-  const targetIndex = args.indexOf('--patch');
-  const targetPatchId = targetIndex !== -1 ? args[targetIndex + 1] : null;
-
-  await runEngine({ dryRun, force, targetPatchId });
 }
 
 main();
