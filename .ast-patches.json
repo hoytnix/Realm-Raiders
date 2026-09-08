@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "applied": [
+    {
+      "id": "001_overhaul_npc_raids_and_roster",
+      "file": "001_overhaul_npc_raids_and_roster.mjs",
+      "description": "Overhaul NPC raids, add FoW espionage, embed War roster, and fix laborer limits",
+      "appliedAt": "2026-09-08T14:49:27.638Z",
+      "sha256": "c6b8aee7a29be55fef457e12bb963d288f48ad57150920de8323307a438d95ee"
+    }
+  ]
+}
