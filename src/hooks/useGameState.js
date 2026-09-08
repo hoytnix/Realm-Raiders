@@ -1,3 +1,4 @@
+import { INITIAL_STATE, CURRENT_SAVE_VERSION, MIN_COMPATIBLE_SAVE_VERSION } from "../constants/initialState.js";
 import { AMORTIZATION_CONFIG } from "../constants/buildings.js";
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { STORAGE_KEY, DEFAULT_STATE, FACTIONS, BUILDINGS, SEASONS, SEASON_ORDER, WEATHER_CONDITIONS, WEATHER_POOL, REALM_MONTHS, getNextWeather, calculateResourceCaps, TECHNOLOGIES, TERRITORY_TIERS, MAX_TERRITORY_TIER, TROOP_RECRUIT_COST, createDefaultGrid, getBuildingUpgradeCost, calculateBuildingYield, calculateBuildDuration, toRomanTier, formatBuildDuration, sounds, DEFAULT_VILLAGERS, VILLAGER_NAMES } from '../constants/index.js';
@@ -1769,4 +1770,19 @@ export function useGameState() {
     recruitLaborer,
     handlePayExtortionTribute
   };
+}
+function migrateSaveState(rawState) {
+  if (!rawState || typeof rawState !== 'object') {
+    return INITIAL_STATE;
+  }
+  const version = typeof rawState.saveVersion === 'number' ? rawState.saveVersion : 0;
+  if (version < MIN_COMPATIBLE_SAVE_VERSION) {
+    console.warn('[Save Migration] Save version ' + version + ' is below minimum supported ' + MIN_COMPATIBLE_SAVE_VERSION + '. Resetting kingdom realm.');
+    return INITIAL_STATE;
+  }
+  let state = {
+    ...rawState
+  };
+  state.saveVersion = CURRENT_SAVE_VERSION;
+  return state;
 }

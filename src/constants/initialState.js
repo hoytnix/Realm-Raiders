@@ -1,3 +1,5 @@
+export const CURRENT_SAVE_VERSION = 1;
+export const MIN_COMPATIBLE_SAVE_VERSION = 1;
 // ==========================================
 // STORAGE KEY & INITIAL GAME STATE SCHEMA
 // ==========================================
@@ -159,4 +161,7 @@ export const DEFAULT_STATE = {
   raidCooldown: 300,
   truceOfFoundations: true,
   impendingRaid: null
+};
+export const INITIAL_STATE = {
+  saveVersion: CURRENT_SAVE_VERSION
 };

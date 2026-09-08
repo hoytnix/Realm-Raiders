@@ -61,6 +61,17 @@
         "src/hooks/useGameState.js",
         "src/components/citadel/BuildingHoverTooltip.jsx"
       ]
+    },
+    {
+      "id": "009_save_version_control_and_migrations",
+      "file": "009_save_version_control_and_migrations.mjs",
+      "description": "Implement save-file schema version control, migrations, and breaking reset guards",
+      "appliedAt": "2026-09-08T16:21:15.957Z",
+      "sha256": "11930c25caffa4f1bf0b1c225562fc8b371d3e0aec23a1a82727d7daceb9206b",
+      "modifiedFiles": [
+        "src/constants/initialState.js",
+        "src/hooks/useGameState.js"
+      ]
     }
   ]
 }
