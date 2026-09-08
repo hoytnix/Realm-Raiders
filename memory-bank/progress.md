@@ -38,7 +38,17 @@
   - [x] Gyroscope parallax support via `DeviceOrientationEvent` in `useDeskTilt`.
   - [x] Web Vibration API tactile feedback (`haptics.light`, `haptics.harvest`, `haptics.heavy`).
   - [x] Compact crisis pill & interactive dropdown modal for famine alerts.
-  - [x] Full-screen slide-up parchment folios with safe-area insets and 48px+ touch targets.
+  - [x] **Constructible Plots, Dynamic Territory Expansion & Demographic Famine Mortality**:
+  - [x] Constructible Plots & Catalog (`BUILDINGS.farm`, `BUILDINGS.barracks`, `EMPTY_PLOT`, `CONSTRUCTIBLE_BLUEPRINTS`).
+  - [x] Territory Expansion Tiers (`TERRITORY_TIERS` Tier 1: 4x4, Tier 2: 5x5, Tier 3: 6x6, annexation costs & keep prerequisites).
+  - [x] Dynamic SVG Grid with Cleared Foundation Plots (`+` markers, dashed parchment lines, and fog-of-war boundary tiles with locks).
+  - [x] Architect Commission Drawer in `BuildingInspector` (carousel of blueprints with labor demand and build costs).
+  - [x] Barracks Garrison Recruitment (`trainTroops` action, troop capacity limits, cost deductions).
+  - [x] Keep Annexation Decree (`expandTerritory` action, boundary tier progression, chronicle logging).
+  - [x] Population-driven Troop Demographics & Upkeep (`troops` object with sustenance upkeep).
+  - [x] Replaced flat 50% famine penalty with continuous Labor Efficiency saturation curve (`min(1.0, troops / laborDemand)` with 8% floor).
+  - [x] Daily Starvation Mortality Engine (10% casualties when food/water stores hit zero, chronicled in battle tome).
+  - [x] Dynamic Demographic Famine Warning banner and interactive crisis modal.
 
 ## Planned / In Progress
 - [ ] Additional sound synthesizers (ambient wind, rain, blizzard noise nodes).

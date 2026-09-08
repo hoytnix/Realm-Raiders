@@ -2,17 +2,20 @@ import React, { useState } from 'react';
 import { sounds } from '../../constants/index.js';
 import { haptics } from '../../utils/index.js';
 
-export function FamineWarning({ isStarving, onRaidGrain }) {
+export function FamineWarning({ isStarving, onRaidGrain, starvationDeaths = 0, laborEfficiency = 0.5 }) {
   const [modalOpen, setModalOpen] = useState(false);
 
   if (!isStarving) return null;
+
+  const deathsLabel = starvationDeaths > 0 ? `(-${starvationDeaths}/cycle)` : '(-10%/cycle)';
+  const laborPct = Math.round((laborEfficiency ?? 0.5) * 100);
 
   return (
     <>
       {/* Desktop Full Alert Banner */}
       <div className="hidden md:flex bg-red-950/90 border-2 border-red-600 text-red-200 px-3 py-1 rounded-xl text-xs font-bold shadow-[0_0_20px_rgba(220,38,38,0.4)] items-center gap-2 animate-pulse">
         <span>⚠️</span>
-        <span>FAMINE IN THE REALM: Sustenance exhausted! Harvest yields & defenses halved.</span>
+        <span>FAMINE ACTIVE: Troops Starving {deathsLabel} • Realm Labor at {laborPct}%</span>
       </div>
 
       {/* Mobile Compact Crisis Pill */}
@@ -26,7 +29,7 @@ export function FamineWarning({ isStarving, onRaidGrain }) {
         title="Active Realm Crisis"
       >
         <span>🩸</span>
-        <span>Famine</span>
+        <span>Famine ({laborPct}%)</span>
       </button>
 
       {/* Mobile Animated Crisis Dropdown Modal */}
@@ -47,12 +50,13 @@ export function FamineWarning({ isStarving, onRaidGrain }) {
             </div>
 
             <p className="text-xs text-stone-800 leading-relaxed">
-              Citadel food or water stores have been depleted to zero! The populace and garrison are starving.
+              Citadel sustenance stores have run dry! Troops are succumbing to malnutrition, reducing workforce saturation and crippling harvest yields.
             </p>
 
             <div className="bg-red-950/10 border border-red-800/30 rounded-xl p-2 text-[11px] text-red-950 font-mono space-y-1">
-              <div>• Crop & building yields halved (-50%)</div>
-              <div>• Citadel defense rating halved (-50%)</div>
+              <div>• Troop Casualties: {deathsLabel}</div>
+              <div>• Active Labor Saturation: {laborPct}%</div>
+              <div>• Harvest yields scale proportionally with living laborers</div>
             </div>
 
             <div className="flex gap-2 pt-1">

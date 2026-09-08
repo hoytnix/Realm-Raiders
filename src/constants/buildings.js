@@ -1,5 +1,5 @@
 // ==========================================
-// CITADEL BUILDINGS DEFINITIONS
+// CITADEL BUILDINGS DEFINITIONS & BLUEPRINTS
 // ==========================================
 export const BUILDINGS = {
   keep: {
@@ -7,11 +7,13 @@ export const BUILDINGS = {
     name: 'Royal Keep',
     inkSymbol: '🏰',
     tag: 'Citadel Heart',
-    description: 'Heart of the realm. Fortifies overall defense power and unlocks higher structural tiers.',
-    gx: 2, gy: 2,
+    description: 'Heart of the realm. Fortifies overall defense power and unlocks higher structural tiers and territory annexation decrees.',
+    gx: 1, gy: 1,
     baseCost: { gold: 120, wood: 100, stone: 100 },
     costMult: 1.6,
     baseHp: 650,
+    laborRequired: 4,
+    maxTier: 5,
     type: 'core'
   },
   granary: {
@@ -20,14 +22,49 @@ export const BUILDINGS = {
     inkSymbol: '🌾',
     tag: 'Ration Silo',
     description: 'Cultivates grain crops and stores bread flour. Sustains realm population and standing garrison.',
-    gx: 1, gy: 1,
+    gx: 0, gy: 1,
     baseCost: { gold: 50, wood: 60, stone: 20 },
     costMult: 1.45,
     cycleDuration: 12,
     baseYield: { food: 55 },
     baseCapacity: 1200,
     baseHp: 280,
+    laborRequired: 3,
+    maxTier: 5,
     type: 'eco'
+  },
+  farm: {
+    id: 'farm',
+    name: 'Grain Acreage',
+    inkSymbol: '🌿',
+    tag: 'Agriculture',
+    description: 'Expansive rye and barley acreage yielding regular harvests to sustain the citadel workforce.',
+    gx: 2, gy: 3,
+    baseCost: { gold: 40, wood: 45, stone: 20 },
+    costMult: 1.4,
+    cycleDuration: 10,
+    baseYield: { food: 45 },
+    baseCapacity: 800,
+    baseHp: 220,
+    laborRequired: 3,
+    maxTier: 5,
+    type: 'eco'
+  },
+  barracks: {
+    id: 'barracks',
+    name: 'War Garrison & Barracks',
+    inkSymbol: '⚔️',
+    tag: 'Military Quarters',
+    description: 'Houses royal levies and trains valiant footmen to bolster defense and labor force.',
+    gx: 3, gy: 2,
+    baseCost: { gold: 90, wood: 100, stone: 70 },
+    costMult: 1.5,
+    defense: 25,
+    troopCapacity: 20,
+    baseHp: 450,
+    laborRequired: 2,
+    maxTier: 5,
+    type: 'military'
   },
   well: {
     id: 'well',
@@ -35,13 +72,15 @@ export const BUILDINGS = {
     inkSymbol: '💧',
     tag: 'Aquifer',
     description: 'Pumps fresh spring aquifer water essential to ward off severe dehydration and mutinous unrest.',
-    gx: 3, gy: 1,
+    gx: 2, gy: 1,
     baseCost: { gold: 45, wood: 40, stone: 40 },
     costMult: 1.42,
     cycleDuration: 10,
     baseYield: { water: 50 },
     baseCapacity: 1200,
     baseHp: 260,
+    laborRequired: 2,
+    maxTier: 5,
     type: 'eco'
   },
   lumber: {
@@ -57,6 +96,8 @@ export const BUILDINGS = {
     baseYield: { wood: 60 },
     baseCapacity: 1500,
     baseHp: 250,
+    laborRequired: 4,
+    maxTier: 5,
     type: 'resource'
   },
   quarry: {
@@ -65,19 +106,21 @@ export const BUILDINGS = {
     inkSymbol: '🪨',
     tag: 'Masonry',
     description: 'Chisels granite blocks to reinforce battlements and withstand enemy catapult bombardments.',
-    gx: 4, gy: 2,
+    gx: 2, gy: 2,
     baseCost: { gold: 60, wood: 50, stone: 30 },
     costMult: 1.45,
     cycleDuration: 18,
     baseYield: { stone: 60 },
     baseCapacity: 1500,
     baseHp: 320,
+    laborRequired: 5,
+    maxTier: 5,
     type: 'resource'
   },
   greenhouse: {
     id: 'greenhouse',
     name: 'Mystic Herbalist',
-    inkSymbol: '🌿',
+    inkSymbol: '🌱',
     tag: 'Alchemist',
     description: 'Nurtures moonlit flora used for alchemical healing salves, magical wards, and raid enhancements.',
     gx: 1, gy: 3,
@@ -87,6 +130,8 @@ export const BUILDINGS = {
     baseYield: { flora: 35 },
     baseCapacity: 800,
     baseHp: 220,
+    laborRequired: 3,
+    maxTier: 5,
     type: 'magic'
   },
   vault: {
@@ -95,13 +140,15 @@ export const BUILDINGS = {
     inkSymbol: '🪙',
     tag: 'Treasury',
     description: 'Mints golden crowns and keeps bullion safe beneath stone slabs during asynchronous pillage incursions.',
-    gx: 3, gy: 3,
+    gx: 3, gy: 1,
     baseCost: { gold: 100, wood: 80, stone: 110 },
     costMult: 1.55,
     cycleDuration: 20,
     baseYield: { gold: 65 },
     baseCapacity: 2000,
     baseHp: 420,
+    laborRequired: 2,
+    maxTier: 5,
     type: 'finance'
   },
   watchtower: {
@@ -115,6 +162,34 @@ export const BUILDINGS = {
     costMult: 1.5,
     defense: 38,
     baseHp: 460,
+    laborRequired: 2,
+    maxTier: 5,
     type: 'military'
   }
+};
+
+export const EMPTY_PLOT = {
+  id: 'empty_plot',
+  name: 'Cleared Foundation',
+  inkSymbol: '⛏️',
+  tag: 'Surveyed Plot',
+  description: 'Cleared ground with surveyed cornerstones ready for new architectural construction decrees.',
+  type: 'plot'
+};
+
+export const CONSTRUCTIBLE_BLUEPRINTS = [
+  'farm',
+  'granary',
+  'lumber',
+  'quarry',
+  'barracks',
+  'watchtower',
+  'well',
+  'greenhouse',
+  'vault'
+];
+
+export const TROOP_RECRUIT_COST = {
+  gold: 15,
+  food: 10
 };

@@ -1,10 +1,21 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { BUILDINGS, ISO_W, ISO_H, gridToParchmentIso, sounds } from '../../constants/index.js';
+import {
+  BUILDINGS,
+  ISO_W,
+  ISO_H,
+  MAX_GRID_SIZE,
+  gridToParchmentIso,
+  isPlotAnnexed,
+  createDefaultGrid,
+  sounds
+} from '../../constants/index.js';
 import { haptics } from '../../utils/index.js';
 
 export function CitadelSvgGrid({
-  buildings,
-  harvestTimers,
+  buildings = {},
+  harvestTimers = {},
+  grid = null,
+  territoryTier = 1,
   onHarvest,
   selectedBuildingId,
   onSelectBuilding,
@@ -16,6 +27,9 @@ export function CitadelSvgGrid({
   const [scale, setScale] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isInteracting, setIsInteracting] = useState(false);
+
+  // Active grid tiles
+  const activeGrid = grid && Array.isArray(grid) && grid.length > 0 ? grid : createDefaultGrid();
 
   // Touch tracking refs
   const touchStateRef = useRef({
@@ -102,6 +116,28 @@ export function CitadelSvgGrid({
     setIsInteracting(false);
   };
 
+  // Find coordinates for aqueducts dynamically
+  const keepPlot = activeGrid.find(p => p.buildingId === 'keep');
+  const wellPlot = activeGrid.find(p => p.buildingId === 'well');
+  const granaryPlot = activeGrid.find(p => p.buildingId === 'granary');
+
+  const keepIso = keepPlot ? gridToParchmentIso(keepPlot.gx, keepPlot.gy, 270, 48) : gridToParchmentIso(1, 1, 270, 48);
+  const wellIso = wellPlot ? gridToParchmentIso(wellPlot.gx, wellPlot.gy, 270, 48) : gridToParchmentIso(2, 1, 270, 48);
+  const granaryIso = granaryPlot ? gridToParchmentIso(granaryPlot.gx, granaryPlot.gy, 270, 48) : gridToParchmentIso(0, 1, 270, 48);
+
+  // Coordinate arrays for all 6x6 grid positions
+  const coords = [];
+  for (let gx = 0; gx < MAX_GRID_SIZE; gx++) {
+    for (let gy = 0; gy < MAX_GRID_SIZE; gy++) {
+      coords.push({ gx, gy });
+    }
+  }
+
+  // Sorted items within annexed territory (empty plots + constructed buildings)
+  const annexedPlots = activeGrid
+    .filter(p => isPlotAnnexed(p.gx, p.gy, territoryTier))
+    .sort((a, b) => (a.gx + a.gy) - (b.gx + b.gy));
+
   return (
     <div
       onTouchStart={handleTouchStart}
@@ -135,222 +171,323 @@ export function CitadelSvgGrid({
             <stop offset="0%" stopColor="#ebdcc1" />
             <stop offset="100%" stopColor="#dfcba6" />
           </linearGradient>
+          <linearGradient id="parchmentFog" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#c8b28f" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#b59c77" stopOpacity="0.6" />
+          </linearGradient>
           <linearGradient id="roofGoldInk" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#d97706" />
             <stop offset="100%" stopColor="#78350f" />
           </linearGradient>
         </defs>
 
-        {/* Isometric Ground Grid Lines */}
-        {[0, 1, 2, 3, 4].map(gx =>
-          [0, 1, 2, 3, 4].map(gy => {
-            const { x, y } = gridToParchmentIso(gx, gy, 270, 50);
-            const isRoad = gx === 2 || gy === 2;
-            return (
+        {/* Isometric Ground Grid Lines (Annexed Plots & Unpurchased Fog Borders) */}
+        {coords.map(({ gx, gy }) => {
+          const { x, y } = gridToParchmentIso(gx, gy, 270, 48);
+          const isAnnexed = isPlotAnnexed(gx, gy, territoryTier);
+          const isRoad = isAnnexed && ((gx === 1 && gy <= 3) || (gy === 1 && gx <= 3));
+
+          return (
+            <g key={`tile-${gx}-${gy}`}>
               <polygon
-                key={`tile-${gx}-${gy}`}
                 points={`
                   ${x},${y - ISO_H / 2}
                   ${x + ISO_W / 2},${y}
                   ${x},${y + ISO_H / 2}
                   ${x - ISO_W / 2},${y}
                 `}
-                fill={isRoad ? '#d5be97' : 'url(#parchmentGround)'}
-                stroke="#8c6843"
-                strokeWidth="1.2"
-                strokeDasharray={isRoad ? '2,2' : 'none'}
-              />
-            );
-          })
-        )}
-
-        {/* Animated Aqueduct Pulses */}
-        <line
-          x1={gridToParchmentIso(1, 1, 270, 50).x}
-          y1={gridToParchmentIso(1, 1, 270, 50).y}
-          x2={gridToParchmentIso(2, 2, 270, 50).x}
-          y2={gridToParchmentIso(2, 2, 270, 50).y}
-          stroke="#0284c7"
-          strokeWidth="2"
-          strokeDasharray="4,6"
-          strokeDashoffset={-inkPulseTick}
-          opacity="0.8"
-        />
-        <line
-          x1={gridToParchmentIso(3, 1, 270, 50).x}
-          y1={gridToParchmentIso(3, 1, 270, 50).y}
-          x2={gridToParchmentIso(2, 2, 270, 50).x}
-          y2={gridToParchmentIso(2, 2, 270, 50).y}
-          stroke="#0284c7"
-          strokeWidth="2"
-          strokeDasharray="4,6"
-          strokeDashoffset={-inkPulseTick}
-          opacity="0.8"
-        />
-
-        {/* 2.5D Isometric Buildings with Illuminated Harvest Rings */}
-        {Object.values(BUILDINGS)
-          .sort((a, b) => (a.gx + a.gy) - (b.gx + b.gy))
-          .map(b => {
-            const level = buildings[b.id] || 1;
-            const { x, y } = gridToParchmentIso(b.gx, b.gy, 270, 50);
-            const isSelected = selectedBuildingId === b.id;
-            const height = 24 + level * 7;
-
-            // Harvest calculation
-            const cycleDur = b.cycleDuration || 0;
-            const timerVal = harvestTimers[b.id] || 0;
-            const progressRatio = cycleDur > 0 ? Math.min(1, timerVal / cycleDur) : 0;
-            const isReadyToHarvest = cycleDur > 0 && progressRatio >= 1;
-
-            return (
-              <g
-                key={b.id}
-                data-building-id={b.id}
-                data-harvest-ready={isReadyToHarvest ? 'true' : 'false'}
+                fill={
+                  !isAnnexed
+                    ? 'url(#parchmentFog)'
+                    : isRoad
+                    ? '#d5be97'
+                    : 'url(#parchmentGround)'
+                }
+                stroke={isAnnexed ? '#8c6843' : '#a88d6a'}
+                strokeWidth={isAnnexed ? '1.2' : '0.9'}
+                strokeDasharray={!isAnnexed ? '3,3' : isRoad ? '2,2' : 'none'}
+                opacity={isAnnexed ? 1 : 0.65}
                 onClick={() => {
-                  if (isReadyToHarvest) {
-                    haptics.harvest();
-                    onHarvest(b.id);
-                  } else {
+                  if (!isAnnexed) {
                     sounds.playCoin();
                     haptics.light();
-                    onSelectBuilding(b.id);
+                    onSelectBuilding('keep'); // Guide player to Keep to annex
                   }
                 }}
-                onMouseEnter={() => {
-                  if (isSelected && canAfford) onHoverUpgrade(true);
+              />
+
+              {/* Fog-of-War Lock Glyphs on Un-annexed Border Tiles */}
+              {!isAnnexed && (
+                <text
+                  x={x}
+                  y={y + 4}
+                  textAnchor="middle"
+                  fill="#78553d"
+                  fontSize="11"
+                  opacity="0.45"
+                  className="select-none pointer-events-none"
+                >
+                  🔒
+                </text>
+              )}
+            </g>
+          );
+        })}
+
+        {/* Animated Aqueduct Pulses connecting Spring Well to Keep and Granary */}
+        {wellPlot && (
+          <>
+            <line
+              x1={wellIso.x}
+              y1={wellIso.y}
+              x2={keepIso.x}
+              y2={keepIso.y}
+              stroke="#0284c7"
+              strokeWidth="2"
+              strokeDasharray="4,6"
+              strokeDashoffset={-inkPulseTick}
+              opacity="0.8"
+            />
+            <line
+              x1={wellIso.x}
+              y1={wellIso.y}
+              x2={granaryIso.x}
+              y2={granaryIso.y}
+              stroke="#0284c7"
+              strokeWidth="2"
+              strokeDasharray="4,6"
+              strokeDashoffset={-inkPulseTick}
+              opacity="0.8"
+            />
+          </>
+        )}
+
+        {/* Render Annexed Citadel Plots: Empty Foundations and Constructed Structures */}
+        {annexedPlots.map(plot => {
+          const { x, y } = gridToParchmentIso(plot.gx, plot.gy, 270, 48);
+
+          // CASE 1: EMPTY FOUNDATION PLOT
+          if (!plot.buildingId) {
+            const isSelected = selectedBuildingId === plot.id;
+            return (
+              <g
+                key={plot.id}
+                data-plot-id={plot.id}
+                onClick={() => {
+                  sounds.playCoin();
+                  haptics.light();
+                  onSelectBuilding(plot.id);
                 }}
-                onMouseLeave={() => onHoverUpgrade(false)}
                 className="cursor-pointer group"
               >
-                {/* Cast Ground Shadow */}
+                {/* Dashed Foundation Diamond Marker */}
                 <polygon
                   points={`
-                    ${x},${y}
-                    ${x + ISO_W / 2},${y - ISO_H / 4}
-                    ${x + ISO_W / 1.5},${y + 8}
-                    ${x},${y + 6}
-                  `}
-                  fill="rgba(78, 52, 34, 0.35)"
-                />
-
-                {/* Harvest Timer Arc / Ring around building base */}
-                {cycleDur > 0 && (
-                  <ellipse
-                    cx={x}
-                    cy={y}
-                    rx={ISO_W / 2 + 4}
-                    ry={ISO_H / 2 + 2}
-                    fill="none"
-                    stroke={isReadyToHarvest ? '#16a34a' : '#d97706'}
-                    strokeWidth={isReadyToHarvest ? '3' : '2'}
-                    strokeDasharray="140"
-                    strokeDashoffset={140 - (progressRatio * 140)}
-                    opacity="0.85"
-                  />
-                )}
-
-                {/* Left Facet */}
-                <polygon
-                  points={`
-                    ${x - ISO_W / 2.5},${y - height}
-                    ${x},${y + ISO_H / 3 - height}
-                    ${x},${y + ISO_H / 3}
+                    ${x},${y - ISO_H / 2.5}
+                    ${x + ISO_W / 2.5},${y}
+                    ${x},${y + ISO_H / 2.5}
                     ${x - ISO_W / 2.5},${y}
                   `}
-                  fill={isSelected ? '#c2410c' : '#78553d'}
-                  stroke="#3f2314"
-                  strokeWidth="1.2"
+                  fill={isSelected ? 'rgba(217, 119, 6, 0.28)' : 'rgba(140, 104, 67, 0.12)'}
+                  stroke={isSelected ? '#d97706' : '#8c6843'}
+                  strokeWidth={isSelected ? '2' : '1.2'}
+                  strokeDasharray="4,4"
+                  className="transition group-hover:fill-amber-600/20"
                 />
 
-                {/* Right Facet */}
-                <polygon
-                  points={`
-                    ${x},${y + ISO_H / 3 - height}
-                    ${x + ISO_W / 2.5},${y - height}
-                    ${x + ISO_W / 2.5},${y}
-                    ${x},${y + ISO_H / 3}
-                  `}
-                  fill={isSelected ? '#9a3412' : '#5e3f2b'}
-                  stroke="#3f2314"
-                  strokeWidth="1.2"
-                />
-
-                {/* Roof Diamond */}
-                <polygon
-                  points={`
-                    ${x},${y - ISO_H / 3 - height}
-                    ${x + ISO_W / 2.5},${y - height}
-                    ${x},${y + ISO_H / 3 - height}
-                    ${x - ISO_W / 2.5},${y - height}
-                  `}
-                  fill={isSelected ? '#f97316' : b.id === 'keep' ? 'url(#roofGoldInk)' : '#9c7349'}
-                  stroke="#3f2314"
-                  strokeWidth="1.2"
-                />
-
-                {/* Ink Drawn Icon & Tier Seal */}
+                {/* Stone Foundation Center Marker "+" */}
                 <text
                   x={x}
-                  y={y - height - 4}
+                  y={y + 4}
                   textAnchor="middle"
-                  className="text-base select-none pointer-events-none"
+                  fill={isSelected ? '#78350f' : '#8c6843'}
+                  fontSize="13"
+                  fontWeight="black"
+                  className="select-none pointer-events-none"
                 >
-                  {b.inkSymbol}
+                  +
                 </text>
-                <rect
-                  x={x - 14}
-                  y={y - height + 8}
-                  width="28"
-                  height="12"
-                  rx="3"
-                  fill="#3f2314"
-                  stroke="#eab308"
-                  strokeWidth="1"
-                />
+
+                {/* Subtle Plot Coordinate Stamp */}
                 <text
                   x={x}
-                  y={y - height + 17}
+                  y={y - 9}
                   textAnchor="middle"
-                  fill="#fef08a"
-                  fontSize="9"
+                  fill={isSelected ? '#78350f' : '#8c6843'}
+                  fontSize="8"
                   fontWeight="bold"
-                  fontFamily="monospace"
+                  letterSpacing="0.4"
+                  opacity={isSelected ? '1' : '0.65'}
+                  className="select-none pointer-events-none font-mono"
                 >
-                  T{level}
+                  PLOT
                 </text>
-
-                {/* Click-to-Collect Floating Ink Banner */}
-                {isReadyToHarvest && (
-                  <g className="animate-bounce">
-                    <rect
-                      x={x - 32}
-                      y={y - height - 24}
-                      width="64"
-                      height="16"
-                      rx="4"
-                      fill="#15803d"
-                      stroke="#86efac"
-                      strokeWidth="1.2"
-                      className="shadow"
-                    />
-                    <text
-                      x={x}
-                      y={y - height - 12}
-                      textAnchor="middle"
-                      fill="#f0fdf4"
-                      fontSize="9"
-                      fontWeight="black"
-                      fontFamily="sans-serif"
-                    >
-                      CLAIM YIELD!
-                    </text>
-                  </g>
-                )}
               </g>
             );
-          })}
+          }
+
+          // CASE 2: CONSTRUCTED 2.5D BUILDING
+          const b = BUILDINGS[plot.buildingId];
+          if (!b) return null;
+
+          const level = buildings[b.id] || 1;
+          const isSelected = selectedBuildingId === b.id;
+          const height = 24 + level * 7;
+
+          // Harvest calculation
+          const cycleDur = b.cycleDuration || 0;
+          const timerVal = harvestTimers[b.id] || 0;
+          const progressRatio = cycleDur > 0 ? Math.min(1, timerVal / cycleDur) : 0;
+          const isReadyToHarvest = cycleDur > 0 && progressRatio >= 1;
+
+          return (
+            <g
+              key={plot.id}
+              data-building-id={b.id}
+              data-harvest-ready={isReadyToHarvest ? 'true' : 'false'}
+              onClick={() => {
+                if (isReadyToHarvest) {
+                  haptics.harvest();
+                  onHarvest(b.id);
+                } else {
+                  sounds.playCoin();
+                  haptics.light();
+                  onSelectBuilding(b.id);
+                }
+              }}
+              onMouseEnter={() => {
+                if (isSelected && canAfford) onHoverUpgrade(true);
+              }}
+              onMouseLeave={() => onHoverUpgrade(false)}
+              className="cursor-pointer group"
+            >
+              {/* Cast Ground Shadow */}
+              <polygon
+                points={`
+                  ${x},${y}
+                  ${x + ISO_W / 2},${y - ISO_H / 4}
+                  ${x + ISO_W / 1.5},${y + 8}
+                  ${x},${y + 6}
+                `}
+                fill="rgba(78, 52, 34, 0.35)"
+              />
+
+              {/* Harvest Timer Arc / Ring around building base */}
+              {cycleDur > 0 && (
+                <ellipse
+                  cx={x}
+                  cy={y}
+                  rx={ISO_W / 2 + 4}
+                  ry={ISO_H / 2 + 2}
+                  fill="none"
+                  stroke={isReadyToHarvest ? '#16a34a' : '#d97706'}
+                  strokeWidth={isReadyToHarvest ? '3' : '2'}
+                  strokeDasharray="140"
+                  strokeDashoffset={140 - (progressRatio * 140)}
+                  opacity="0.85"
+                />
+              )}
+
+              {/* Left Facet */}
+              <polygon
+                points={`
+                  ${x - ISO_W / 2.5},${y - height}
+                  ${x},${y + ISO_H / 3 - height}
+                  ${x},${y + ISO_H / 3}
+                  ${x - ISO_W / 2.5},${y}
+                `}
+                fill={isSelected ? '#c2410c' : '#78553d'}
+                stroke="#3f2314"
+                strokeWidth="1.2"
+              />
+
+              {/* Right Facet */}
+              <polygon
+                points={`
+                  ${x},${y + ISO_H / 3 - height}
+                  ${x + ISO_W / 2.5},${y - height}
+                  ${x + ISO_W / 2.5},${y}
+                  ${x},${y + ISO_H / 3}
+                `}
+                fill={isSelected ? '#9a3412' : '#5e3f2b'}
+                stroke="#3f2314"
+                strokeWidth="1.2"
+              />
+
+              {/* Roof Diamond */}
+              <polygon
+                points={`
+                  ${x},${y - ISO_H / 3 - height}
+                  ${x + ISO_W / 2.5},${y - height}
+                  ${x},${y + ISO_H / 3 - height}
+                  ${x - ISO_W / 2.5},${y - height}
+                `}
+                fill={isSelected ? '#f97316' : b.id === 'keep' ? 'url(#roofGoldInk)' : '#9c7349'}
+                stroke="#3f2314"
+                strokeWidth="1.2"
+              />
+
+              {/* Ink Drawn Icon & Tier Seal */}
+              <text
+                x={x}
+                y={y - height - 4}
+                textAnchor="middle"
+                className="text-base select-none pointer-events-none"
+              >
+                {b.inkSymbol}
+              </text>
+              <rect
+                x={x - 14}
+                y={y - height + 8}
+                width="28"
+                height="12"
+                rx="3"
+                fill="#3f2314"
+                stroke="#eab308"
+                strokeWidth="1"
+              />
+              <text
+                x={x}
+                y={y - height + 17}
+                textAnchor="middle"
+                fill="#fef08a"
+                fontSize="9"
+                fontWeight="bold"
+                fontFamily="monospace"
+              >
+                T{level}
+              </text>
+
+              {/* Click-to-Collect Floating Ink Banner */}
+              {isReadyToHarvest && (
+                <g className="animate-bounce">
+                  <rect
+                    x={x - 32}
+                    y={y - height - 24}
+                    width="64"
+                    height="16"
+                    rx="4"
+                    fill="#15803d"
+                    stroke="#86efac"
+                    strokeWidth="1.2"
+                    className="shadow"
+                  />
+                  <text
+                    x={x}
+                    y={y - height - 12}
+                    textAnchor="middle"
+                    fill="#f0fdf4"
+                    fontSize="9"
+                    fontWeight="black"
+                    fontFamily="sans-serif"
+                  >
+                    CLAIM YIELD!
+                  </text>
+                </g>
+              )}
+            </g>
+          );
+        })}
       </svg>
     </div>
   );

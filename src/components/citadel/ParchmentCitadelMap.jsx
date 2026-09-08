@@ -1,16 +1,22 @@
 import React from 'react';
-import { BUILDINGS, WEATHER_CONDITIONS } from '../../constants/index.js';
+import { BUILDINGS, EMPTY_PLOT, WEATHER_CONDITIONS } from '../../constants/index.js';
 import { CitadelSvgGrid } from './CitadelSvgGrid.jsx';
 import { BuildingInspector } from './BuildingInspector.jsx';
 
 export function ParchmentCitadelMap({
   buildings,
   harvestTimers,
+  grid,
+  territoryTier = 1,
+  troops = { total: 20, maxCapacity: 30 },
   onHarvest,
   onHarvestAll,
   selectedBuildingId,
   onSelectBuilding,
   onUpgradeBuilding,
+  onConstructBuilding,
+  onExpandTerritory,
+  onTrainTroops,
   resources,
   faction,
   stats,
@@ -19,15 +25,17 @@ export function ParchmentCitadelMap({
   stampingDecree,
   onHoverUpgrade
 }) {
-  const selectedDef = BUILDINGS[selectedBuildingId] || BUILDINGS.keep;
-  const currentLvl = buildings[selectedBuildingId] || 1;
+  const isEmptyPlot = selectedBuildingId?.startsWith('plot-');
+  const selectedDef = isEmptyPlot ? EMPTY_PLOT : (BUILDINGS[selectedBuildingId] || BUILDINGS.keep);
+  const currentLvl = isEmptyPlot ? 0 : (buildings[selectedBuildingId] || 1);
   const discount = faction?.id === 'humans' ? 0.5 : 1.0;
 
-  const costGold = Math.round(selectedDef.baseCost.gold * Math.pow(selectedDef.costMult, currentLvl - 1) * discount);
-  const costWood = Math.round(selectedDef.baseCost.wood * Math.pow(selectedDef.costMult, currentLvl - 1) * discount);
-  const costStone = Math.round(selectedDef.baseCost.stone * Math.pow(selectedDef.costMult, currentLvl - 1) * discount);
+  const costGold = isEmptyPlot ? 0 : Math.round((selectedDef.baseCost?.gold || 0) * Math.pow(selectedDef.costMult || 1.5, currentLvl - 1) * discount);
+  const costWood = isEmptyPlot ? 0 : Math.round((selectedDef.baseCost?.wood || 0) * Math.pow(selectedDef.costMult || 1.5, currentLvl - 1) * discount);
+  const costStone = isEmptyPlot ? 0 : Math.round((selectedDef.baseCost?.stone || 0) * Math.pow(selectedDef.costMult || 1.5, currentLvl - 1) * discount);
 
   const canAfford =
+    !isEmptyPlot &&
     resources.gold >= costGold &&
     resources.wood >= costWood &&
     resources.stone >= costStone;
@@ -78,10 +86,12 @@ export function ParchmentCitadelMap({
         </button>
       )}
 
-      {/* The 2.5D Isometric SVG Living Ink Canvas with pinch-zoom/pan/sweep */}
+      {/* The 2.5D Isometric SVG Living Ink Canvas with dynamic grid, tiers, pinch-zoom/pan/sweep */}
       <CitadelSvgGrid
         buildings={buildings}
         harvestTimers={harvestTimers}
+        grid={grid}
+        territoryTier={territoryTier}
         onHarvest={onHarvest}
         selectedBuildingId={selectedBuildingId}
         onSelectBuilding={onSelectBuilding}
@@ -103,6 +113,12 @@ export function ParchmentCitadelMap({
         onUpgradeBuilding={onUpgradeBuilding}
         selectedBuildingId={selectedBuildingId}
         onHoverUpgrade={onHoverUpgrade}
+        territoryTier={territoryTier}
+        troops={troops}
+        stats={stats}
+        onConstructBuilding={onConstructBuilding}
+        onExpandTerritory={onExpandTerritory}
+        onTrainTroops={onTrainTroops}
       />
     </div>
   );

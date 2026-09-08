@@ -10,6 +10,7 @@ export function MonarchHeader({
   resources,
   isMuted,
   isStarving,
+  starvationDeaths = 0,
   onToggleSpeed,
   onToggleMute,
   onRaidGrain
@@ -26,7 +27,7 @@ export function MonarchHeader({
               {currentFaction.name}
             </h1>
             <span className="text-[9px] sm:text-[10px] text-amber-500/80 font-mono block">
-              ⭐ {stats.overallRating} <span className="hidden sm:inline">• Def {Math.round(stats.defensePower)}</span>
+              ⭐ {stats.overallRating} <span className="hidden sm:inline">• Def {Math.round(stats.defensePower)} • Labor {Math.round((stats.laborEfficiency || 1) * 100)}%</span>
             </span>
           </div>
         </div>
@@ -39,7 +40,12 @@ export function MonarchHeader({
           />
 
           {/* Mobile Famine Crisis Pill */}
-          <FamineWarning isStarving={isStarving} onRaidGrain={onRaidGrain} />
+          <FamineWarning
+            isStarving={isStarving}
+            onRaidGrain={onRaidGrain}
+            starvationDeaths={starvationDeaths}
+            laborEfficiency={stats?.laborEfficiency}
+          />
 
           {/* Sound Mute Toggle */}
           <button

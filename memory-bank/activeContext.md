@@ -26,6 +26,20 @@
   - **Compact Crisis Pill (`FamineWarning`)**: Replaced overflowing banner on mobile with a pulsing crisis pill and interactive dropdown modal with "Raid for Grain" CTA.
   - **Full-Screen Parchment Folios**: Modals render as full-screen slide-up sheets with safe-area insets (`env(safe-area-inset-bottom)`) and 48px+ touch targets.
 - Build integrity validated via `pnpm run build` producing clean static output in `dist/` in ~2.0s.
+- **Constructible Plots, Dynamic Territory Expansion & Demographic Famine Mortality**:
+  - **Constructible Plots & Catalog (`src/constants/buildings.js`)**: Added `EMPTY_PLOT`, `CONSTRUCTIBLE_BLUEPRINTS`, and new constructible blueprints (`farm`, `barracks`), each specifying `laborRequired`, costs, max tier, and capacities.
+  - **Dynamic Territory Expansion (`src/constants/isometric.js`)**: Defined `TERRITORY_TIERS` (Tier 1: 4x4 Core, Tier 2: 5x5 Baileys, Tier 3: 6x6 Imperial Marches) with gold/wood/stone annexation costs and Keep level prerequisites. Added `isPlotAnnexed` and boundary fog lines with lock icons.
+  - **Troop Demographics & Famine Mortality Engine (`src/constants/initialState.js`, `src/hooks/useGameState.js`, `src/hooks/usePlayerStats.js`)**:
+    - Introduced `troops: { total: 20, maxCapacity: 30, sustenanceUpkeepPerDay: 1 }` and `grid: createDefaultGrid()`.
+    - Replaced arbitrary 50% famine harvest penalty with organic labor saturation: `Labor Efficiency = min(1.0, Living Troops / Required Labor)` with an 8% safety floor to prevent NaN/0 lockouts.
+    - Implemented starvation casualties when sustenance hits zero during day transitions (10% troop mortality per cycle), chronologically logged in battle logs.
+    - Added `trainTroops(count)` at the Barracks and `expandTerritory()` at the Royal Keep.
+  - **Interactive Citadel & Inspector (`CitadelSvgGrid.jsx`, `BuildingInspector.jsx`)**:
+    - Foundation tiles render with dashed parchment diamonds and `+` markers.
+    - Selecting empty foundation opens "Architectural Commission" carousel to erect structures.
+    - Barracks inspector includes levy recruitment controls.
+    - Royal Keep inspector includes territory annexation decree card.
+    - Famine warning HUD reports dynamic troop casualties and active labor saturation percentage.
 
 ## Active Focus & Next Steps
 - Push or link repository to Netlify for continuous static deployment.

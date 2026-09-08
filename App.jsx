@@ -5,6 +5,7 @@ import {
   SEASON_ORDER,
   FACTIONS,
   BUILDINGS,
+  EMPTY_PLOT,
   DEFAULT_STATE,
   SoundController,
   sounds,
@@ -65,6 +66,7 @@ export {
   SEASON_ORDER,
   FACTIONS,
   BUILDINGS,
+  EMPTY_PLOT,
   DEFAULT_STATE,
   SoundController,
   sounds,
@@ -87,11 +89,15 @@ export default function App() {
     isMuted,
     setIsMuted,
     isStarving,
+    starvationDeaths,
     inkPulseTick,
     handleToggleSpeed,
     handleHarvestBuilding,
     handleHarvestAll,
     handleIssueRoyalDecree,
+    constructBuilding,
+    expandTerritory,
+    trainTroops,
     recordRaidVictory,
     handleDoubleRaidSpoils,
     handleResetKingdom,
@@ -206,13 +212,15 @@ export default function App() {
     return bDef && bDef.cycleDuration && (gameState.harvestTimers[bId] || 0) >= bDef.cycleDuration;
   }).length;
 
-  const selectedDef = BUILDINGS[selectedBuildingId] || BUILDINGS.keep;
-  const currentLvl = gameState.buildings[selectedBuildingId] || 1;
+  const isEmptyPlot = selectedBuildingId?.startsWith('plot-');
+  const selectedDef = isEmptyPlot ? EMPTY_PLOT : (BUILDINGS[selectedBuildingId] || BUILDINGS.keep);
+  const currentLvl = isEmptyPlot ? 0 : (gameState.buildings[selectedBuildingId] || 1);
   const discount = currentFaction?.id === 'humans' ? 0.5 : 1.0;
-  const costGold = Math.round(selectedDef.baseCost.gold * Math.pow(selectedDef.costMult, currentLvl - 1) * discount);
-  const costWood = Math.round(selectedDef.baseCost.wood * Math.pow(selectedDef.costMult, currentLvl - 1) * discount);
-  const costStone = Math.round(selectedDef.baseCost.stone * Math.pow(selectedDef.costMult, currentLvl - 1) * discount);
+  const costGold = isEmptyPlot ? 0 : Math.round((selectedDef.baseCost?.gold || 0) * Math.pow(selectedDef.costMult || 1.5, currentLvl - 1) * discount);
+  const costWood = isEmptyPlot ? 0 : Math.round((selectedDef.baseCost?.wood || 0) * Math.pow(selectedDef.costMult || 1.5, currentLvl - 1) * discount);
+  const costStone = isEmptyPlot ? 0 : Math.round((selectedDef.baseCost?.stone || 0) * Math.pow(selectedDef.costMult || 1.5, currentLvl - 1) * discount);
   const canUpgradeSelected =
+    !isEmptyPlot &&
     gameState.resources.gold >= costGold &&
     gameState.resources.wood >= costWood &&
     gameState.resources.stone >= costStone;
@@ -251,6 +259,7 @@ export default function App() {
         resources={gameState.resources}
         isMuted={isMuted}
         isStarving={isStarving}
+        starvationDeaths={starvationDeaths}
         onToggleSpeed={handleToggleSpeed}
         onToggleMute={() => setIsMuted(!isMuted)}
         onRaidGrain={() => setDeskView('war')}
@@ -270,11 +279,17 @@ export default function App() {
           <ParchmentCitadelMap
             buildings={gameState.buildings}
             harvestTimers={gameState.harvestTimers}
+            grid={gameState.grid}
+            territoryTier={gameState.territoryTier || 1}
+            troops={gameState.troops}
             onHarvest={onHarvest}
             onHarvestAll={handleHarvestAll}
             selectedBuildingId={selectedBuildingId}
             onSelectBuilding={setSelectedBuildingId}
             onUpgradeBuilding={onUpgradeBuilding}
+            onConstructBuilding={constructBuilding}
+            onExpandTerritory={expandTerritory}
+            onTrainTroops={trainTroops}
             resources={gameState.resources}
             faction={currentFaction}
             stats={stats}
