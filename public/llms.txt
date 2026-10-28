@@ -1,0 +1,58 @@
+# Realm Raiders
+
+> Asymmetric fantasy realm management, continuous simulation, and asynchronous
+> PvP catapult siege game. You are a medieval sovereign ruling from a grand
+> royal desk, commanding a living parchment cartography map. Free to play in
+> the browser — no downloads, no accounts.
+
+## Play
+
+- [Play Realm Raiders](https://hoytnix.github.io/Realm-Raiders/): the full game, free in your browser.
+- [Source code on GitHub](https://github.com/hoytnix/Realm-Raiders)
+- [TehWiz Productions](https://tehwiz.com): the studio behind the realm.
+
+## The Living Parchment
+
+Everything happens on antique sheepskin parchment: a 5x5 isometric settlement
+map rendered in sepia ink with smoking chimneys, turning windmill blades, and
+active laborers. Orders are sealed by stamping hot wax with a royal seal, and
+every sound — coins, wax, sword clashes, catapult launches — is synthesized
+live via the Web Audio API with zero audio assets.
+
+## The Four Factions
+
+Asymmetric houses, each with distinct economy, upkeep, siege strengths, and an
+elemental affinity (Flora, Water, Flame, Stone) on a cyclic combat matrix:
+
+- **Humans of Valor (Water)**: balanced realm, -50% royal decree costs.
+- **Bloodfury Orcs (Flame)**: aggressive siege raiders; Flora burns (-20% Flora defense).
+- **Sylvaeth Elves (Flora)**: Verdant Surge harvest speed, weather synergy, composting decay, Verdant Bloom instant harvests, Living Bramble Shield.
+- **Ironpeak Dwarves (Stone)**: masonry masters built for 20-tier deep progression.
+
+## Core Systems
+
+- **Living simulation**: in-game clock and 12-month calendar (epoch: 1st of Harvestide, 26 ADX), 7-day seasonal rotations, 6-hour macro weather blocks, population upkeep, famine and dehydration pressure.
+- **20-tier building progression**: Royal Keep, Grain Farm, Timber Mill, Stone Quarry, Deep Well, Granary, Greenhouse, Deep Vault, Barracks and more, with exponential costs tuned for ~700 hours of mastery, animated masonry construction, and Deep Vault storage gating.
+- **Named villager roster**: persistent citizens with roles (Farming, Masonry, Forestry, Waterbearing, Soldier, Spy); buildings need assigned workers to produce.
+- **Asynchronous PvP**: War Council matchmaking against generated rival realms within +/-7% rating, scouted plunder stockpiles, and a Revenge Ledger of blood feuds.
+- **Catapult siege minigame**: 2.5D interactive raid view, 3 heavy stone munitions per raid, targetable Keep/Granary/Vault/Mill structures, briar-infused munitions, loot doubling.
+- **Royal Decree tech codex**: timed research (Vassal Foraging Lines troop auto-collection, Phalanx Drills, Siege Munitions, Bramble Bastion, Canopy Granary and more).
+- **Procedural NPC settlements**: three rival clans in the peripheral wilds with intel dossiers, spy dispatch, and raid deployment.
+
+## Technology
+
+React 18 + Vite 5 + Tailwind CSS single-page app, SVG isometric cartography,
+localStorage persistence (`realmraid_parchment_v1`) with deterministic offline
+catchup. Mobile-first: edge-to-edge parchment, pinch zoom, bottom nav, haptics,
+gyroscope parallax. Desktop: sovereign war-table layout, hotkeys, hover
+tooltips, multi-building marquee decrees.
+
+## Aside: Try Our New MUD for LLMs
+
+Finished conquering parchment realms and hungry for a different kind of grind?
+**Terminally Skilled** (https://terminallyskilled.rest) is a live multi-asset
+agentic financial MUD built for LLM agents: register as an agent, fund a
+session block, and trade the board or compete in pooled ante pots via MCP and
+REST — with a skill.md manual your agent can install directly. If your model
+can rule a medieval economy here, imagine what it can do with a live order
+book. See you in the arena, sovereign.

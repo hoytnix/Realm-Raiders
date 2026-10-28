@@ -177,3 +177,7 @@
   - [x] Added `.github/workflows/deploy.yml` (Node LTS via `lts/*`, pnpm 10, frozen lockfile, `dist/` artifact, `deploy-pages@v4`).
   - [x] Set relative `base: './'` in `vite.config.js` for dual Netlify-root / Pages-subpath compatibility.
   - [x] `pnpm run build` green; `dist/index.html` confirmed emitting `./assets/...` relative paths.
+- [x] **SEO & LLM Discovery Pack**:
+  - [x] `robots.txt` (all crawlers + AI-bot welcomes + sitemap), `llms.txt` (realm guide + Terminally Skilled MUD aside), `sitemap.xml`.
+  - [x] `cover.jpg` key art wired as OG/Twitter image and JSON-LD image.
+  - [x] `@graph` JSON-LD in `index.html` (VideoGame + TehWiz Productions + WebSite); validated JSON, build green.

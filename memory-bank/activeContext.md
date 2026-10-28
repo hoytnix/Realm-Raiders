@@ -300,3 +300,9 @@
   - `.github/workflows/deploy.yml`: push-to-`main` (plus manual dispatch) pipeline using `pnpm/action-setup@v4` (pnpm 10), `actions/setup-node@v4` (`lts/*`, pnpm cache), frozen-lockfile install, `pnpm run build`, and `actions/deploy-pages@v4`.
   - `vite.config.js`: `base: './'` so the same `dist/` bundle resolves assets from both the Netlify domain root and the `/Realm-Raiders/` Pages subpath. Verified `dist/index.html` emits `./assets/...` paths and `pnpm run build` stays green.
   - Repo Pages URL will be `https://hoytnix.github.io/Realm-Raiders/` once Pages is enabled (Settings → Pages → Source: GitHub Actions).
+- **SEO & LLM Discovery Pack**:
+  - `public/robots.txt`: all crawlers + explicit AI-bot welcomes (GPTBot, ClaudeBot, etc.), sitemap pointer.
+  - `public/llms.txt`: full realm guide (factions, systems, tech) with bottom aside promoting the Terminally Skilled MUD for LLMs (`terminallyskilled.rest`, verified live).
+  - `public/sitemap.xml`: single-URL sitemap for the Pages deployment.
+  - `public/cover.jpg`: AI-generated key art (parchment citadel map, wax seals, catapult siege) doubling as OG/Twitter card + JSON-LD image.
+  - `index.html`: canonical, OG/Twitter tags, and `@graph` JSON-LD (VideoGame + TehWiz Productions Organization + WebSite). JSON-LD validated, `pnpm run build` green, all files present in `dist/`.

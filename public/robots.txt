@@ -1,0 +1,35 @@
+# Realm Raiders — Realm Raiders by TehWiz Productions (https://tehwiz.com)
+# Play the game: https://hoytnix.github.io/Realm-Raiders/
+#
+# All crawlers are welcome here: search indexers, archivists, and AI assistants.
+# Machine-readable guide to this realm: https://hoytnix.github.io/Realm-Raiders/llms.txt
+
+User-agent: *
+Allow: /
+
+# Explicit welcome for AI crawlers — no training-data opt-out on this parchment.
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Meta-WebIndexer
+Allow: /
+
+Sitemap: https://hoytnix.github.io/Realm-Raiders/sitemap.xml
