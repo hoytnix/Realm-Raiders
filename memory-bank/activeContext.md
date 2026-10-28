@@ -296,3 +296,7 @@
 ## Active Focus & Next Steps
 - Continue strategic balancing across Water, Flame, and Stone unique elemental active sinks and decree expansions.
 - Explore procedural ambient audio additions (rain drops, howling wind, crackling embers).
+- **GitHub Pages Deployment Wired**:
+  - `.github/workflows/deploy.yml`: push-to-`main` (plus manual dispatch) pipeline using `pnpm/action-setup@v4` (pnpm 10), `actions/setup-node@v4` (`lts/*`, pnpm cache), frozen-lockfile install, `pnpm run build`, and `actions/deploy-pages@v4`.
+  - `vite.config.js`: `base: './'` so the same `dist/` bundle resolves assets from both the Netlify domain root and the `/Realm-Raiders/` Pages subpath. Verified `dist/index.html` emits `./assets/...` paths and `pnpm run build` stays green.
+  - Repo Pages URL will be `https://hoytnix.github.io/Realm-Raiders/` once Pages is enabled (Settings → Pages → Source: GitHub Actions).

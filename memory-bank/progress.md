@@ -173,3 +173,7 @@
 ## Planned / In Progress
 - [ ] Additional weather sound synthesizers (rain, thunder, blizzard noise nodes).
 - [ ] Expanded battle animations (projectile arcs and particle debris on the SVG canvas).
+- [x] **GitHub Pages Build & Deploy Workflow**:
+  - [x] Added `.github/workflows/deploy.yml` (Node LTS via `lts/*`, pnpm 10, frozen lockfile, `dist/` artifact, `deploy-pages@v4`).
+  - [x] Set relative `base: './'` in `vite.config.js` for dual Netlify-root / Pages-subpath compatibility.
+  - [x] `pnpm run build` green; `dist/index.html` confirmed emitting `./assets/...` relative paths.
